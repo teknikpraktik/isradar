@@ -12,7 +12,9 @@ test("temperaturintervall över, kring och under 0 °C", () => {
   assert.equal(formatTemperatureRange(-3, 2, 0), "−3 – 2 °C");
   assert.equal(formatTemperatureRange(-12.4, -3.2), "−12,4 – −3,2 °C");
   assert.equal(formatTemperatureRange(9.1, 12.8, 0), "9–13 °C", "prognos i hela grader");
-  assert.equal(formatTemperatureRange(5, 5), "5 °C");
+  assert.equal(formatTemperatureRange(5, 5), "5,0 °C");
+  assert.equal(formatTemperatureRange(11, 17.6), "11,0–17,6 °C", "fast en decimal i observationer");
+  assert.equal(formatTemperatureRange(-0.04, 2), "0,0–2,0 °C", "inget minus på noll");
   assert.equal(formatTemperatureRange(null, 3), null);
 });
 

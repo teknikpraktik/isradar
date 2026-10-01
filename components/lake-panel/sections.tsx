@@ -1,22 +1,21 @@
 "use client";
 
 import type { LakeConditions } from "@/lib/data/conditions";
-import { describeTime, distanceKm, formatDate, formatDateShort, formatShortDateTime } from "@/lib/format";
+import { distanceKm, formatDate, formatDateShort, formatShortDateTime } from "@/lib/format";
 import { COLLECTION_AREA_NOTE, getColdDayStyle } from "@/lib/map/coldScale";
 import { compassSv } from "@/lib/weather/compute";
 import type {
   ColdAmountObservation,
-  HourCoverage,
+  SatellitePass,
   WeatherForecast,
   WeatherStation,
 } from "@/types/observations";
 import type { Lake } from "@/types/lake";
 import styles from "./LakePanel.module.css";
-import { KindBadge, Row, Section, fmtPct, fmtQ, fmtSignedQ, type Loadable } from "./parts";
+import { KindBadge, Row, Section, fmtQ, fmtSignedQ, type Loadable } from "./parts";
 import {
   formatPrecipitation,
   formatStation,
-  formatSubzeroDuration,
   formatTemperature,
   formatTemperatureRange,
   formatWind,
@@ -243,24 +242,60 @@ export function ModelSection({ meps }: { meps: L<"meps"> }) {
 /* SATELLIT – Sentinel                                                 */
 /* ------------------------------------------------------------------ */
 
+const ORBIT: Record<string, string> = { ascending: "stigande", descending: "fallande" };
+
+function passValue(p: SatellitePass | null) {
+  if (!p || p.provenance.time.kind !== "observation") return undefined;
+  return formatShortDateTime(p.provenance.time.observedAt);
+}
+
+function passMeta(p: SatellitePass | null) {
+  if (!p) return undefined;
+  const cloud = p.provenance.quality?.cloudCoverPct;
+  return join(p.platform, cloud !== undefined && `moln ${cloud} %`, p.orbitState && ORBIT[p.orbitState]);
+}
+
 export function SatelliteSection({ sat }: { sat: L<"satellite"> }) {
-  const o = sat.status === "ok" ? sat.value : null;
-  const q = o?.provenance.quality;
-  const quality = q
-    ? join(q.flag, q.cloudCoverPct !== undefined && `moln ${q.cloudCoverPct} %`, q.resolutionM !== undefined && `${q.resolutionM} m`)
-    : undefined;
+  const v = sat.status === "ok" ? sat.value : null;
+  const none = v ? `Ingen inom ${v.windowDays} d` : undefined;
   return (
-    <Section title="Satellit · Sentinel" kinds={["observation"]} status={sat.status}>
+    <Section
+      title="Satellit · Sentinel"
+      kinds={["observation"]}
+      status={sat.status}
+      hintLabel="Information om satellitpassager"
+      hint={
+        <>
+          <p className={styles.hintTitle}>Senaste passager</p>
+          <p>När Sentinel senast tog en bild över vattnet. Ingen tolkning av is eller vatten ännu.</p>
+          <p>Radar (Sentinel-1) ser genom moln och mörker. Optisk (Sentinel-2) kräver klart väder.</p>
+          <p>Molnighet gäller hela bildrutan (~110 km), inte vattnet.</p>
+          <p>Copernicus Data Space Ecosystem</p>
+        </>
+      }
+    >
       <Row
-        label="Senaste"
+        label="Radar"
         status={sat.status}
-        value={o ? `${o.platform} ${o.sensor === "SAR" ? "radar" : "optisk"}` : undefined}
-        meta={o ? describeTime(o.provenance.time) : undefined}
+        value={v ? passValue(v.sar) : undefined}
+        placeholder={v && !v.sar ? none : undefined}
+        meta={v ? passMeta(v.sar) : undefined}
       />
-      <Row label="Is" status={sat.status} value={fmtPct(o?.icePct)} />
-      <Row label="Vatten" status={sat.status} value={fmtPct(o?.waterPct)} />
-      <Row label="Okänt" status={sat.status} value={fmtPct(o?.unknownPct)} />
-      <Row label="Kvalitet" status={sat.status} value={quality || undefined} />
+      <Row
+        label="Optisk"
+        status={sat.status}
+        value={v ? passValue(v.optical) : undefined}
+        placeholder={v && !v.optical ? none : undefined}
+        meta={v ? passMeta(v.optical) : undefined}
+      />
+      <Row
+        label={v ? `Optisk ≤ ${v.clearMaxCloudPct} % moln` : "Optisk, klar"}
+        status={sat.status}
+        value={v ? passValue(v.opticalClear) : undefined}
+        placeholder={v && !v.opticalClear ? none : undefined}
+        meta={v ? passMeta(v.opticalClear) : undefined}
+      />
+      <Row label="Is/vatten" status="not_connected" placeholder="Ej ansluten" />
     </Section>
   );
 }
@@ -276,12 +311,12 @@ function weatherPlaceholder(r: L<"weatherRecent"> | L<"weatherForecast">): strin
   return "N/A";
 }
 
-/** "Karlstad Flygplats · 16 km · 23 av 24 h" (täckning bara om ofullständig). */
-const stationMeta = (v: { station: WeatherStation; coverage: HourCoverage }) =>
-  join(
-    formatStation(v.station.name, v.station.distanceKm),
-    v.coverage.hours < v.coverage.expectedHours && `${v.coverage.hours} av ${v.coverage.expectedHours} h`,
-  );
+/**
+ * "Karlstad Flygplats · 16 km" / "VViS Högåsen · 13 km". VViS-namn (vägpunkter)
+ * visar inte källan själva, därav prefixet. Täckning visas inte.
+ */
+const stationMeta = (v: { station: WeatherStation }) =>
+  formatStation(v.station.source === "TRAFIKVERKET_VVIS" ? `VViS ${v.station.name}` : v.station.name, v.station.distanceKm);
 
 export function WeatherSection({
   recent,
@@ -371,40 +406,34 @@ export function WeatherSection({
 
       {(w || fc) && (
         <p className={styles.weatherSource}>
-          {join("SMHI", run?.kind === "forecast" && `uppdaterad ${formatShortDateTime(run.modelRun)}`)}
+          Observationer: SMHI + Trafikverket VViS
           <br />
-          CC BY 4.0
+          {join("Prognos: SMHI", run?.kind === "forecast" && `uppdaterad ${formatShortDateTime(run.modelRun)}`)}
+          <br />
+          SMHI CC BY 4.0 · Källa: Trafikverket
         </p>
       )}
     </Section>
   );
 }
 
-/** Ett prognosfönster. Prioritet: temperatur, tid under 0 °C, nederbörd, vind. */
+/** Ett prognosfönster: temperatur, nederbörd, vind, byvind. */
 function ForecastBlock({ f }: { f: WeatherForecast }) {
   const v = f.values;
   const temp = formatTemperatureRange(v.temperatureMin?.value ?? null, v.temperatureMax?.value ?? null, 0);
-  const subzero = v.subzeroHours?.value ?? null;
   const cold = (v.temperatureMin?.value ?? 1) < 0;
-  const line = (label: string, value: string | null) => (
-    <div className={styles.fcLine}>
-      <span>{label}</span>
-      <span className={value === null ? styles.placeholder : undefined}>{value ?? "Ingen data"}</span>
-    </div>
-  );
+  const precip = formatPrecipitation(v.precipitation?.value ?? null);
+  const wind = formatWind(v.windMax?.value ?? null);
+  const gust = formatWind(v.gustMax?.value ?? null);
   return (
     <div className={styles.fcBlock}>
       <div className={styles.fcWindow}>
         {f.window[0]}–{f.window[1]} h
       </div>
       <div className={cold ? `${styles.fcTemp} ${styles.cold}` : styles.fcTemp}>{temp ?? "Ingen data"}</div>
-      <div className={styles.fcLine}>
-        <span>Tid under 0 °C</span>
-        <span className={subzero ? styles.cold : undefined}>{formatSubzeroDuration(subzero) ?? "Ingen data"}</span>
-      </div>
-      {line("Nederbörd", formatPrecipitation(v.precipitation?.value ?? null))}
-      {line("Vind", formatWind(v.windMax?.value ?? null))}
-      {line("Byvind", formatWind(v.gustMax?.value ?? null))}
+      <div className={styles.fcLine}>{precip ?? "Nederbörd saknas"}</div>
+      <div className={styles.fcLine}>{wind ? `Vind ${wind}` : "Vind saknas"}</div>
+      <div className={styles.fcLine}>{gust ? `Byvind ${gust}` : "Byvind saknas"}</div>
     </div>
   );
 }

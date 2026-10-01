@@ -48,7 +48,7 @@ function toVariable<S, V>(
     station: v.station,
     coverage: v.summary.coverage,
     provenance: {
-      source: r.sources.observed,
+      source: v.station.source === "TRAFIKVERKET_VVIS" ? r.sources.observedSecondary : r.sources.observed,
       time: {
         kind: "observation",
         observedAt: latestAt ? new Date(latestAt).toISOString() : v.period.to,

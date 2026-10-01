@@ -9,11 +9,13 @@ import type {
   WindSummary,
 } from "@/lib/weather/compute";
 import type { DataSource, IsoDateTime } from "@/types/provenance";
+import type { ObservationSource } from "@/lib/weather/stations";
 
 export interface WeatherStationRef {
   id: string;
   name: string;
   distanceKm: number;
+  source: ObservationSource;
 }
 
 /** En uppmätt variabel – varje variabel kan komma från olika station. */
@@ -54,7 +56,7 @@ export interface WeatherApiResponse {
     createdTime: IsoDateTime;
     windows: ForecastWindow[];
   } | null;
-  sources: { observed: DataSource; forecast: DataSource };
+  sources: { observed: DataSource; observedSecondary: DataSource; forecast: DataSource };
   /** Delar som inte kunde hämtas (övriga delar kan ändå vara giltiga). */
   errors: string[];
   retrievedAt: IsoDateTime;

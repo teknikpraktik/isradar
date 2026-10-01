@@ -4,13 +4,13 @@
  */
 import { getCurrentColdAmount } from "@/lib/data/cold";
 import { getMepsRun } from "@/lib/data/meps";
-import { getLatestSatelliteObservation } from "@/lib/data/satellite";
+import { getSatellitePasses } from "@/lib/data/satellite";
 import { getRecentWeather, getWeatherForecast } from "@/lib/data/weather";
 import type { Lake } from "@/types/lake";
 import type {
   ColdAmountObservation,
   MepsRun,
-  SatelliteObservation,
+  SatellitePasses,
   WeatherForecast,
   WeatherObservation,
 } from "@/types/observations";
@@ -19,7 +19,7 @@ import type { DataResult } from "@/types/provenance";
 export interface LakeConditions {
   currentCold: DataResult<ColdAmountObservation>;
   meps: DataResult<MepsRun>;
-  satellite: DataResult<SatelliteObservation>;
+  satellite: DataResult<SatellitePasses>;
   weatherRecent: DataResult<WeatherObservation>;
   weatherForecast: DataResult<WeatherForecast[]>;
 }
@@ -30,9 +30,25 @@ export async function getLakeConditions(lake: Lake, asOf?: string): Promise<Lake
     await Promise.all([
       getCurrentColdAmount(lake, asOf),
       getMepsRun(lake, asOf),
-      getLatestSatelliteObservation(lake),
+      getSatellitePasses(lake, asOf),
       getRecentWeather(lake, asOf),
       getWeatherForecast(lake, asOf),
     ]);
   return { currentCold, meps, satellite, weatherRecent, weatherForecast };
+}
+
+/**
+ * Som getLakeConditions men levererar varje källa så fort den är klar, så att
+ * en långsam källa (t.ex. MEPS) inte håller tillbaka de andra.
+ */
+export function loadLakeConditions(
+  lake: Lake,
+  asOf: string | undefined,
+  onPart: <K extends keyof LakeConditions>(key: K, value: LakeConditions[K]) => void,
+): void {
+  getCurrentColdAmount(lake, asOf).then((v) => onPart("currentCold", v));
+  getMepsRun(lake, asOf).then((v) => onPart("meps", v));
+  getSatellitePasses(lake, asOf).then((v) => onPart("satellite", v));
+  getRecentWeather(lake, asOf).then((v) => onPart("weatherRecent", v));
+  getWeatherForecast(lake, asOf).then((v) => onPart("weatherForecast", v));
 }

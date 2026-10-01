@@ -11,7 +11,8 @@ ISRADAR kombinerar historisk köldmängd, aktuell köldmängd, MEPS sjöismodell
 - Utvecklas och testas för **Värmland** (avgränsning för utveckling – arkitekturen är nationell).
 - Ansluten data: **historisk köldmängd** (Skridskonätet), koppling till temperaturstation och **aktuell köldmängd** (beräknad ur SMHI:s dygnsmedeltemperaturer) samt **väder** (SMHI, uppmätt senaste 24 h och prognos).
 - Ansluten: **MEPS sjöismodell** (MET Norway, FLake).
-- Ej anslutet ännu: Sentinel. Finns i UI och datamodell som "Ej ansluten".
+- Sentinel: senaste passager (Copernicus STAC, utan konto). Is/vatten-klassning ej ansluten.
+- Väderobservationer kompletteras med **Trafikverket VViS**. Finns i UI och datamodell som "Ej ansluten".
 
 ## Kom igång
 
@@ -108,6 +109,17 @@ Beräknas av ISRADAR per temperaturstation och visas för alla vatten som använ
 - **Avståndsgräns 50 km:** i Värmland har 259/261 vatten temperatur, 256 vind och 241 nederbörd inom gränsen. Övriga visar "Ingen station inom 50 km".
 - **Prognos (FORECAST):** SMHI punktprognos `snow1g` (ersätter `pmp3g`) vid vattnets centroid, sammanfattad för 0–24 h och 24–48 h: temperatur, **tid under 0 °C** (antal prognostimmar med lufttemperatur < 0 °C), nederbörd, vind och byvind. All väderformatering ligger i `lib/weather/format.ts` (testad). Modellkörningstid (`referenceTime`) visas.
 - **Endast nuläge:** med `?asOf=` visas "Endast nuläge" – inget väder hämtas.
+
+### Trafikverket VViS (kompletterande observationer)
+
+`lib/server/vvis.ts` – Trafikverkets öppna API `https://api.trafikinfo.trafikverket.se/v2/data.json`, namespace `road.weatherinfo`, schemaversion 2.1.
+
+- **Nyckel:** `TRAFIKVERKET_API_KEY`. Saknas den används Trafikverkets publika `demokey` (avsedd för test – registrera egen nyckel på data.trafikverket.se för produktion). API-svaret anger `RateLimit-Policy: 100;w=1`.
+- **Data:** `WeatherMeasurepoint` (stationer + senaste mätning, cache 6 h, hela landet i ett anrop) och `WeatherObservation` (mätningar var 5:e minut, ~24 h bakåt, cache 10 min, ett anrop för de 3 närmaste aktuella stationerna). Parametrar: lufttemperatur, vind (hastighet, riktning, 10-min max som byvind), nederbörd (`Aggregated5minutes.TotalWaterEquivalent`, mm per 5 min – summeras). Vägytetemperatur hämtas inte till väderdelen.
+- **Normalisering:** `lib/weather/stations.ts` gör om 5-minutersdata till timvärden (senaste / summa / max), filtrerar orimliga värden och ger samma `StationSeries` som SMHI.
+- **Stationsval per parameter** (`chooseBest`, testad): SMHI och VViS är likvärdiga kandidater. Poäng = avstånd (km) + 10 × andel saknade timmar + 2 × timmar sedan senaste värde; observationer äldre än 3 h utesluts. Vindriktning och byvind tas från samma station som vald vind.
+- **Reserv:** fel i VViS loggas och vädret visas med enbart SMHI.
+- **Begränsningar:** VViS-stationer står vid vägar (köldhål, broar, öppna vindlägen) och representerar inte sjön; station och avstånd visas alltid. VViS används **inte** i GD-beräkningen – det kräver ett separat beslut om hur SMHI- och VViS-serier ska kvalitetskontrolleras och viktas över tid (serierna har redan samma form för en sådan modell). Licensvillkoren kunde inte läsas utan inloggning; källan anges som "Källa: Trafikverket".
 
 ### MEPS sjöismodell (MET Norway)
 

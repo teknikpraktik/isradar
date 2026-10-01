@@ -100,7 +100,8 @@ export default function InfoDialog({ open, onClose, region, manifest, showCollec
           <div>
             <dt>Temp, väder</dt>
             <dd>
-              <a href="https://www.smhi.se/data/oppna-data">SMHI</a> (CC BY 4.0) · station ≤ 50 km
+              <a href="https://www.smhi.se/data/oppna-data">SMHI</a> (CC BY 4.0) +{" "}
+              <a href="https://data.trafikverket.se">Trafikverket VViS</a> · station ≤ 50 km
             </dd>
           </div>
           <div>

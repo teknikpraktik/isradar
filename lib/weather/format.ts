@@ -7,12 +7,12 @@
 
 const MINUS = "−";
 
-function num(v: number, decimals: number): string {
+function num(v: number, decimals: number, fixed = false): string {
   const s = new Intl.NumberFormat("sv-SE", {
-    minimumFractionDigits: 0,
+    minimumFractionDigits: fixed ? decimals : 0,
     maximumFractionDigits: decimals,
   }).format(Math.abs(v));
-  return v < 0 && s !== "0" ? `${MINUS}${s}` : s;
+  return v < 0 && !/^[0,]+$/.test(s) ? `${MINUS}${s}` : s;
 }
 
 /**
@@ -22,15 +22,16 @@ function num(v: number, decimals: number): string {
  */
 export function formatTemperatureRange(min: number | null, max: number | null, decimals = 1): string | null {
   if (min === null || max === null) return null;
-  const a = num(min, decimals);
-  const b = num(max, decimals);
+  // Fast antal decimaler så att intervallets ändpunkter är jämförbara.
+  const a = num(min, decimals, true);
+  const b = num(max, decimals, true);
   if (a === b) return `${a} °C`;
-  const sep = min < 0 || max < 0 ? " – " : "–";
+  const sep = a.startsWith(MINUS) || b.startsWith(MINUS) ? " – " : "–";
   return `${a}${sep}${b} °C`;
 }
 
 export function formatTemperature(v: number | null, decimals = 1): string | null {
-  return v === null ? null : `${num(v, decimals)} °C`;
+  return v === null ? null : `${num(v, decimals, true)} °C`;
 }
 
 /**

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getLakeConditions, type LakeConditions } from "@/lib/data/conditions";
+import { loadLakeConditions, type LakeConditions } from "@/lib/data/conditions";
 import { formatCoord } from "@/lib/format";
 import type { Lake } from "@/types/lake";
 import styles from "./LakePanel.module.css";
@@ -17,22 +17,24 @@ interface Props {
 }
 
 export default function LakePanel({ lake, onClose, onShowInfo, asOf }: Props) {
-  const [loaded, setLoaded] = useState<{ key: string; data: LakeConditions } | null>(null);
+  const [loaded, setLoaded] = useState<{ key: string; data: Partial<LakeConditions> }>({ key: "", data: {} });
   const [expanded, setExpanded] = useState(false);
 
   const key = `${lake.id}|${asOf ?? ""}`;
 
   useEffect(() => {
     let cancelled = false;
-    getLakeConditions(lake, asOf).then((data) => {
-      if (!cancelled) setLoaded({ key: `${lake.id}|${asOf ?? ""}`, data });
+    const k = `${lake.id}|${asOf ?? ""}`;
+    loadLakeConditions(lake, asOf, (part, value) => {
+      if (cancelled) return;
+      setLoaded((prev) => ({ key: k, data: { ...(prev.key === k ? prev.data : {}), [part]: value } }));
     });
     return () => {
       cancelled = true;
     };
   }, [lake, asOf]);
 
-  const c = loaded?.key === key ? loaded.data : null;
+  const c = loaded.key === key ? loaded.data : {};
 
   return (
     <aside
@@ -63,10 +65,10 @@ export default function LakePanel({ lake, onClose, onShowInfo, asOf }: Props) {
       </header>
 
       <div className={styles.body}>
-        <OverviewSection lake={lake} cold={c?.currentCold ?? LOADING} asOf={asOf} />
-        <ModelSection meps={c?.meps ?? LOADING} />
-        <SatelliteSection sat={c?.satellite ?? LOADING} />
-        <WeatherSection recent={c?.weatherRecent ?? LOADING} forecast={c?.weatherForecast ?? LOADING} />
+        <OverviewSection lake={lake} cold={c.currentCold ?? LOADING} asOf={asOf} />
+        <ModelSection meps={c.meps ?? LOADING} />
+        <SatelliteSection sat={c.satellite ?? LOADING} />
+        <WeatherSection recent={c.weatherRecent ?? LOADING} forecast={c.weatherForecast ?? LOADING} />
 
         <p className={styles.disclaimer}>
           Visar inte om isen är bärig. Bedöm alltid på plats.{" "}

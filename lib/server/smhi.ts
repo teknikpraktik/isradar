@@ -136,7 +136,7 @@ async function latestDay(param: number, stationId: string): Promise<SmhiHourly[]
     .filter((x) => Number.isFinite(x.v));
 }
 
-const distKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+export const distKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
   const r = (d: number) => (d * Math.PI) / 180;
   const a =
     Math.sin(r(lat2 - lat1) / 2) ** 2 +

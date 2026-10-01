@@ -99,6 +99,32 @@ export interface SatelliteObservation {
   provenance: Provenance<ObservationTime> & { quality: DataQuality };
 }
 
+/**
+ * En satellitpassage över vattnet (OBSERVATION av att bild finns – ingen
+ * tolkning av is/vatten). Steg 1 av satellitlagret.
+ */
+export interface SatellitePass {
+  lakeId: LakeId;
+  productId: string;
+  /** t.ex. "Sentinel-1C" */
+  platform: string;
+  sensor: SatelliteSensor;
+  orbitState: string | null;
+  /** quality.cloudCoverPct = molnighet för hela tile-rutan (~110 km), inte vattnet. */
+  provenance: Provenance<ObservationTime>;
+}
+
+export interface SatellitePasses {
+  /** Senaste radarpassage (Sentinel-1, ser genom moln/mörker). */
+  sar: SatellitePass | null;
+  /** Senaste optiska passage (Sentinel-2), oavsett moln. */
+  optical: SatellitePass | null;
+  /** Senaste optiska med tile-molnighet ≤ clearMaxCloudPct. */
+  opticalClear: SatellitePass | null;
+  windowDays: number;
+  clearMaxCloudPct: number;
+}
+
 /* ------------------------------------------------------------------ */
 /* Väder                                                               */
 /* ------------------------------------------------------------------ */
@@ -106,6 +132,8 @@ export interface SatelliteObservation {
 /** Mätstation för en enskild vädervariabel. */
 export interface WeatherStation {
   id: string;
+  /** "SMHI" | "TRAFIKVERKET_VVIS" */
+  source: string;
   name: string;
   /** Avstånd från vattnets centroid. */
   distanceKm: number;
