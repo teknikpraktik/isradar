@@ -1,11 +1,10 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { LARGE_LAKE_COLD_REASON } from "@/lib/data/cold";
 import type { LakeConditions } from "@/lib/data/conditions";
 import { MEPS_LEAD_TIMES_H } from "@/lib/data/meps";
 import { describeTime, distanceKm, formatDate, formatDateShort, formatShortDateTime } from "@/lib/format";
-import { coldDayClassFor } from "@/lib/map/coldScale";
+import { COLLECTION_AREA_NOTE, getColdDayStyle } from "@/lib/map/coldScale";
 import { compassSv } from "@/lib/weather/compute";
 import type {
   ColdAmountObservation,
@@ -57,7 +56,7 @@ export function OverviewSection({
   cold: Loadable<ColdAmountObservation>;
   asOf?: string;
 }) {
-  if (lake.modelType === "LARGE_LAKE_OPEN_WATER") return <LargeLakeOverview lake={lake} />;
+  if (lake.areaType === "COLLECTION_AREA") return <CollectionAreaOverview lake={lake} />;
 
   const hca = lake.historicalColdAmount;
   const station = lake.temperatureStation;
@@ -67,10 +66,11 @@ export function OverviewSection({
     <Section title="Köldmängd" kinds={["historical_reference", "observation"]} status="ok">
       <Row
         label="Historisk köldmängd"
-        value={hca ? <ColdValue gd={hca.amount.value} /> : undefined}
+        value={hca ? <ColdValue lake={lake} gd={hca.amount.value} /> : undefined}
         placeholder={hca ? undefined : "Saknas"}
         hint="Median vid första rapporterade åkning (Skridskonätet). GD = graddagar. Ingen säkerhetsgräns."
       />
+      {lake.parent && <Row label="Del av" value={lake.parent.name} />}
       <Row
         label="Temperaturstation"
         value={station?.name}
@@ -82,7 +82,7 @@ export function OverviewSection({
         status={cold.status}
         placeholder={currentColdPlaceholder(cold, "value")}
         placeholderTitle={reason}
-        value={current ? <ColdValue gd={current.accumulated.value} /> : undefined}
+        value={current ? <ColdValue lake={lake} gd={current.accumulated.value} /> : undefined}
         meta={current ? coldMeta(current) : undefined}
         hint="Från 1 okt. SMHI-dygnsmedel vid stationen, netto, golv 0."
       />
@@ -104,24 +104,43 @@ export function OverviewSection({
   );
 }
 
-/** GD-värde med samma klassfärg som kartan. */
-function ColdValue({ gd }: { gd: number }) {
-  const cls = coldDayClassFor(gd);
+/** GD-värde med klassfärg – via samma centrala regel som kartan. */
+function ColdValue({ lake, gd }: { lake: Lake; gd: number }) {
+  const style = getColdDayStyle(lake.areaType, gd);
   return (
     <span className={styles.coldValue}>
-      <span className={styles.classSwatch} style={{ background: cls.color }} aria-hidden />
+      {style.kind === "class" && (
+        <span className={styles.classSwatch} style={{ background: style.cls.color }} aria-hidden />
+      )}
       {fmtQ({ value: gd, unit: "GD" })}
     </span>
   );
 }
 
-/** Stor sjö, öppet vatten: normal GD-modell används inte. Inga GD-fält visas. */
-function LargeLakeOverview({ lake }: { lake: Lake }) {
+/**
+ * Samlingsområde: ingen sjöspecifik GD. Ev. historiskt värde visas separat
+ * som områdeshistorik, utan klassfärg.
+ */
+function CollectionAreaOverview({ lake }: { lake: Lake }) {
+  const area = lake.areaHistoricalColdAmount;
+  const station = lake.temperatureStation;
   return (
-    <Section title="Köldmängd" kinds={[]} status="not_applicable">
-      <p className={styles.largeLake}>{lake.largeLake?.name ?? "Stor sjö"} – öppet vatten</p>
-      <Row label="Köldmängd" status="not_applicable" hint={LARGE_LAKE_COLD_REASON} />
-    </Section>
+    <>
+      <Section title="Köldmängd" kinds={[]} status="ok">
+        <Row label="Områdestyp" value="Samlingsområde" />
+        <Row label="GD-klassificering" status="not_applicable" placeholder="Ej tillämpad" hint={COLLECTION_AREA_NOTE} />
+      </Section>
+      {area && (
+        <Section title="Områdeshistorik" kinds={["historical_reference"]} status="ok">
+          <Row
+            label="Historisk områdesobservation"
+            value={fmtQ(area.amount)}
+            meta={station ? `${station.name} ${Math.round(distanceKm(lake.centroid, station.position))} km` : undefined}
+            hint="Källans värde för hela området. Används inte för färgsättning."
+          />
+        </Section>
+      )}
+    </>
   );
 }
 

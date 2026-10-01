@@ -8,6 +8,7 @@
  */
 import type { FeatureCollection, MultiPolygon, Point, Polygon } from "geojson";
 import { historicalColdAmountFromIndex } from "@/lib/data/cold";
+import { canRenderColdDays } from "@/lib/map/coldScale";
 import type {
   Lake,
   LakeFeatureProperties,
@@ -94,9 +95,11 @@ export function buildLake(data: RegionLakeData, id: LakeId): Lake | null {
     geometry,
     centroid: entry.centroid,
     bbox: entry.bbox,
-    modelType: entry.modelType,
-    largeLake: entry.largeLake,
-    historicalColdAmount: historicalColdAmountFromIndex(entry),
+    areaType: entry.areaType,
+    parent: entry.parent,
+    // Samlingsområdets värde hålls semantiskt isär från sjöspecifik GD.
+    historicalColdAmount: canRenderColdDays(entry.areaType) ? historicalColdAmountFromIndex(entry) : null,
+    areaHistoricalColdAmount: canRenderColdDays(entry.areaType) ? null : historicalColdAmountFromIndex(entry),
     temperatureStation:
       entry.stationId !== null ? (data.stations.get(entry.stationId) ?? null) : null,
   };

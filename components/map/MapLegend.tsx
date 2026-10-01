@@ -4,20 +4,20 @@ import { useState } from "react";
 import {
   COLD_DAY_CLASSES,
   COLD_INDICATOR_NOTE,
+  COLLECTION_AREA_STYLE,
   NO_VALUE_STYLE,
-  OPEN_WATER_STYLE,
 } from "@/lib/map/coldScale";
 import { GdUnit } from "@/components/ui/GdUnit";
 import styles from "./MapLegend.module.css";
 
 interface Props {
-  /** Visa posten för stora sjöars öppna vatten (om sådana finns i datan). */
-  showOpenWater?: boolean;
+  /** Visa posten för samlingsområden (om sådana finns i datan). */
+  showCollection?: boolean;
   /** Visa posten "Värde saknas" (om sådana finns i datan). */
   showMissing?: boolean;
 }
 
-export default function MapLegend({ showOpenWater = false, showMissing = false }: Props) {
+export default function MapLegend({ showCollection = false, showMissing = false }: Props) {
   const [open, setOpen] = useState(true);
   const [showNote, setShowNote] = useState(false);
   return (
@@ -55,16 +55,20 @@ export default function MapLegend({ showOpenWater = false, showMissing = false }
                 <span className="num">{c.label}</span> <GdUnit />
               </li>
             ))}
-            {showOpenWater && (
+          </ul>
+          {/* Separata poster – ingår inte i GD-klasserna */}
+          <ul className={`${styles.list} ${styles.extra}`}>
+            {showCollection && (
               <li>
                 <span
                   className={styles.swatch}
                   style={{
-                    backgroundColor: OPEN_WATER_STYLE.fill,
-                    backgroundImage: `repeating-linear-gradient(-45deg, ${OPEN_WATER_STYLE.hatch} 0 1.5px, transparent 1.5px 4px)`,
+                    background: COLLECTION_AREA_STYLE.fill,
+                    opacity: COLLECTION_AREA_STYLE.fillOpacity + 0.25,
+                    outline: `1px solid ${COLLECTION_AREA_STYLE.line}`,
                   }}
                 />
-                <span>Ej klassificerad – stor sjö</span>
+                <span>{COLLECTION_AREA_STYLE.label}</span>
               </li>
             )}
             {showMissing && (

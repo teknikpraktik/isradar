@@ -16,7 +16,7 @@
  * ≥120: 31. Ändra här om det finns empiriskt stöd för bättre brytpunkter.
  */
 import type { ExpressionSpecification } from "maplibre-gl";
-import type { WaterModelType } from "@/types/lake";
+import type { AreaType } from "@/types/lake";
 
 export interface ColdDayClass {
   /** Inklusive. */
@@ -35,14 +35,18 @@ export const COLD_DAY_CLASSES: readonly ColdDayClass[] = [
   { min: 120, max: null, label: "≥ 120", color: "#3a6aa8" },
 ];
 
-/** Stor sjö, öppet vatten: medvetet ej GD-klassificerad. Neutral, inte blå. */
-export const OPEN_WATER_STYLE = {
-  label: "Ej klassificerad (stor sjö, öppet vatten)",
-  fill: "#3a454e",
-  hatch: "#5d6a74",
+/**
+ * Samlingsområde (COLLECTION_AREA): medvetet ej GD-färgsatt. Lågmäld blågrå,
+ * ingen av GD-skalans färger och tydligt ljusare än kartans vatten (#17222d).
+ */
+export const COLLECTION_AREA_STYLE = {
+  label: "Områdespolygon – ej GD-klassificerad",
+  fill: "#4b5a66",
+  fillOpacity: 0.55,
+  line: "#6c7a86",
 } as const;
 
-/** Standardsjö där GD-värde saknas i källdatan. Endast kontur, ingen fyllning. */
+/** Vatten där GD-värde saknas i källdatan. Endast kontur, ingen fyllning. */
 export const NO_VALUE_STYLE = {
   label: "Värde saknas",
   line: "#7d8995",
@@ -50,15 +54,45 @@ export const NO_VALUE_STYLE = {
 
 export const COLD_INDICATOR_NOTE = "Temperaturbaserad indikator – säger inte om is finns eller är säker.";
 
+export const COLLECTION_AREA_NOTE =
+  "Området omfattar flera olika vattenmiljöer och färgklassificeras därför inte med ett gemensamt GD-värde.";
+
 export function coldDayClassFor(gd: number): ColdDayClass {
   return COLD_DAY_CLASSES.find((c) => gd >= c.min && (c.max === null || gd < c.max)) ?? COLD_DAY_CLASSES[0];
+}
+
+/* ------------------------------------------------------------------ */
+/* Central regel: får objektet GD-färg?                                */
+/* ------------------------------------------------------------------ */
+
+/** WATER och SUBAREA kan GD-färgsättas, COLLECTION_AREA aldrig. */
+export function canRenderColdDays(areaType: AreaType): boolean {
+  return areaType !== "COLLECTION_AREA";
+}
+
+/**
+ * De tre fallen hålls strikt isär:
+ *   class          – värde finns (även 0 GD) → GD-klass
+ *   missing        – värdet är okänt
+ *   not_applicable – GD används medvetet inte (COLLECTION_AREA)
+ */
+export type ColdDayStyle =
+  | { kind: "class"; gd: number; cls: ColdDayClass }
+  | { kind: "missing" }
+  | { kind: "not_applicable" };
+
+export function getColdDayStyle(areaType: AreaType, gd: number | null | undefined): ColdDayStyle {
+  if (!canRenderColdDays(areaType)) return { kind: "not_applicable" };
+  if (gd === null || gd === undefined || !Number.isFinite(gd)) return { kind: "missing" };
+  return { kind: "class", gd, cls: coldDayClassFor(gd) };
 }
 
 /* ------------------------------------------------------------------ */
 /* MapLibre-uttryck                                                    */
 /* ------------------------------------------------------------------ */
 
-const OPEN: WaterModelType = "LARGE_LAKE_OPEN_WATER";
+const COLLECTION: AreaType = "COLLECTION_AREA";
+const isCollection = ["==", ["get", "areaType"], COLLECTION];
 
 function stepExpression(property: string) {
   return [
@@ -69,16 +103,17 @@ function stepExpression(property: string) {
   ];
 }
 
-/**
- * Fyllnadsfärg för ett GD-fält (default "hca" = historisk köldmängd).
- * Parametriserat så att samma klassning kan användas för t.ex. aktuell
- * köldmängd som eget kartlager senare.
+/*
+ * MapLibre-motsvarigheten till getColdDayStyle – samma ordning:
+ * not_applicable (COLLECTION_AREA) → missing (null) → GD-klass.
+ * property = GD-fält (default "hca" = historisk), parametriserat för framtida
+ * kartlager med t.ex. aktuell köldmängd.
  */
 export function coldFillColor(property = "hca"): ExpressionSpecification {
   return [
     "case",
-    ["==", ["get", "modelType"], OPEN],
-    OPEN_WATER_STYLE.fill,
+    isCollection,
+    COLLECTION_AREA_STYLE.fill,
     ["==", ["get", property], null],
     "rgba(0,0,0,0)",
     stepExpression(property),
@@ -88,13 +123,13 @@ export function coldFillColor(property = "hca"): ExpressionSpecification {
 export function coldLineColor(property = "hca"): ExpressionSpecification {
   return [
     "case",
-    ["==", ["get", "modelType"], OPEN],
-    OPEN_WATER_STYLE.hatch,
+    isCollection,
+    COLLECTION_AREA_STYLE.line,
     ["==", ["get", property], null],
     NO_VALUE_STYLE.line,
     stepExpression(property),
   ] as unknown as ExpressionSpecification;
 }
 
-/** Filter för vatten som INTE klassificeras med GD. */
-export const isOpenWaterFilter = ["==", ["get", "modelType"], OPEN] as unknown as ExpressionSpecification;
+/** Filter för objekt som inte GD-färgsätts. */
+export const isCollectionAreaFilter = isCollection as unknown as ExpressionSpecification;

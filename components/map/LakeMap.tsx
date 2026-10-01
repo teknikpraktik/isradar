@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { GeoJSONSource, Map as MlMap, Marker } from "maplibre-gl";
 import type { LakeFeatureCollection } from "@/lib/data/lakes";
 import { LAKE_LABEL_FONT, basemapStyle } from "@/lib/map/basemap";
-import { OPEN_WATER_STYLE, coldFillColor, coldLineColor, isOpenWaterFilter } from "@/lib/map/coldScale";
+import { COLLECTION_AREA_STYLE, coldFillColor, coldLineColor, isCollectionAreaFilter } from "@/lib/map/coldScale";
 import { loadMapLibre } from "@/lib/map/maplibre";
 import type { BBox, LakeId, LngLat } from "@/types/lake";
 import type { RegionDefinition } from "@/types/region";
@@ -28,7 +28,7 @@ interface Props {
 
 const SOURCE = "lakes";
 // Ordning spelar ingen roll för träffar: queryRenderedFeatures ger översta först.
-const CLICK_LAYERS = ["lakes-fill", "lakes-point", "open-water-fill"];
+const CLICK_LAYERS = ["lakes-fill", "lakes-point", "collection-fill"];
 const SELECTED_COLOR = "#f2f5f7";
 
 /** Kartans synliga yta när sjöpanelen är öppen (bottom sheet resp. sidopanel). */
@@ -210,23 +210,7 @@ function addRegionOutline(map: MlMap, region: RegionDefinition) {
   });
 }
 
-/** Diagonal skraffering – markerar medvetet ej klassificerat vatten. */
-function addHatchPattern(map: MlMap) {
-  const size = 8;
-  const data = new Uint8Array(size * size * 4);
-  const hex = OPEN_WATER_STYLE.hatch;
-  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
-  for (let y = 0; y < size; y++)
-    for (let x = 0; x < size; x++) {
-      if ((x + y) % size > 1) continue;
-      const o = (y * size + x) * 4;
-      data.set([r, g, b, 255], o);
-    }
-  map.addImage("open-water-hatch", { width: size, height: size, data });
-}
-
 function addLakeLayers(map: MlMap) {
-  addHatchPattern(map);
   map.addSource(SOURCE, {
     type: "geojson",
     data: { type: "FeatureCollection", features: [] },
@@ -238,32 +222,25 @@ function addLakeLayers(map: MlMap) {
   const none = ["==", ["get", "id"], -1] as never;
 
   const hover = ["boolean", ["feature-state", "hover"], false];
-  const notOpenWater = ["!", isOpenWaterFilter];
+  const notCollection = ["!", isCollectionAreaFilter];
 
-  // Stora sjöars öppna vatten ritas UNDER alla vanliga sjöar, så att det aldrig
-  // täcker vikar och skärgårdar (källpolygonerna kan överlappa).
+  // Samlingsområden (ej GD-färgsatta) ritas UNDER alla vatten och delområden,
+  // så att de aldrig täcker vikar och skärgårdar.
   map.addLayer({
-    id: "open-water-fill",
+    id: "collection-fill",
     type: "fill",
     source: SOURCE,
-    filter: ["all", isPolygon, isOpenWaterFilter] as never,
+    filter: ["all", isPolygon, isCollectionAreaFilter] as never,
     paint: {
-      "fill-color": OPEN_WATER_STYLE.fill,
-      "fill-opacity": ["case", hover, 0.95, 0.85] as never,
+      "fill-color": COLLECTION_AREA_STYLE.fill,
+      "fill-opacity": ["case", hover, COLLECTION_AREA_STYLE.fillOpacity + 0.2, COLLECTION_AREA_STYLE.fillOpacity] as never,
     },
-  });
-  map.addLayer({
-    id: "open-water-hatch",
-    type: "fill",
-    source: SOURCE,
-    filter: ["all", isPolygon, isOpenWaterFilter] as never,
-    paint: { "fill-pattern": "open-water-hatch", "fill-opacity": 0.7 },
   });
   map.addLayer({
     id: "lakes-fill",
     type: "fill",
     source: SOURCE,
-    filter: ["all", isPolygon, notOpenWater] as never,
+    filter: ["all", isPolygon, notCollection] as never,
     paint: {
       "fill-color": coldFillColor(),
       "fill-opacity": ["case", hover, 0.97, 0.85] as never,
@@ -314,17 +291,33 @@ function addLakeLayers(map: MlMap) {
     type: "symbol",
     source: SOURCE,
     minzoom: 9,
-    layout: {
-      "text-field": ["get", "name"],
-      "text-font": LAKE_LABEL_FONT,
-      "text-size": ["interpolate", ["linear"], ["zoom"], 9, 10, 13, 12.5],
-      "text-letter-spacing": 0.03,
-      "text-max-width": 8,
-    },
-    paint: {
-      "text-color": "#cfdbe3",
-      "text-halo-color": "#0c1015",
-      "text-halo-width": 1.3,
-    },
+    filter: notCollection as never,
+    layout: labelLayout as never,
+    paint: labelPaint,
+  });
+  // Samlingsområden består ofta av många delytor (efter klippning) – deras
+  // namn visas först på nära håll för att inte upprepas över hela kartan.
+  map.addLayer({
+    id: "collection-label",
+    type: "symbol",
+    source: SOURCE,
+    minzoom: 11,
+    filter: isCollectionAreaFilter,
+    layout: { ...labelLayout, "symbol-spacing": 600 } as never,
+    paint: { ...labelPaint, "text-color": "#9aa6b1" },
   });
 }
+
+const labelLayout = {
+  "text-field": ["get", "name"],
+  "text-font": LAKE_LABEL_FONT,
+  "text-size": ["interpolate", ["linear"], ["zoom"], 9, 10, 13, 12.5],
+  "text-letter-spacing": 0.03,
+  "text-max-width": 8,
+};
+
+const labelPaint = {
+  "text-color": "#cfdbe3",
+  "text-halo-color": "#0c1015",
+  "text-halo-width": 1.3,
+};

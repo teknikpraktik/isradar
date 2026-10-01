@@ -6,13 +6,12 @@
  *    vid sjöns temperaturstation) – via /api/cold/station/[measurepoint].
  */
 import type { ApiError, StationColdAmountResponse } from "@/lib/cold/api";
+import { COLLECTION_AREA_NOTE, canRenderColdDays } from "@/lib/map/coldScale";
 import { SOURCES } from "@/lib/sources";
 import type { HistoricalColdAmount, Lake, LakeIndexEntry } from "@/types/lake";
 import type { ColdAmountObservation } from "@/types/observations";
 import type { DataResult } from "@/types/provenance";
 
-export const LARGE_LAKE_COLD_REASON =
-  "Stora sjöar bedöms inte enbart utifrån lufttemperatur och graddagar.";
 
 export const HISTORICAL_COLD_METHOD =
   "Median köldmängd vid första historiskt rapporterade åkning";
@@ -63,8 +62,8 @@ export async function getCurrentColdAmount(
   lake: Lake,
   asOf?: string,
 ): Promise<DataResult<ColdAmountObservation>> {
-  if (lake.modelType === "LARGE_LAKE_OPEN_WATER") {
-    return { status: "not_applicable", reason: LARGE_LAKE_COLD_REASON };
+  if (!canRenderColdDays(lake.areaType)) {
+    return { status: "not_applicable", reason: COLLECTION_AREA_NOTE };
   }
   const station = lake.temperatureStation;
   if (!station) {

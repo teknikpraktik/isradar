@@ -34,10 +34,8 @@ import type {
   BBox,
   LakeFeature,
   LakeIndexEntry,
-  LargeLakeRef,
   LngLat,
   TemperatureStation,
-  WaterModelType,
 } from "../types/lake";
 import type { RegionDataManifest, RegionDefinition } from "../types/region";
 
@@ -258,66 +256,90 @@ function assignCounty(p: LngLat, counties: County[]): { code: string; nearest: b
 }
 
 /* ------------------------------------------------------------------ */
-/* Stora sjöar (data/large-lakes.json)                                  */
+/* Objekttyp (data/area-types.json)                                     */
 /* ------------------------------------------------------------------ */
 
-interface LargeLakeConfig {
-  lakes: { id: string; name: string; openWaterObjektIds: number[]; clipContainedObjektIds?: number[] }[];
-}
+type Prepared = { feature: LakeFeature; index: LakeIndexEntry; areaKm2: number };
 
-/** objektid för källpolygoner som omsluter andra vattenobjekt och ska klippas. */
-function loadClipContained(): Set<number> {
-  const file = join(ROOT, "data", "large-lakes.json");
+function loadCollectionAreaIds(): Set<number> {
+  const file = join(ROOT, "data", "area-types.json");
   if (!existsSync(file)) return new Set();
-  const cfg = JSON.parse(readFileSync(file, "utf8")) as LargeLakeConfig;
-  return new Set(cfg.lakes.flatMap((l) => l.clipContainedObjektIds ?? []));
+  return new Set((JSON.parse(readFileSync(file, "utf8")) as { collectionAreaIds: number[] }).collectionAreaIds);
 }
 
-/** objektid → stor sjö, för vatten som ska vara LARGE_LAKE_OPEN_WATER. */
-function loadLargeLakeOpenWater(): Map<number, LargeLakeRef> {
-  const file = join(ROOT, "data", "large-lakes.json");
-  const map = new Map<number, LargeLakeRef>();
-  if (!existsSync(file)) return map;
-  const cfg = JSON.parse(readFileSync(file, "utf8")) as LargeLakeConfig;
-  for (const lake of cfg.lakes) for (const id of lake.openWaterObjektIds) map.set(id, { id: lake.id, name: lake.name });
-  return map;
+/** Ungefärlig area i km² (plan approximation, räcker för jämförelser). */
+function areaKm2(g: Polygon | MultiPolygon): number {
+  let total = 0;
+  for (const rings of polygonsOf(g))
+    rings.forEach((ring, i) => {
+      const a = Math.abs(ringAreaCentroid(ring).a) * 111.32 * Math.cos((ring[0][1] * Math.PI) / 180) * 110.57;
+      total += i === 0 ? a : -a;
+    });
+  return total;
 }
 
 /**
- * Vissa källpolygoner (t.ex. "Norra Vänern") omsluter även vikar och
- * skärgårdar som finns som egna vattenobjekt. Vi klipper bort alla sådana
- * överlappande vatten (clipContainedObjektIds i data/large-lakes.json), så att
- * polygonen bara omfattar sin egen yta och vikarna inte ritas över – oavsett
- * om den omslutande polygonen är GD-klassad eller öppet vatten.
+ * Sätter areaType och parent:
+ *  - COLLECTION_AREA: enligt data/area-types.json (manuellt).
+ *  - SUBAREA: centroiden ligger inuti ett annat objekts källgeometri (hål
+ *    räknas inte). Förälder = minsta omslutande objekt.
+ *  - WATER: övriga.
+ * Körs på okklippta källgeometrier, innan samlingsområden klipps.
  */
-function clipContainedWaters(all: { feature: LakeFeature; index: LakeIndexEntry }[], clipIds: Set<number>) {
+function assignAreaTypes(all: Prepared[], collectionIds: Set<number>) {
+  const polys = all.filter((p) => p.feature.geometry.type !== "Point");
+  for (const p of all) {
+    if (collectionIds.has(p.index.id)) {
+      p.index.areaType = "COLLECTION_AREA";
+      continue;
+    }
+    const [x, y] = p.index.centroid;
+    let parent: Prepared | null = null;
+    for (const o of polys) {
+      if (o === p || o.areaKm2 <= p.areaKm2) continue;
+      const [x0, y0, x1, y1] = o.index.bbox;
+      if (x < x0 || x > x1 || y < y0 || y > y1) continue;
+      if (!pointInGeometry(p.index.centroid, o.feature.geometry as Polygon | MultiPolygon)) continue;
+      if (!parent || o.areaKm2 < parent.areaKm2) parent = o;
+    }
+    if (parent) {
+      p.index.areaType = "SUBAREA";
+      p.index.parent = { id: parent.index.id, name: parent.index.name };
+    }
+  }
+  for (const p of all) p.feature.properties.areaType = p.index.areaType;
+}
+
+/**
+ * Samlingsområden (t.ex. "Norra Vänern") omsluter vikar och skärgårdar som
+ * finns som egna vattenobjekt. Vi klipper bort alla sådana överlappande vatten,
+ * så att den neutrala samlingsytan inte ritas över delvattnen.
+ */
+function clipCollectionAreas(all: Prepared[]) {
   const overlaps = (a: BBox, b: BBox) => a[0] <= b[2] && b[0] <= a[2] && a[1] <= b[3] && b[1] <= a[3];
-  for (const open of all) {
-    if (!clipIds.has(open.index.id)) continue;
-    const g = open.feature.geometry;
+  for (const area of all) {
+    if (area.index.areaType !== "COLLECTION_AREA") continue;
+    const g = area.feature.geometry;
     if (g.type === "Point") continue;
     const others = all.filter(
       (o) =>
-        o !== open &&
-        !clipIds.has(o.index.id) &&
+        o !== area &&
+        // även mindre samlingsområden inuti (t.ex. Värmlandsskärgården i Norra Vänern)
+        (o.index.areaType !== "COLLECTION_AREA" || o.areaKm2 < area.areaKm2) &&
         o.feature.geometry.type !== "Point" &&
-        overlaps(open.index.bbox, o.index.bbox),
+        overlaps(area.index.bbox, o.index.bbox),
     );
     const clip = others.map((o) => (o.feature.geometry as Polygon | MultiPolygon).coordinates) as polygonClipping.Geom[];
     const result = polygonClipping.difference(g.coordinates as polygonClipping.Geom, ...clip);
-    const before = polygonsOf(g).length;
     if (result.length === 0) {
-      console.warn(`[data] ${open.index.name}: inget öppet vatten kvar efter klippning`);
+      console.warn(`[data] ${area.index.name}: ingen yta kvar efter klippning`);
       continue;
     }
     const clipped: Polygon | MultiPolygon =
       result.length === 1 ? { type: "Polygon", coordinates: result[0] } : { type: "MultiPolygon", coordinates: result };
     const rounded = roundGeometry(clipped) ?? clipped;
-    open.feature.geometry = rounded;
-    open.index.bbox = bboxOf(rounded);
-    console.log(
-      `[data] ${open.index.name}: ${others.length} överlappande vatten bortklippta (${before} → ${polygonsOf(rounded).length} delytor).`,
-    );
+    area.feature.geometry = rounded;
+    area.index.bbox = bboxOf(rounded);
   }
 }
 
@@ -383,23 +405,19 @@ function main() {
 
   const waterRows = parseCsv(readFileSync(watersCsv, "utf8"));
   const counties = loadCounties();
-  const openWater = loadLargeLakeOpenWater();
   let kmMismatch = 0;
   let nearestAssigned = 0;
   let noCounty = 0;
 
-  type Prepared = { feature: LakeFeature; index: LakeIndexEntry };
   const all: Prepared[] = [];
   for (const r of waterRows) {
     const id = num(r.objektid);
     if (id === null) continue;
     const name = (r.name ?? "").trim() || `Namnlöst vatten ${id}`;
-    // Öppen bassäng i stor sjö: ingen GD-klass och ingen stationskoppling
-    // (ingen fallback till närmaste station). Källans km-värde används inte.
-    const largeLake = openWater.get(id) ?? null;
-    const modelType: WaterModelType = largeLake ? "LARGE_LAKE_OPEN_WATER" : "STANDARD_LAKE";
-    const hca = largeLake ? null : num(r.km);
-    const stationId = largeLake ? null : num(r.measurepoint);
+    // Källans värden behålls för alla objekt – även samlingsområden (där de
+    // används som områdeshistorik men aldrig för färgsättning).
+    const hca = num(r.km);
+    const stationId = num(r.measurepoint);
     if (geoKmById.has(id) && geoKmById.get(id) !== num(r.km)) kmMismatch++;
 
     const raw = geomById.get(id);
@@ -426,7 +444,7 @@ function main() {
         type: "Feature",
         id,
         geometry: geometry ?? { type: "Point", coordinates: centroid },
-        properties: { id, name, hca, stationId, modelType },
+        properties: { id, name, hca, stationId, areaType: "WATER" },
       },
       index: {
         id,
@@ -437,13 +455,15 @@ function main() {
         stationId,
         hasPolygon: geometry !== null,
         countyCode: county?.code ?? null,
-        modelType,
-        largeLake,
+        areaType: "WATER",
+        parent: null,
       },
+      areaKm2: geometry ? areaKm2(geometry) : 0,
     });
   }
 
-  clipContainedWaters(all, loadClipContained());
+  assignAreaTypes(all, loadCollectionAreaIds());
+  clipCollectionAreas(all);
 
   console.log(`[data] ${all.length} vatten lästa, ${geomById.size} med polygon.`);
   if (kmMismatch) console.warn(`[data] VARNING: ${kmMismatch} vatten har olika km i CSV och GeoJSON (CSV används).`);
@@ -468,9 +488,16 @@ function main() {
       .map((id) => stations.get(id))
       .filter((s): s is TemperatureStation => !!s);
 
-    const openCount = selected.filter((p) => p.index.modelType === "LARGE_LAKE_OPEN_WATER").length;
-    if (openCount) console.log(`[data] ${region.id}: ${openCount} vatten som stor sjö/öppet vatten (ej GD-klassade).`);
-    const hcas = selected.map((p) => p.index.hca).filter((v): v is number => v !== null).sort((a, b) => a - b);
+    const typeCounts = Object.entries(
+      selected.reduce<Record<string, number>>((m, p) => ((m[p.index.areaType] = (m[p.index.areaType] ?? 0) + 1), m), {}),
+    )
+      .map(([k, n]) => `${k} ${n}`)
+      .join(", ");
+    console.log(`[data] ${region.id}: ${typeCounts}`);
+    // Fördelningen avser bara GD-färgsatta objekt.
+    const hcas = selected
+      .filter((p) => p.index.areaType !== "COLLECTION_AREA")
+      .map((p) => p.index.hca).filter((v): v is number => v !== null).sort((a, b) => a - b);
     const withPolygon = selected.filter((p) => p.index.hasPolygon).length;
     const manifest: RegionDataManifest = {
       regionId: region.id,
@@ -489,7 +516,10 @@ function main() {
 
     const outDir = join(OUT_ROOT, region.id);
     mkdirSync(outDir, { recursive: true });
-    const geojson: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: selected.map((p) => p.feature) };
+    // Ritordning: största objekt först, så att delområden alltid ritas ovanpå
+    // sitt omslutande vatten (indexet ovan är alfabetiskt).
+    const drawOrder = [...selected].sort((a, b) => b.areaKm2 - a.areaKm2);
+    const geojson: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: drawOrder.map((p) => p.feature) };
     writeFileSync(join(outDir, "lakes.geojson"), JSON.stringify(geojson));
     writeFileSync(join(outDir, "lakes-index.json"), JSON.stringify(selected.map((p) => p.index)));
     writeFileSync(join(outDir, "stations.json"), JSON.stringify(usedStations, null, 2));

@@ -305,18 +305,6 @@
   border-radius: 2px;
 }
 
-.largeLake {
-  margin: 2px 0 4px;
-  font-size: 14px;
-  color: var(--text-strong);
-}
-
-.largeLakeNote {
-  margin: 4px 0 2px;
-  font-size: 12.5px;
-  line-height: 1.45;
-  color: var(--text-muted);
-}
 
 /* Prognostabell i vädersektionen */
 .forecast {

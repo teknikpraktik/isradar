@@ -19,22 +19,24 @@ export type LngLat = [number, number];
 export type BBox = [number, number, number, number];
 
 /**
- * Vilken modell som är rimlig för vattnet.
+ * Vilken sorts vattenobjekt polygonen representerar. Styr bl.a. om GD får
+ * färgsättas (se canRenderColdDays i lib/map/coldScale.ts) och kan senare
+ * användas av satellit-, modell- och observationslager.
  *
- *   STANDARD_LAKE          – klassificeras med köldmängd (GD) från temperaturstation.
- *   LARGE_LAKE_OPEN_WATER  – öppen huvudbassäng i stor sjö (t.ex. Vänern). Får INGEN
- *                            GD-klass och ingen stationskoppling; ska senare bedömas med
- *                            andra indikatorer (ytvattentemperatur, vind, satellit,
- *                            isobservationer, ev. särskild stor-sjö-modell).
+ *   WATER           – faktisk sjö eller tydligt avgränsat vattenobjekt.
+ *   SUBAREA         – avgränsad del av ett större vatten (ligger inuti ett annat
+ *                     objekt) med eget historikvärde. GD-färgsätts.
+ *   COLLECTION_AREA – samlingsområde med flera olika vattenmiljöer. GD-färgsätts
+ *                     INTE; ev. historiskt värde visas som områdeshistorik.
  *
- * Konfigureras i data/large-lakes.json.
+ * COLLECTION_AREA anges manuellt i data/area-types.json. SUBAREA härleds ur
+ * geometrin vid bygget. Storlek används inte som kriterium.
  */
-export type WaterModelType = "STANDARD_LAKE" | "LARGE_LAKE_OPEN_WATER";
+export type AreaType = "WATER" | "SUBAREA" | "COLLECTION_AREA";
 
-/** Koppling till en stor sjö (endast för LARGE_LAKE_OPEN_WATER). */
-export interface LargeLakeRef {
-  /** Nyckel i data/large-lakes.json, t.ex. "vanern". */
-  id: string;
+/** Omslutande vattenobjekt för en SUBAREA. */
+export interface ParentAreaRef {
+  id: LakeId;
   name: string;
 }
 
@@ -65,12 +67,19 @@ export interface Lake {
   /** Areaviktad centroid (eller källans punkt om geometri saknas). */
   centroid: LngLat;
   bbox: BBox;
-  modelType: WaterModelType;
-  /** Satt för delar av stora sjöar (LARGE_LAKE_OPEN_WATER). */
-  largeLake: LargeLakeRef | null;
-  /** null = värde saknas. Alltid null för LARGE_LAKE_OPEN_WATER (ej klassificerad). */
+  areaType: AreaType;
+  /** Omslutande objekt (SUBAREA). */
+  parent: ParentAreaRef | null;
+  /**
+   * Sjöspecifik historisk köldmängd. null = saknas, eller COLLECTION_AREA
+   * (då ligger värdet i areaHistoricalColdAmount).
+   */
   historicalColdAmount: HistoricalColdAmount | null;
-  /** Alltid null för LARGE_LAKE_OPEN_WATER – ingen fallback till närmaste station. */
+  /**
+   * Endast COLLECTION_AREA: källans historiska värde för hela området. Behålls
+   * för analys/kalibrering men används aldrig för färgsättning.
+   */
+  areaHistoricalColdAmount: HistoricalColdAmount | null;
   temperatureStation: TemperatureStation | null;
 }
 
@@ -83,14 +92,14 @@ export interface LakeIndexEntry {
   name: string;
   centroid: LngLat;
   bbox: BBox;
-  /** Historisk köldmängd i GD. null = saknas ELLER ej klassificerad (se modelType). */
+  /** Källans historiska köldmängd i GD (för alla areaType). null = saknas. */
   hca: number | null;
   stationId: number | null;
   hasPolygon: boolean;
   /** SCB-länskod, t.ex. "17". null om inget län kunde tilldelas. */
   countyCode: string | null;
-  modelType: WaterModelType;
-  largeLake: LargeLakeRef | null;
+  areaType: AreaType;
+  parent: ParentAreaRef | null;
 }
 
 /** Properties på features i genererad lakes.geojson. Hålls minimala. */
@@ -99,7 +108,7 @@ export interface LakeFeatureProperties {
   name: string;
   hca: number | null;
   stationId: number | null;
-  modelType: WaterModelType;
+  areaType: AreaType;
 }
 
 export type LakeFeature = GeoJSON.Feature<

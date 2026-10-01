@@ -1,0 +1,14 @@
+{
+  "$comment": "Manuell klassning av vattenobjekt tills källdatan har bättre metadata. collectionAreaIds = COLLECTION_AREA: samlingspolygoner som omfattar flera vattenmiljöer (ofta med egna delobjekt) och därför inte GD-färgsätts. Deras historiska GD behålls som områdeshistorik, och omslutna vattenobjekt klipps bort ur geometrin. Övriga objekt: SUBAREA om centroiden ligger inuti ett annat objekt (härleds ur geometrin), annars WATER. Storlek används inte som kriterium.",
+  "collectionAreaIds": [17739, 131094, 30132, 129215, 8907, 6999, 39553, 248906],
+  "names": {
+    "17739": "Norra Vänern – omsluter 38 vikar/skärgårdar",
+    "131094": "Värmlandsskärgården – 8 ögrupper med egna värden (71–246 GD)",
+    "30132": "Hammarösjön – 6 vikar, 83 % täckta av delobjekt",
+    "129215": "Jutviken-Otterbäcken – Vänerområde med 3 vikar",
+    "8907": "Värmlandsnäs och Lurö Skärgård – omsluter två skärgårdar",
+    "6999": "Segerstads skärgård – omsluter Gässlingegrund, Söder Onsön",
+    "39553": "Södra Vänern (utanför Värmland)",
+    "248906": "Yttre Dalbosjön (utanför Värmland)"
+  }
+}

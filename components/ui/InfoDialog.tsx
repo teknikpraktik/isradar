@@ -14,13 +14,13 @@ interface Props {
   onClose: () => void;
   region: RegionDefinition;
   manifest: RegionDataManifest | null;
-  /** Visa stycket om stora sjöar (om det finns ej klassificerat öppet vatten i datan). */
-  showLargeLakeNote?: boolean;
+  /** Visa posten om samlingsområden (om sådana finns i datan). */
+  showCollectionNote?: boolean;
 }
 
 const KINDS: DataKind[] = ["observation", "model", "forecast", "historical_reference"];
 
-export default function InfoDialog({ open, onClose, region, manifest, showLargeLakeNote = false }: Props) {
+export default function InfoDialog({ open, onClose, region, manifest, showCollectionNote = false }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -81,10 +81,10 @@ export default function InfoDialog({ open, onClose, region, manifest, showLargeL
               inte isstatus.
             </dd>
           </div>
-          {showLargeLakeNote && (
+          {showCollectionNote && (
             <div>
-              <dt>Skrafferat</dt>
-              <dd>Öppet vatten i stor sjö – ej GD-klassat</dd>
+              <dt>Blågrå</dt>
+              <dd>Områdespolygon med flera vattenmiljöer – ej GD-klassificerad</dd>
             </div>
           )}
         </dl>

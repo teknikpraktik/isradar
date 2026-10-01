@@ -91,3 +91,11 @@
   color: var(--text-muted);
   font-size: 10.5px;
 }
+
+.extra {
+  margin-top: 5px;
+}
+
+.extra:empty {
+  display: none;
+}
