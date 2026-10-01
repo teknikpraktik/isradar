@@ -29,7 +29,12 @@ export async function GET(request: NextRequest) {
       retrievedAt: new Date().toISOString(),
     };
     return NextResponse.json(body, {
-      headers: { "Cache-Control": "public, max-age=0, s-maxage=3600, stale-while-revalidate=7200" },
+      headers: {
+        // Webbläsaren kontrollerar alltid; bara Vercels CDN cachar (annars kan
+        // stale-while-revalidate ge användaren ett inaktuellt svar).
+        "Cache-Control": "no-cache",
+        "CDN-Cache-Control": "public, max-age=3600, stale-while-revalidate=7200",
+      },
     });
   } catch (err) {
     console.error(err);

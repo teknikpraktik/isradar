@@ -142,6 +142,10 @@ export async function getWeatherForecast(
           windMax: qn(w.windMax, "m/s"),
           gustMax: qn(w.gustMax, "m/s"),
           subzeroHours: qn(w.subzeroHours, "h"),
+          precipitationType: w.precipitationType,
+          forecastSnowfall: w.snowfallCm
+            ? { minCm: w.snowfallCm[0], maxCm: w.snowfallCm[1], estimated: w.estimatedSnowfall }
+            : null,
         },
         provenance: {
           source: r.sources.forecast,

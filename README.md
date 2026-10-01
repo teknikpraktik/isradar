@@ -109,6 +109,8 @@ Beräknas av ISRADAR per temperaturstation och visas för alla vatten som använ
 - **Avståndsgräns 50 km:** i Värmland har 259/261 vatten temperatur, 256 vind och 241 nederbörd inom gränsen. Övriga visar "Ingen station inom 50 km".
 - **Prognos (FORECAST):** SMHI punktprognos `snow1g` (ersätter `pmp3g`) vid vattnets centroid, sammanfattad för 0–24 h och 24–48 h: temperatur, **tid under 0 °C** (antal prognostimmar med lufttemperatur < 0 °C), nederbörd, vind och byvind. All väderformatering ligger i `lib/weather/format.ts` (testad). Modellkörningstid (`referenceTime`) visas.
 - **Endast nuläge:** med `?asOf=` visas "Endast nuläge" – inget väder hämtas.
+- **Nederbörd och nysnö** (`lib/weather/precipitation.ts`, testad): prognosens mm är `precipitation_amount_mean` i kg/m² = **mm vattenekvivalent**. Typ (Regn/Snö/Blandat/Okänd) avgörs **per timme** – modellens `predominant_precipitation_type_at_surface` (0–12), annars `precipitation_frozen_part`, annars temperaturen den timmen – och periodens typ är den som står för ≥ 80 % av mängden. snow1g har ingen egen snöparameter, så "Beräknad nysnö" är en grov uppskattning: fast andel × temperaturberoende snö/vatten-kvot (> −1 °C 5–8, −1…−5 8–12, −5…−10 10–15, < −10 15–20), visad som intervall i hela cm. Ingen uppskattning vid regn, eller vid blandat utan fryst andel. Hålls isär från MEPS "snö på is" (befintligt snötäcke).
+- **Cache:** API-svar har `Cache-Control: no-cache` (webbläsaren kontrollerar alltid) och `CDN-Cache-Control` för Vercels CDN.
 
 ### Sentinel-satellitbilder (kartlager)
 

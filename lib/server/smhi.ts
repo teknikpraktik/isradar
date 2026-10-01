@@ -194,6 +194,10 @@ export interface SmhiForecastStep {
   precipitation?: number;
   /** Sannolikhet för fryst nederbörd, 0–1. */
   probabilityFrozenPrecipitation?: number;
+  /** predominant_precipitation_type_at_surface, 0–12 (0 = ingen). */
+  precipitationType?: number;
+  /** precipitation_frozen_part, 0–100 % (−9 = ingen nederbörd → saknas). */
+  frozenPartPct?: number;
 }
 
 export interface SmhiForecast {
@@ -229,6 +233,8 @@ export async function pointForecast(lat: number, lon: number): Promise<SmhiForec
       windFromDirection: nonNeg(s.data.wind_from_direction),
       precipitation: nonNeg(s.data.precipitation_amount_mean),
       probabilityFrozenPrecipitation: nonNeg(s.data.probability_of_frozen_precipitation),
+      precipitationType: nonNeg(s.data.predominant_precipitation_type_at_surface),
+      frozenPartPct: nonNeg(s.data.precipitation_frozen_part),
     })),
   };
 }

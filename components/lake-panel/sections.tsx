@@ -5,6 +5,10 @@ import { distanceKm, formatDate, formatDateShort, formatShortDateTime } from "@/
 import { COLLECTION_AREA_NOTE, getColdDayStyle } from "@/lib/map/coldScale";
 import type { SatelliteScene } from "@/lib/satellite/api";
 import { compassSv } from "@/lib/weather/compute";
+import { PRECIP_TYPE_LABEL, formatSnowfall } from "@/lib/weather/precipitation";
+
+const PRECIP_HINT =
+  "Anges som vattenekvivalent: 1 mm = 1 liter vatten per m². Vid snöfall kan nysnön bli flera gånger djupare. SMHI:s prognos saknar egen snöparameter – beräknad nysnö är en grov temperaturbaserad uppskattning. Skiljs från MEPS snö på is (befintligt snötäcke).";
 import type {
   ColdAmountObservation,
   WeatherForecast,
@@ -457,6 +461,7 @@ export function WeatherSection({
       />
       <Row
         label="Nederbörd"
+        hint={PRECIP_HINT}
         status={recent.status}
         placeholder={p ? undefined : missing}
         placeholderTitle={missingTitle}
@@ -532,7 +537,19 @@ function ForecastBlock({ f }: { f: WeatherForecast }) {
         {f.window[0]}–{f.window[1]} h
       </div>
       <div className={cold ? `${styles.fcTemp} ${styles.cold}` : styles.fcTemp}>{temp ?? "Ingen data"}</div>
-      <div className={styles.fcLine}>{precip ?? "Nederbörd saknas"}</div>
+      <div className={styles.fcLine}>
+        {precip === null
+          ? "Nederbörd saknas"
+          : v.precipitationType && (v.precipitation?.value ?? 0) > 0
+            ? `${precip} · ${PRECIP_TYPE_LABEL[v.precipitationType]}`
+            : precip}
+      </div>
+      {v.forecastSnowfall && (
+        <div className={styles.fcLine}>
+          {v.forecastSnowfall.estimated ? "Beräknad nysnö " : "Nysnö "}
+          {formatSnowfall([v.forecastSnowfall.minCm, v.forecastSnowfall.maxCm])}
+        </div>
+      )}
       <div className={styles.fcLine}>{wind ? `Vind ${wind}` : "Vind saknas"}</div>
       <div className={styles.fcLine}>{gust ? `Byvind ${gust}` : "Byvind saknas"}</div>
     </div>

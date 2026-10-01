@@ -180,6 +180,13 @@ export interface WeatherForecast {
     gustMax: Quantity<"m/s"> | null;
     /** Prognostimmar med lufttemperatur under 0 °C. */
     subzeroHours: Quantity<"h"> | null;
+    /** Dominerande typ för precipitation (mm vattenekvivalent). */
+    precipitationType: "rain" | "snow" | "mixed" | "unknown" | null;
+    /**
+     * PROGNOSTISERAD NYSNÖ (cm nyfallen snö) – inte detsamma som nederbörd
+     * (mm vattenekvivalent) eller MEPS "snö på is" (befintligt snötäcke).
+     */
+    forecastSnowfall: { minCm: number; maxCm: number; estimated: boolean } | null;
   };
   /** time.validAt = fönstrets slut, leadTimeHours = window[1]. */
   provenance: Provenance<ForecastTime>;

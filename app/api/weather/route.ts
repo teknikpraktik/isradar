@@ -25,6 +25,7 @@ import {
   type HourlyValue,
   type Window,
 } from "@/lib/weather/compute";
+import { summarizePrecipitationTyped } from "@/lib/weather/precipitation";
 import { chooseBest, type ObservationParameter, type ScoredSeries, type StationSeries } from "@/lib/weather/stations";
 import { VVIS_SOURCE, nearbyVvis, vvisSeries, vvisStations } from "@/lib/server/vvis";
 
@@ -138,6 +139,18 @@ export async function GET(request: NextRequest) {
       const t = summarizeTemperature(temps, w);
       const p = summarizePrecipitation(series("precipitation"), w);
       const frozen = maxInWindow(series("probabilityFrozenPrecipitation"), w);
+      // Typ och nysnö avgörs per timme (modellens ptype → fryst andel → temperatur).
+      const typed = summarizePrecipitationTyped(
+        fc.steps
+          .filter((s) => s.t > w.from && s.t <= w.to && s.precipitation !== undefined)
+          .map((s) => ({
+            t: s.t,
+            mm: s.precipitation as number,
+            ptype: s.precipitationType,
+            frozenPct: s.frozenPartPct,
+            tempC: s.airTemperature,
+          })),
+      );
       return {
         fromH: a,
         toH: b,
@@ -146,6 +159,9 @@ export async function GET(request: NextRequest) {
         temperatureMin: t?.min ?? null,
         temperatureMax: t?.max ?? null,
         precipitation: p?.sum ?? null,
+        precipitationType: p ? typed.type : null,
+        snowfallCm: p ? typed.snowfallCm : null,
+        estimatedSnowfall: typed.estimatedSnowfall,
         frozenPrecipitationProbabilityMax: frozen ? Math.round(frozen.max * 100) : null,
         windMax: maxInWindow(series("windSpeed"), w)?.max ?? null,
         gustMax: maxInWindow(series("windGust"), w)?.max ?? null,
@@ -169,6 +185,11 @@ export async function GET(request: NextRequest) {
     retrievedAt: new Date().toISOString(),
   };
   return NextResponse.json(body, {
-    headers: { "Cache-Control": "public, max-age=0, s-maxage=600, stale-while-revalidate=1800" },
+    headers: {
+        // Webbläsaren kontrollerar alltid; bara Vercels CDN cachar (annars kan
+        // stale-while-revalidate ge användaren ett inaktuellt svar).
+        "Cache-Control": "no-cache",
+        "CDN-Cache-Control": "public, max-age=600, stale-while-revalidate=1800",
+      },
   });
 }

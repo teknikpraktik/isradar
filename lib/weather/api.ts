@@ -10,6 +10,7 @@ import type {
 } from "@/lib/weather/compute";
 import type { DataSource, IsoDateTime } from "@/types/provenance";
 import type { ObservationSource } from "@/lib/weather/stations";
+import type { PrecipitationType } from "@/lib/weather/precipitation";
 
 export interface WeatherStationRef {
   id: string;
@@ -33,8 +34,14 @@ export interface ForecastWindow {
   to: IsoDateTime;
   temperatureMin: number | null;
   temperatureMax: number | null;
-  /** Summa medelnederbörd (mm). */
+  /** Summa medelnederbörd, mm VATTENEKVIVALENT (kg/m²). */
   precipitation: number | null;
+  /** Dominerande nederbördstyp, null när ingen nederbörd. */
+  precipitationType: PrecipitationType | null;
+  /** Beräknad nysnö (cm, min–max). null = ingen snöuppskattning. */
+  snowfallCm: [number, number] | null;
+  /** true = egen uppskattning (snow1g saknar direkt snöparameter). */
+  estimatedSnowfall: boolean;
   /** Högsta sannolikhet för fryst nederbörd (0–100 %). */
   frozenPrecipitationProbabilityMax: number | null;
   windMax: number | null;
