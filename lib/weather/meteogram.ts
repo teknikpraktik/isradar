@@ -122,3 +122,21 @@ export function meteogramSummary(hours: ForecastHour[]): string {
   return parts.join(" ");
 }
 
+
+/**
+ * Delar en tidsserie i sammanhängande segment – en lucka större än maxGapMs
+ * bryter linjen (ingen interpolation). Delas av meteogram och sparklines.
+ */
+export function splitAtGaps<T extends { t: number }>(points: T[], maxGapMs = 1.5 * 3_600_000): T[][] {
+  const sorted = [...points].sort((a, b) => a.t - b.t);
+  const segs: T[][] = [];
+  for (const p of sorted) {
+    const cur = segs[segs.length - 1];
+    if (cur && p.t - cur[cur.length - 1].t <= maxGapMs) cur.push(p);
+    else segs.push([p]);
+  }
+  return segs;
+}
+
+/** Minsta antal värden för att en 24 h-sparkline ska vara meningsfull. */
+export const MIN_SPARKLINE_POINTS = 6;

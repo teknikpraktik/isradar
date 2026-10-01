@@ -514,3 +514,16 @@
   opacity: 0.35;
   cursor: default;
 }
+
+/* Observationsblock i SENASTE 24 H – lättare än prognosens meteogram */
+.obsBlock {
+  padding: 2px 0 6px;
+}
+
+.obsMeta {
+  margin: 0;
+  text-align: right;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--text-faint);
+}

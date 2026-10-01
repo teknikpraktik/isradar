@@ -45,6 +45,8 @@ function toVariable<S, V>(
 ): ObservedWeatherVariable<V> {
   return {
     values,
+    // Äldre cachade API-svar saknar serie – visa då bara textvärden.
+    series: v.series ?? [],
     station: v.station,
     coverage: v.summary.coverage,
     provenance: {

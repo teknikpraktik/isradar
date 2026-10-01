@@ -7,6 +7,8 @@ import type { SatelliteScene } from "@/lib/satellite/api";
 import { compassSv } from "@/lib/weather/compute";
 import { formatSnowfall } from "@/lib/weather/precipitation";
 import Meteogram from "./Meteogram";
+import Sparkline from "./Sparkline";
+import { MIN_SPARKLINE_POINTS } from "@/lib/weather/meteogram";
 
 const PRECIP_HINT =
   "Anges som vattenekvivalent: 1 mm = 1 liter vatten per m². Vid snöfall kan nysnön bli flera gånger djupare. SMHI:s prognos saknar egen snöparameter – beräknad nysnö är en grov temperaturbaserad uppskattning. Skiljs från MEPS snö på is (befintligt snötäcke).";
@@ -409,6 +411,41 @@ export function SatelliteSection({
 /* VÄDER                                                               */
 /* ------------------------------------------------------------------ */
 
+/** Observationsperiod (samma för alla parametrar: nu − 24 h → nu). */
+function periodOf(v: { provenance: { time: { kind: string; period?: { from: string; to: string } } } }) {
+  const p = v.provenance.time.period;
+  const to = p?.to ?? new Date().toISOString();
+  return { from: p?.from ?? new Date(Date.parse(to) - 24 * 3_600_000).toISOString(), to };
+}
+
+/**
+ * Observationsblock: etikett, valfri sparkline, huvudvärde, sekundärt värde
+ * och station. Ingen kortram – sektionens luft räcker.
+ */
+function ObsBlock({
+  label,
+  hint,
+  sparkline,
+  value,
+  secondary,
+  meta,
+}: {
+  label: string;
+  hint?: string;
+  sparkline: React.ReactNode;
+  value: string | null;
+  secondary?: string | null;
+  meta: string;
+}) {
+  return (
+    <div className={styles.obsBlock}>
+      <Row label={label} hint={hint} value={value ?? undefined} />
+      {sparkline}
+      <p className={styles.obsMeta}>{join(secondary, meta)}</p>
+    </div>
+  );
+}
+
 function weatherPlaceholder(r: L<"weatherRecent"> | L<"weatherForecast">): string | undefined {
   if (r.status !== "unavailable") return undefined;
   if (r.code === "not_historical") return "Endast nuläge";
@@ -451,23 +488,41 @@ export function WeatherSection({
       <h4 className={styles.subhead}>
         Senaste 24 h <KindBadge kind="observation" />
       </h4>
-      <Row
-        label="Temperatur"
-        status={recent.status}
-        placeholder={t ? undefined : missing}
-        placeholderTitle={missingTitle}
-        value={t ? formatTemperatureRange(t.values.min.value, t.values.max.value) : undefined}
-        meta={t ? join(`Nu ${formatTemperature(t.values.latest.value)}`, stationMeta(t)) : undefined}
-      />
-      <Row
-        label="Nederbörd"
-        hint={PRECIP_HINT}
-        status={recent.status}
-        placeholder={p ? undefined : missing}
-        placeholderTitle={missingTitle}
-        value={p ? formatPrecipitation(p.values.sum.value) : undefined}
-        meta={p ? stationMeta(p) : undefined}
-      />
+      {t ? (
+        <ObsBlock
+          label="Temperatur"
+          sparkline={
+            t.series.length >= MIN_SPARKLINE_POINTS ? (
+              <Sparkline kind="temperature" series={t.series} from={periodOf(t).from} to={periodOf(t).to} />
+            ) : null
+          }
+          value={`Nu ${formatTemperature(t.values.latest.value)}`}
+          secondary={formatTemperatureRange(t.values.min.value, t.values.max.value)}
+          meta={stationMeta(t)}
+        />
+      ) : (
+        <Row label="Temperatur" status={recent.status} placeholder={missing} placeholderTitle={missingTitle} />
+      )}
+      {p ? (
+        <ObsBlock
+          label="Nederbörd"
+          hint={PRECIP_HINT}
+          sparkline={
+            // Vid 0 mm finns ingen timing att visa – bara texten.
+            p.series.length >= MIN_SPARKLINE_POINTS && p.values.sum.value > 0 ? (
+              <Sparkline kind="precipitation" series={p.series} from={periodOf(p).from} to={periodOf(p).to} />
+            ) : null
+          }
+          value={
+            p.values.sum.value > 0
+              ? `${formatPrecipitation(p.values.sum.value)} totalt`
+              : formatPrecipitation(p.values.sum.value)
+          }
+          meta={stationMeta(p)}
+        />
+      ) : (
+        <Row label="Nederbörd" hint={PRECIP_HINT} status={recent.status} placeholder={missing} placeholderTitle={missingTitle} />
+      )}
       <Row
         label="Vind"
         status={recent.status}

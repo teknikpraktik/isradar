@@ -41,6 +41,10 @@ function observed<T>(best: ScoredSeries, w: Window, summary: T | null): Observed
     station: { id: st.id, name: st.name, distanceKm: st.distanceKm, source: st.source },
     period: { from: iso(w.from), to: iso(w.to) },
     summary,
+    series: best.values
+      .filter((x) => x.t > w.from && x.t <= w.to)
+      .sort((a, b) => a.t - b.t)
+      .map((x) => ({ time: iso(x.t), value: x.v })),
   };
 }
 

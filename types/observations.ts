@@ -143,6 +143,8 @@ export interface HourCoverage {
  */
 export interface ObservedWeatherVariable<V> {
   values: V;
+  /** Timserie för perioden (från stationen; luckor = saknade timmar). */
+  series: { time: string; value: number }[];
   station: WeatherStation;
   coverage: HourCoverage;
   /** time.period = mätperioden (senaste 24 h), time.observedAt = senaste värdet. */

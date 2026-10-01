@@ -23,6 +23,8 @@ export interface ObservedVariable<T> {
   station: WeatherStationRef;
   period: { from: IsoDateTime; to: IsoDateTime };
   summary: T;
+  /** Timserie inom period (stationens egna tidsstämplar, inga interpolerade värden). */
+  series: { time: IsoDateTime; value: number }[];
 }
 
 /** En prognostimme. Alla variabler delar samma tidsstämpel. */

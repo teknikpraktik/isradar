@@ -79,3 +79,11 @@ test("sammanfattning för skärmläsare", () => {
   assert.match(s, /1,2 millimeter/);
   assert.match(meteogramSummary([hour("x", { precipitationMm: 0 })]), /Ingen nederbörd/);
 });
+
+test("tidsserie bryts vid luckor > 1,5 h", async () => {
+  const { splitAtGaps } = await import("./meteogram.ts");
+  const H = 3_600_000;
+  const segs = splitAtGaps([{ t: 0 }, { t: H }, { t: 2 * H }, { t: 5 * H }, { t: 6 * H }]);
+  assert.deepEqual(segs.map((s) => s.length), [3, 2]);
+  assert.deepEqual(splitAtGaps([]), []);
+});
