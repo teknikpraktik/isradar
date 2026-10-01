@@ -43,6 +43,14 @@ export default function IsradarApp({ regionId }: { regionId?: string }) {
     };
   }, [region.id]);
 
+  const legendFlags = useMemo(
+    () => ({
+      showOpenWater: !!data?.index.some((l) => l.modelType === "LARGE_LAKE_OPEN_WATER"),
+      showMissing: !!data?.index.some((l) => l.modelType === "STANDARD_LAKE" && l.hca === null),
+    }),
+    [data],
+  );
+
   const lake = useMemo(
     () => (data && selectedId !== null ? buildLake(data, selectedId) : null),
     [data, selectedId],
@@ -104,7 +112,7 @@ export default function IsradarApp({ regionId }: { regionId?: string }) {
       </div>
 
       <div className={styles.legend} data-hidden-mobile={lake !== null}>
-        <MapLegend />
+        <MapLegend {...legendFlags} />
       </div>
 
       {lake && (

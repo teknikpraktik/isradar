@@ -14,6 +14,7 @@ export type SectionStatus = Loadable<unknown>["status"];
 export const PLACEHOLDER: Record<Exclude<SectionStatus, "ok">, string> = {
   not_connected: "Data kommer senare",
   unavailable: "Ej tillgänglig",
+  not_applicable: "Ej klassificerad",
   loading: "Hämtar…",
 };
 
@@ -66,6 +67,7 @@ export function Row({
   meta,
   status = "ok",
   placeholder,
+  placeholderTitle,
   hint,
 }: {
   label: ReactNode;
@@ -74,6 +76,8 @@ export function Row({
   status?: SectionStatus;
   /** Ersätter standardtexten när värde saknas, t.ex. en orsak. */
   placeholder?: string;
+  /** Längre förklaring när värde saknas – visas vid hovring. */
+  placeholderTitle?: string;
   hint?: ReactNode;
 }) {
   const [showHint, setShowHint] = useState(false);
@@ -94,7 +98,7 @@ export function Row({
           </button>
         )}
       </dt>
-      <dd className={empty ? styles.placeholder : styles.value}>
+      <dd className={empty ? styles.placeholder : styles.value} title={empty ? placeholderTitle : undefined}>
         {empty ? (placeholder ?? (status === "ok" ? "–" : PLACEHOLDER[status])) : value}
         {meta && !empty && <span className={styles.meta}>{meta}</span>}
       </dd>

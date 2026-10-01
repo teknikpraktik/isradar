@@ -94,6 +94,8 @@ export function buildLake(data: RegionLakeData, id: LakeId): Lake | null {
     geometry,
     centroid: entry.centroid,
     bbox: entry.bbox,
+    modelType: entry.modelType,
+    largeLake: entry.largeLake,
     historicalColdAmount: historicalColdAmountFromIndex(entry),
     temperatureStation:
       entry.stationId !== null ? (data.stations.get(entry.stationId) ?? null) : null,

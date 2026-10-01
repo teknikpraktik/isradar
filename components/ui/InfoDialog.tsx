@@ -2,7 +2,8 @@
 
 import { useEffect, useRef } from "react";
 import { KIND_DESCRIPTION } from "@/lib/format";
-import { COLD_CLASSES } from "@/lib/map/coldScale";
+import { LARGE_LAKE_COLD_REASON } from "@/lib/data/cold";
+import { COLD_DAY_CLASSES, COLD_INDICATOR_NOTE } from "@/lib/map/coldScale";
 import { SOURCES } from "@/lib/sources";
 import type { RegionDataManifest, RegionDefinition } from "@/types/region";
 import { KindBadge } from "@/components/lake-panel/parts";
@@ -68,8 +69,19 @@ export default function InfoDialog({ open, onClose, region, manifest }: Props) {
           Värdet beskriver tidigare säsonger och är ingen säkerhetsgräns.
         </p>
         <p>
-          Kartans färger ({COLD_CLASSES.map((c) => c.label).join(", ")} GD) visar bara detta
-          historiska värde.
+          Kartans färger ({COLD_DAY_CLASSES.map((c) => c.label).join(", ")} GD) visar bara detta
+          historiska värde: ljusare = mindre, mörkare = mer ackumulerad kyla. {COLD_INDICATOR_NOTE}
+        </p>
+        <p>
+          <strong>Aktuell köldmängd</strong> är en separat variabel för innevarande säsong (från 1
+          oktober), beräknad ur SMHI:s uppmätta temperaturer. Den blandas inte ihop med den historiska.
+        </p>
+
+        <h3>Stora sjöar</h3>
+        <p>
+          Vänerns öppna huvudbassäng (skrafferad) klassificeras medvetet inte med köldmängd.{" "}
+          {LARGE_LAKE_COLD_REASON} Vikar och skärgårdar som finns som egna vattenobjekt klassificeras
+          som vanligt.
         </p>
 
         <h3>Källor och status</h3>

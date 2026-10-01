@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { GeoJSONSource, Map as MlMap, Marker } from "maplibre-gl";
 import type { LakeFeatureCollection } from "@/lib/data/lakes";
 import { LAKE_LABEL_FONT, basemapStyle } from "@/lib/map/basemap";
-import { coldColorExpression } from "@/lib/map/coldScale";
+import { OPEN_WATER_STYLE, coldFillColor, coldLineColor, isOpenWaterFilter } from "@/lib/map/coldScale";
 import { loadMapLibre } from "@/lib/map/maplibre";
 import type { BBox, LakeId, LngLat } from "@/types/lake";
 import type { RegionDefinition } from "@/types/region";
@@ -209,7 +209,23 @@ function addRegionOutline(map: MlMap, region: RegionDefinition) {
   });
 }
 
+/** Diagonal skraffering – markerar medvetet ej klassificerat vatten. */
+function addHatchPattern(map: MlMap) {
+  const size = 8;
+  const data = new Uint8Array(size * size * 4);
+  const hex = OPEN_WATER_STYLE.hatch;
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  for (let y = 0; y < size; y++)
+    for (let x = 0; x < size; x++) {
+      if ((x + y) % size > 1) continue;
+      const o = (y * size + x) * 4;
+      data.set([r, g, b, 255], o);
+    }
+  map.addImage("open-water-hatch", { width: size, height: size, data });
+}
+
 function addLakeLayers(map: MlMap) {
+  addHatchPattern(map);
   map.addSource(SOURCE, {
     type: "geojson",
     data: { type: "FeatureCollection", features: [] },
@@ -226,9 +242,16 @@ function addLakeLayers(map: MlMap) {
     source: SOURCE,
     filter: isPolygon,
     paint: {
-      "fill-color": coldColorExpression,
-      "fill-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 0.78, 0.55],
+      "fill-color": coldFillColor(),
+      "fill-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 0.97, 0.85],
     },
+  });
+  map.addLayer({
+    id: "lakes-open-water-hatch",
+    type: "fill",
+    source: SOURCE,
+    filter: ["all", isPolygon, isOpenWaterFilter] as never,
+    paint: { "fill-pattern": "open-water-hatch", "fill-opacity": 0.7 },
   });
   map.addLayer({
     id: "lakes-line",
@@ -236,9 +259,9 @@ function addLakeLayers(map: MlMap) {
     source: SOURCE,
     filter: isPolygon,
     paint: {
-      "line-color": coldColorExpression,
-      "line-width": ["interpolate", ["linear"], ["zoom"], 6, 0.3, 12, 1.2],
-      "line-opacity": 0.9,
+      "line-color": coldLineColor(),
+      "line-width": ["interpolate", ["linear"], ["zoom"], 6, 0.4, 12, 1.2],
+      "line-opacity": 1,
     },
   });
   map.addLayer({
@@ -247,7 +270,7 @@ function addLakeLayers(map: MlMap) {
     source: SOURCE,
     filter: isPoint,
     paint: {
-      "circle-color": coldColorExpression,
+      "circle-color": coldFillColor(),
       "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, 2.5, 12, 6],
       "circle-stroke-color": "#0c1015",
       "circle-stroke-width": 1,

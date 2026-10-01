@@ -127,5 +127,16 @@ export type Unit = "GD" | "cm" | "°C" | "mm" | "m/s" | "%" | "deg";
  */
 export type DataResult<T> =
   | { status: "not_connected"; source: DataSource }
-  | { status: "unavailable"; source: DataSource; reason: string }
+  | {
+      status: "unavailable";
+      source: DataSource;
+      reason: string;
+      /** no_data_yet = källan svarar men har inga värden ännu (t.ex. säsongsstart). */
+      code?: "no_data_yet" | "error";
+    }
+  /**
+   * Medvetet modellval: datakällan används inte för detta vatten (t.ex. GD för
+   * Vänerns öppna vatten). Inte samma sak som saknad data eller värdet 0.
+   */
+  | { status: "not_applicable"; reason: string }
   | { status: "ok"; value: T };

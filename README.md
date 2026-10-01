@@ -143,7 +143,16 @@ Kvalitet (`DataQuality`): upplösning, molntäckning, okänd andel, flagga – f
 
 ### Kartan
 
-MapLibre GL JS 6 med en egen mörk, avskalad stil ovanpå OpenFreeMap-vektortiles (ingen API-nyckel; byt via `NEXT_PUBLIC_MAP_STYLE_URL`). Sjöarna färgas med en **neutral enfärgsramp** efter historisk köldmängd (< 30, 30–50, 50–80, 80–120, ≥ 120 GD – valt efter fördelningen i Värmland så klasserna blir ungefär jämnstora). Det är enbart visualisering av ett historiskt värde.
+MapLibre GL JS 6 med en egen mörk, avskalad stil ovanpå OpenFreeMap-vektortiles (ingen API-nyckel; byt via `NEXT_PUBLIC_MAP_STYLE_URL`). Sjöarna färgas efter **historisk köldmängd** med en enda blå ljushetsramp (ljus = låg GD, mörk = hög GD). Klassgränser, färger och etiketter finns på ett ställe – `COLD_DAY_CLASSES` i `lib/map/coldScale.ts` – och används av kartan, legenden och sidopanelen (testas i `coldScale.test.mts`). Färgerna är valda så att även högsta klassen syns tydligt mot den mörka baskartan. Färgen är en temperaturindikator, inte isstatus.
+
+#### Stora sjöar – Vänern
+
+Varje vatten har en `modelType`:
+
+- `STANDARD_LAKE` – vanlig GD-klassning via temperaturstation.
+- `LARGE_LAKE_OPEN_WATER` – öppen huvudbassäng i stor sjö. Får **ingen** GD-klass, ingen stationskoppling (ingen fallback till närmaste station) och visas neutralt skrafferad. I panelen: "Vänern – öppet vatten · Köldmängd: ej klassificerad". Aktuell köldmängd returnerar `not_applicable`, som hålls isär från saknad data och 0 GD.
+
+Konfigureras i `data/large-lakes.json` via `objektid`. Vänern finns inte som ett objekt i källdatan utan i ~20 namngivna delar, så identifieringen är **manuell**. Just nu: Norra Vänern (17739), Södra Vänern (39553), Yttre Dalbosjön (248906). Vikar och skärgårdar som egna vattenobjekt (t.ex. Kattfjorden, Värmlandsskärgården) klassificeras som vanligt.
 
 MapLibre 6 laddar sin worker relativt `import.meta.url`, vilket inte överlever bundling; `scripts/copy-maplibre-worker.mjs` kopierar därför workern till `public/vendor/maplibre/` och `lib/map/maplibre.ts` sätter `setWorkerUrl`.
 

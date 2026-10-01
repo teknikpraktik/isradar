@@ -1,12 +1,14 @@
 "use client";
 
-import { HISTORICAL_COLD_METHOD } from "@/lib/data/cold";
+import { HISTORICAL_COLD_METHOD, LARGE_LAKE_COLD_REASON } from "@/lib/data/cold";
 import { MEPS_LEAD_TIMES_H } from "@/lib/data/meps";
 import { describeTime, distanceKm, formatAge, formatDate, formatDateTime } from "@/lib/format";
+import { COLD_INDICATOR_NOTE, coldDayClassFor } from "@/lib/map/coldScale";
 import { SOURCES } from "@/lib/sources";
 import type { LakeConditions } from "@/lib/data/conditions";
 import type { ColdAmountObservation } from "@/types/observations";
 import type { Lake } from "@/types/lake";
+import styles from "./LakePanel.module.css";
 import { Row, Section, fmtPct, fmtQ, fmtSignedQ, type Loadable } from "./parts";
 
 /** Datakälla som kan vara under hämtning. */
@@ -28,6 +30,20 @@ function coldMeta(c: ColdAmountObservation, asOf?: string): string {
 /* ÖVERSIKT                                                            */
 /* ------------------------------------------------------------------ */
 
+const GD_HINT = (
+  <>
+    <abbr title="graddagar">GD</abbr> = graddagar, ett mått på ackumulerad kyla (dygnsmedeltemperaturer
+    under 0 °C summerade över tid). {COLD_INDICATOR_NOTE}
+  </>
+);
+
+/** Platshållare för aktuell köldmängd när värde saknas – aldrig "0 GD" om data saknas. */
+function currentColdPlaceholder(cold: Loadable<ColdAmountObservation>, row: "value" | "change") {
+  if (cold.status !== "unavailable") return undefined;
+  if (cold.code === "no_data_yet") return row === "value" ? "Ingen ackumulerad köld ännu" : "Ingen data ännu";
+  return "N/A";
+}
+
 export function OverviewSection({
   lake,
   cold,
@@ -37,27 +53,31 @@ export function OverviewSection({
   cold: Loadable<ColdAmountObservation>;
   asOf?: string;
 }) {
+  if (lake.modelType === "LARGE_LAKE_OPEN_WATER") return <LargeLakeOverview lake={lake} />;
+
   const hca = lake.historicalColdAmount;
   const station = lake.temperatureStation;
   const current = cold.status === "ok" ? cold.value : null;
+  const reason = cold.status === "unavailable" ? cold.reason : undefined;
   return (
-    <Section title="Översikt" kinds={["historical_reference", "observation"]} status="ok">
+    <Section title="Köldmängd" kinds={["historical_reference", "observation"]} status="ok">
       <Row
         label="Historisk köldmängd"
-        value={fmtQ(hca?.amount)}
+        value={hca ? <ColdValue gd={hca.amount.value} /> : undefined}
+        placeholder={hca ? undefined : "Värde saknas"}
         hint={
           <>
             {HISTORICAL_COLD_METHOD}. Beräknat ur tidigare säsonger av Skridskonätet. Ett historiskt
             referensvärde – ingen säkerhetsgräns och ingen beskrivning av isen nu.
             <br />
-            <abbr title="graddagar">GD</abbr> = graddagar, ett mått på ackumulerad kyla (dygnsmedeltemperaturer
-            under 0 °C summerade över tid).
+            {GD_HINT}
           </>
         }
       />
       <Row
         label="Temperaturstation"
         value={station?.name}
+        placeholder={station ? undefined : "Ingen kopplad"}
         meta={
           station
             ? `${Math.round(distanceKm(lake.centroid, station.position))} km från vattnet`
@@ -68,14 +88,16 @@ export function OverviewSection({
       <Row
         label={asOf ? `Köldmängd ${formatDate(asOf)}` : "Aktuell köldmängd"}
         status={cold.status}
-        placeholder={cold.status === "unavailable" ? cold.reason : undefined}
-        value={fmtQ(current?.accumulated)}
+        placeholder={currentColdPlaceholder(cold, "value")}
+        placeholderTitle={reason}
+        value={current ? <ColdValue gd={current.accumulated.value} /> : undefined}
         meta={current ? coldMeta(current, asOf) : undefined}
         hint={
           <>
-            Beräknad av ISRADAR ur SMHI:s uppmätta dygnsmedeltemperaturer vid temperaturstationen,
-            från 1 oktober. Minusgrader ökar och plusgrader minskar värdet, som aldrig blir under 0.
-            Gäller stationen, inte vattnet. Metoden kan avvika från Skridskonätets beräkning av den
+            Innevarande säsong, separat från den historiska köldmängden. Beräknad av ISRADAR ur
+            SMHI:s uppmätta dygnsmedeltemperaturer vid temperaturstationen, från 1 oktober.
+            Minusgrader ökar och plusgrader minskar värdet, som aldrig blir under 0. Gäller
+            stationen, inte vattnet. Metoden kan avvika från Skridskonätets beräkning av den
             historiska köldmängden.
           </>
         }
@@ -83,15 +105,53 @@ export function OverviewSection({
       <Row
         label="Förändring 24 h"
         status={cold.status}
-        placeholder={cold.status === "unavailable" || (current && !current.change24h) ? "–" : undefined}
+        placeholder={currentColdPlaceholder(cold, "change") ?? (current && !current.change24h ? "Jämförelsedygn saknas" : undefined)}
+        placeholderTitle={reason}
         value={fmtSignedQ(current?.change24h)}
       />
       <Row
         label="Förändring 7 dygn"
         status={cold.status}
-        placeholder={cold.status === "unavailable" || (current && !current.change7d) ? "–" : undefined}
+        placeholder={currentColdPlaceholder(cold, "change") ?? (current && !current.change7d ? "Jämförelsedygn saknas" : undefined)}
+        placeholderTitle={reason}
         value={fmtSignedQ(current?.change7d)}
       />
+    </Section>
+  );
+}
+
+/** GD-värde med samma klassfärg som kartan. */
+function ColdValue({ gd }: { gd: number }) {
+  const cls = coldDayClassFor(gd);
+  return (
+    <span className={styles.coldValue}>
+      <span className={styles.classSwatch} style={{ background: cls.color }} aria-hidden />
+      {fmtQ({ value: gd, unit: "GD" })}
+    </span>
+  );
+}
+
+/** Stor sjö, öppet vatten: normal GD-modell används inte. Inga GD-fält visas. */
+function LargeLakeOverview({ lake }: { lake: Lake }) {
+  return (
+    <Section title="Köldmängd" kinds={[]} status="not_applicable">
+      <p className={styles.largeLake}>
+        <strong>{lake.largeLake?.name ?? "Stor sjö"} – öppet vatten</strong>
+      </p>
+      <Row
+        label="Köldmängd"
+        status="not_applicable"
+        hint={
+          <>
+            Medvetet modellval, inte saknad data. Vänern har stor termisk tröghet och stora
+            skillnader mellan öppet vatten, grunda vikar, skärgård och kustnära vatten – en enda
+            lufttemperaturbaserad GD-siffra skulle bli missvisande. Vikar och skärgårdar som egna
+            vattenobjekt klassificeras som vanligt. Senare kan t.ex. ytvattentemperatur, vind,
+            satellit- och isobservationer användas här.
+          </>
+        }
+      />
+      <p className={styles.largeLakeNote}>{LARGE_LAKE_COLD_REASON}</p>
     </Section>
   );
 }

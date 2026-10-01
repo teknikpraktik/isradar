@@ -7,6 +7,12 @@
   min-width: 150px;
 }
 
+.headRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .head {
   all: unset;
   cursor: pointer;
@@ -24,6 +30,34 @@
 .head:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+.info {
+  all: unset;
+  cursor: pointer;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.info:hover,
+.info:focus-visible {
+  color: var(--text);
+  border-color: var(--text-muted);
+}
+
+.explain {
+  margin: 6px 0 2px;
+  max-width: 200px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-muted);
 }
 
 .chev {
@@ -46,14 +80,14 @@
 }
 
 .swatch {
+  flex: none;
   width: 14px;
   height: 10px;
   border-radius: 2px;
-  opacity: 0.85;
 }
 
 .note {
-  margin: 6px 0 0;
-  color: var(--text-faint);
+  margin: 7px 0 0;
+  color: var(--text-muted);
   font-size: 10.5px;
 }

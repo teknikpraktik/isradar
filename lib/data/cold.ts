@@ -11,6 +11,9 @@ import type { HistoricalColdAmount, Lake, LakeIndexEntry } from "@/types/lake";
 import type { ColdAmountObservation } from "@/types/observations";
 import type { DataResult } from "@/types/provenance";
 
+export const LARGE_LAKE_COLD_REASON =
+  "Stora sjöar bedöms inte enbart utifrån lufttemperatur och graddagar.";
+
 export const HISTORICAL_COLD_METHOD =
   "Median köldmängd vid första historiskt rapporterade åkning";
 
@@ -60,6 +63,9 @@ export async function getCurrentColdAmount(
   lake: Lake,
   asOf?: string,
 ): Promise<DataResult<ColdAmountObservation>> {
+  if (lake.modelType === "LARGE_LAKE_OPEN_WATER") {
+    return { status: "not_applicable", reason: LARGE_LAKE_COLD_REASON };
+  }
   const station = lake.temperatureStation;
   if (!station) {
     return { status: "unavailable", source: SOURCES.coldAmount, reason: "Ingen temperaturstation kopplad" };
@@ -71,6 +77,7 @@ export async function getCurrentColdAmount(
         status: "unavailable",
         source: SOURCES.coldAmount,
         reason: `Inga temperaturdygn ännu sedan säsongsstart ${r.seasonStart}`,
+        code: "no_data_yet",
       };
     }
     const gd = (v: number | null) => (v === null ? null : { value: v, unit: "GD" as const });
@@ -104,6 +111,7 @@ export async function getCurrentColdAmount(
       status: "unavailable",
       source: SOURCES.coldAmount,
       reason: err instanceof Error ? err.message : "Okänt fel",
+      code: "error",
     };
   }
 }

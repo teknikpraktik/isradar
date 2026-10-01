@@ -109,7 +109,11 @@ export default function LakeSearch({ index, stations, onPick, disabled }: Props)
                     {lake.centroid[1].toFixed(2)}° N {lake.centroid[0].toFixed(2)}° E
                   </span>
                   {station && <span> · {station.name}</span>}
-                  {lake.hca !== null && <span className="num"> · {lake.hca} GD</span>}
+                  {lake.modelType === "LARGE_LAKE_OPEN_WATER" ? (
+                    <span> · {lake.largeLake?.name ?? "stor sjö"}, öppet vatten – ej klassificerad</span>
+                  ) : (
+                    lake.hca !== null && <span className="num"> · {lake.hca} GD</span>
+                  )}
                 </span>
               </li>
             );

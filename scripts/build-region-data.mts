@@ -33,8 +33,10 @@ import type {
   BBox,
   LakeFeature,
   LakeIndexEntry,
+  LargeLakeRef,
   LngLat,
   TemperatureStation,
+  WaterModelType,
 } from "../types/lake";
 import type { RegionDataManifest, RegionDefinition } from "../types/region";
 
@@ -255,6 +257,24 @@ function assignCounty(p: LngLat, counties: County[]): { code: string; nearest: b
 }
 
 /* ------------------------------------------------------------------ */
+/* Stora sjöar (data/large-lakes.json)                                  */
+/* ------------------------------------------------------------------ */
+
+interface LargeLakeConfig {
+  lakes: { id: string; name: string; openWaterObjektIds: number[] }[];
+}
+
+/** objektid → stor sjö, för vatten som ska vara LARGE_LAKE_OPEN_WATER. */
+function loadLargeLakeOpenWater(): Map<number, LargeLakeRef> {
+  const file = join(ROOT, "data", "large-lakes.json");
+  const map = new Map<number, LargeLakeRef>();
+  if (!existsSync(file)) return map;
+  const cfg = JSON.parse(readFileSync(file, "utf8")) as LargeLakeConfig;
+  for (const lake of cfg.lakes) for (const id of lake.openWaterObjektIds) map.set(id, { id: lake.id, name: lake.name });
+  return map;
+}
+
+/* ------------------------------------------------------------------ */
 /* Huvudflöde                                                          */
 /* ------------------------------------------------------------------ */
 
@@ -316,6 +336,7 @@ function main() {
 
   const waterRows = parseCsv(readFileSync(watersCsv, "utf8"));
   const counties = loadCounties();
+  const openWater = loadLargeLakeOpenWater();
   let kmMismatch = 0;
   let nearestAssigned = 0;
   let noCounty = 0;
@@ -326,9 +347,13 @@ function main() {
     const id = num(r.objektid);
     if (id === null) continue;
     const name = (r.name ?? "").trim() || `Namnlöst vatten ${id}`;
-    const hca = num(r.km);
-    const stationId = num(r.measurepoint);
-    if (geoKmById.has(id) && geoKmById.get(id) !== hca) kmMismatch++;
+    // Öppen bassäng i stor sjö: ingen GD-klass och ingen stationskoppling
+    // (ingen fallback till närmaste station). Källans km-värde används inte.
+    const largeLake = openWater.get(id) ?? null;
+    const modelType: WaterModelType = largeLake ? "LARGE_LAKE_OPEN_WATER" : "STANDARD_LAKE";
+    const hca = largeLake ? null : num(r.km);
+    const stationId = largeLake ? null : num(r.measurepoint);
+    if (geoKmById.has(id) && geoKmById.get(id) !== num(r.km)) kmMismatch++;
 
     const raw = geomById.get(id);
     const geometry = raw ? roundGeometry(raw) : null;
@@ -354,7 +379,7 @@ function main() {
         type: "Feature",
         id,
         geometry: geometry ?? { type: "Point", coordinates: centroid },
-        properties: { id, name, hca, stationId },
+        properties: { id, name, hca, stationId, modelType },
       },
       index: {
         id,
@@ -365,6 +390,8 @@ function main() {
         stationId,
         hasPolygon: geometry !== null,
         countyCode: county?.code ?? null,
+        modelType,
+        largeLake,
       },
     });
   }
@@ -392,6 +419,8 @@ function main() {
       .map((id) => stations.get(id))
       .filter((s): s is TemperatureStation => !!s);
 
+    const openCount = selected.filter((p) => p.index.modelType === "LARGE_LAKE_OPEN_WATER").length;
+    if (openCount) console.log(`[data] ${region.id}: ${openCount} vatten som stor sjö/öppet vatten (ej GD-klassade).`);
     const hcas = selected.map((p) => p.index.hca).filter((v): v is number => v !== null).sort((a, b) => a - b);
     const withPolygon = selected.filter((p) => p.index.hasPolygon).length;
     const manifest: RegionDataManifest = {

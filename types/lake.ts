@@ -18,6 +18,26 @@ export type LngLat = [number, number];
 /** [minLon, minLat, maxLon, maxLat] */
 export type BBox = [number, number, number, number];
 
+/**
+ * Vilken modell som är rimlig för vattnet.
+ *
+ *   STANDARD_LAKE          – klassificeras med köldmängd (GD) från temperaturstation.
+ *   LARGE_LAKE_OPEN_WATER  – öppen huvudbassäng i stor sjö (t.ex. Vänern). Får INGEN
+ *                            GD-klass och ingen stationskoppling; ska senare bedömas med
+ *                            andra indikatorer (ytvattentemperatur, vind, satellit,
+ *                            isobservationer, ev. särskild stor-sjö-modell).
+ *
+ * Konfigureras i data/large-lakes.json.
+ */
+export type WaterModelType = "STANDARD_LAKE" | "LARGE_LAKE_OPEN_WATER";
+
+/** Koppling till en stor sjö (endast för LARGE_LAKE_OPEN_WATER). */
+export interface LargeLakeRef {
+  /** Nyckel i data/large-lakes.json, t.ex. "vanern". */
+  id: string;
+  name: string;
+}
+
 export interface TemperatureStation {
   /** Skridskonätets `measurepoint`. */
   id: number;
@@ -45,7 +65,12 @@ export interface Lake {
   /** Areaviktad centroid (eller källans punkt om geometri saknas). */
   centroid: LngLat;
   bbox: BBox;
+  modelType: WaterModelType;
+  /** Satt för delar av stora sjöar (LARGE_LAKE_OPEN_WATER). */
+  largeLake: LargeLakeRef | null;
+  /** null = värde saknas. Alltid null för LARGE_LAKE_OPEN_WATER (ej klassificerad). */
   historicalColdAmount: HistoricalColdAmount | null;
+  /** Alltid null för LARGE_LAKE_OPEN_WATER – ingen fallback till närmaste station. */
   temperatureStation: TemperatureStation | null;
 }
 
@@ -58,12 +83,14 @@ export interface LakeIndexEntry {
   name: string;
   centroid: LngLat;
   bbox: BBox;
-  /** Historisk köldmängd i GD, null om okänd. */
+  /** Historisk köldmängd i GD. null = saknas ELLER ej klassificerad (se modelType). */
   hca: number | null;
   stationId: number | null;
   hasPolygon: boolean;
   /** SCB-länskod, t.ex. "17". null om inget län kunde tilldelas. */
   countyCode: string | null;
+  modelType: WaterModelType;
+  largeLake: LargeLakeRef | null;
 }
 
 /** Properties på features i genererad lakes.geojson. Hålls minimala. */
@@ -72,6 +99,7 @@ export interface LakeFeatureProperties {
   name: string;
   hca: number | null;
   stationId: number | null;
+  modelType: WaterModelType;
 }
 
 export type LakeFeature = GeoJSON.Feature<
