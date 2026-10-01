@@ -112,8 +112,14 @@ export default function InfoDialog({ open, onClose, region, manifest, showCollec
             <dd>© OpenStreetMap, OpenMapTiles, OpenFreeMap</dd>
           </div>
           <div>
-            <dt>Ej anslutna</dt>
-            <dd>MEPS, Sentinel</dd>
+            <dt>Sjöismodell</dt>
+            <dd>
+              <a href="https://thredds.met.no">MET Norway MEPS</a> (CC BY 4.0) · 2,5 km
+            </dd>
+          </div>
+          <div>
+            <dt>Ej ansluten</dt>
+            <dd>Sentinel</dd>
           </div>
         </dl>
 

@@ -10,7 +10,8 @@ ISRADAR kombinerar historisk köldmängd, aktuell köldmängd, MEPS sjöismodell
 
 - Utvecklas och testas för **Värmland** (avgränsning för utveckling – arkitekturen är nationell).
 - Ansluten data: **historisk köldmängd** (Skridskonätet), koppling till temperaturstation och **aktuell köldmängd** (beräknad ur SMHI:s dygnsmedeltemperaturer) samt **väder** (SMHI, uppmätt senaste 24 h och prognos).
-- Ej anslutet ännu: MEPS, Sentinel. Finns i UI och datamodell som "Ej ansluten".
+- Ansluten: **MEPS sjöismodell** (MET Norway, FLake).
+- Ej anslutet ännu: Sentinel. Finns i UI och datamodell som "Ej ansluten".
 
 ## Kom igång
 
@@ -107,6 +108,15 @@ Beräknas av ISRADAR per temperaturstation och visas för alla vatten som använ
 - **Avståndsgräns 50 km:** i Värmland har 259/261 vatten temperatur, 256 vind och 241 nederbörd inom gränsen. Övriga visar "Ingen station inom 50 km".
 - **Prognos (FORECAST):** SMHI punktprognos `snow1g` (ersätter `pmp3g`) vid vattnets centroid, sammanfattad för 0–24 h och 24–48 h: temperatur, **tid under 0 °C** (antal prognostimmar med lufttemperatur < 0 °C), nederbörd, vind och byvind. All väderformatering ligger i `lib/weather/format.ts` (testad). Modellkörningstid (`referenceTime`) visas.
 - **Endast nuläge:** med `?asOf=` visas "Endast nuläge" – inget väder hämtas.
+
+### MEPS sjöismodell (MET Norway)
+
+`GET /api/meps?cells=y:x,…` (`app/api/meps/route.ts`, `lib/server/meps.ts`).
+
+- **Källa:** THREDDS `mepslatest/meps_det_2_5km_*.ncml` via OPeNDAP, senaste körning med alla 67 tidssteg. FLake-variabler: `SFX_H_ICE` (istjocklek, m), `SFX_H_SNOW` (snö på is, m), `SFX_TS_WATER` (yttemperatur, K). MET Norway, CC BY 4.0.
+- **Rutor per vatten:** byggskriptet beräknar vilka 2,5 km-rutor (Lambert conformal conic, `lib/meps/grid.ts`, verifierad mot gittrets lat/lon) vars mittpunkt ligger i vattnet – max 25, annars närmaste ruta – och sparar dem som `mepsCells` i indexet. I Värmland: 202 vatten har 1 ruta, 52 har 2–9, 7 har ≥ 10.
+- **Värde:** median över rutor med sjöyta (fyllnadsvärde 9.97e36 = ingen sjö i rutan), för +0 h (MODEL) och +24/+48/+66 h (FORECAST). Antal rutor med sjöyta visas.
+- **Begränsning:** värdet gäller modellens sjöyta i rutan, inte nödvändigtvis just det vattnet – särskilt för små vatten. Endast senaste körning (`?asOf=` ger "Endast nuläge").
 
 ### Kända egenheter i källdatan
 

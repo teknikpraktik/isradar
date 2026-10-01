@@ -100,6 +100,7 @@ export function buildLake(data: RegionLakeData, id: LakeId): Lake | null {
     // Samlingsområdets värde hålls semantiskt isär från sjöspecifik GD.
     historicalColdAmount: canRenderColdDays(entry.areaType) ? historicalColdAmountFromIndex(entry) : null,
     areaHistoricalColdAmount: canRenderColdDays(entry.areaType) ? null : historicalColdAmountFromIndex(entry),
+    mepsCells: entry.mepsCells,
     temperatureStation:
       entry.stationId !== null ? (data.stations.get(entry.stationId) ?? null) : null,
   };

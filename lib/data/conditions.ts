@@ -29,7 +29,7 @@ export async function getLakeConditions(lake: Lake, asOf?: string): Promise<Lake
   const [currentCold, meps, satellite, weatherRecent, weatherForecast] =
     await Promise.all([
       getCurrentColdAmount(lake, asOf),
-      getMepsRun(lake),
+      getMepsRun(lake, asOf),
       getLatestSatelliteObservation(lake),
       getRecentWeather(lake, asOf),
       getWeatherForecast(lake, asOf),

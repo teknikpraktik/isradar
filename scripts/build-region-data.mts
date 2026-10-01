@@ -38,6 +38,7 @@ import type {
   TemperatureStation,
 } from "../types/lake";
 import type { RegionDataManifest, RegionDefinition } from "../types/region";
+import { cellCenter, nearestCell, type MepsCell } from "../lib/meps/grid.ts";
 
 const ROOT = resolve(import.meta.dirname, "..");
 const SOURCE_DIR = resolve(ROOT, process.env.ISRADAR_SOURCE_DIR ?? "isradar_koldmangd");
@@ -344,6 +345,45 @@ function clipCollectionAreas(all: Prepared[]) {
 }
 
 /* ------------------------------------------------------------------ */
+/* MEPS-gitterrutor                                                    */
+/* ------------------------------------------------------------------ */
+
+const MAX_MEPS_CELLS = 25;
+
+/**
+ * Rutor i MEPS 2,5 km-gittret vars mittpunkt ligger i vattnets (slutliga)
+ * geometri. Små vatten utan någon rutmittpunkt får närmaste ruta. Stora vatten
+ * samplas jämnt till högst MAX_MEPS_CELLS.
+ */
+function assignMepsCells(all: Prepared[]) {
+  for (const p of all) {
+    const g = p.feature.geometry;
+    const [x0, y0, x1, y1] = p.index.bbox;
+    const cells: MepsCell[] = [];
+    if (g.type !== "Point") {
+      const corners = [nearestCell(x0, y0), nearestCell(x1, y0), nearestCell(x0, y1), nearestCell(x1, y1)].filter(
+        (c): c is MepsCell => c !== null,
+      );
+      if (corners.length) {
+        const js = corners.map((c) => c[0]);
+        const is = corners.map((c) => c[1]);
+        for (let j = Math.min(...js) - 1; j <= Math.max(...js) + 1; j++)
+          for (let i = Math.min(...is) - 1; i <= Math.max(...is) + 1; i++) {
+            const c = cellCenter([j, i]) as LngLat;
+            if (pointInGeometry(c, g)) cells.push([j, i]);
+          }
+      }
+    }
+    if (cells.length === 0) {
+      const c = nearestCell(p.index.centroid[0], p.index.centroid[1]);
+      if (c) cells.push(c);
+    }
+    const step = cells.length / MAX_MEPS_CELLS;
+    p.index.mepsCells = step > 1 ? Array.from({ length: MAX_MEPS_CELLS }, (_, k) => cells[Math.floor(k * step)]) : cells;
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /* Huvudflöde                                                          */
 /* ------------------------------------------------------------------ */
 
@@ -457,6 +497,7 @@ function main() {
         countyCode: county?.code ?? null,
         areaType: "WATER",
         parent: null,
+        mepsCells: [],
       },
       areaKm2: geometry ? areaKm2(geometry) : 0,
     });
@@ -464,6 +505,7 @@ function main() {
 
   assignAreaTypes(all, loadCollectionAreaIds());
   clipCollectionAreas(all);
+  assignMepsCells(all);
 
   console.log(`[data] ${all.length} vatten lästa, ${geomById.size} med polygon.`);
   if (kmMismatch) console.warn(`[data] VARNING: ${kmMismatch} vatten har olika km i CSV och GeoJSON (CSV används).`);

@@ -1,7 +1,6 @@
 "use client";
 
 import type { LakeConditions } from "@/lib/data/conditions";
-import { MEPS_LEAD_TIMES_H } from "@/lib/data/meps";
 import { describeTime, distanceKm, formatDate, formatDateShort, formatShortDateTime } from "@/lib/format";
 import { COLLECTION_AREA_NOTE, getColdDayStyle } from "@/lib/map/coldScale";
 import { compassSv } from "@/lib/weather/compute";
@@ -146,30 +145,79 @@ function CollectionAreaOverview({ lake }: { lake: Lake }) {
 /* MODELL – MEPS                                                       */
 /* ------------------------------------------------------------------ */
 
+const fmtNum = (v: number | null | undefined, unit: string) =>
+  v === null || v === undefined ? "–" : `${new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 1 }).format(v)}${unit}`;
+
 export function ModelSection({ meps }: { meps: L<"meps"> }) {
   const run = meps.status === "ok" ? meps.value : null;
-  const a = run?.analysis;
+  const steps = run ? [run.analysis, ...run.forecasts].filter((s): s is NonNullable<typeof s> => !!s) : [];
+  const lead = (s: (typeof steps)[number]) => (s.provenance.time.kind === "forecast" ? s.provenance.time.leadTimeHours : 0);
+  const q = steps[0]?.provenance.quality;
+  const placeholder =
+    meps.status === "unavailable"
+      ? meps.code === "not_historical"
+        ? "Endast nuläge"
+        : meps.code === "no_data_yet"
+          ? meps.reason
+          : "N/A"
+      : undefined;
+
   return (
-    <Section
-      title="Modell · MEPS"
-      kinds={["model", "forecast"]}
-      status={meps.status}
-      source={run ? `MEPS · körning ${formatShortDateTime(run.modelRun)}` : undefined}
-    >
-      <Row
-        label="Istjocklek"
-        status={meps.status}
-        value={fmtQ(a?.values.iceThickness)}
-        meta={a ? describeTime(a.provenance.time) : undefined}
-      />
-      <Row label="Snö på is" status={meps.status} value={fmtQ(a?.values.snowOnIce)} />
-      <Row label="Yttemperatur" status={meps.status} value={fmtQ(a?.values.surfaceTemperature)} />
-      {MEPS_LEAD_TIMES_H.map((h) => {
-        const f = run?.forecasts.find(
-          (x) => x.provenance.time.kind === "forecast" && x.provenance.time.leadTimeHours === h,
-        );
-        return <Row key={h} label={`Istjocklek +${h} h`} status={meps.status} value={fmtQ(f?.values.iceThickness)} />;
-      })}
+    <Section title="Modell · MEPS" kinds={["model", "forecast"]} status={meps.status === "unavailable" ? "ok" : meps.status}>
+      {run ? (
+        <>
+          <div className={styles.forecast}>
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col" />
+                  {steps.map((s) => (
+                    <th key={lead(s)} scope="col" className="num">
+                      {lead(s) === 0 ? "Nu" : `+${lead(s)} h`}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">Istjocklek</th>
+                  {steps.map((s) => (
+                    <td key={lead(s)}>{fmtNum(s.values.iceThickness?.value, " cm")}</td>
+                  ))}
+                </tr>
+                <tr>
+                  <th scope="row">Snö på is</th>
+                  {steps.map((s) => (
+                    <td key={lead(s)}>{fmtNum(s.values.snowOnIce?.value, " cm")}</td>
+                  ))}
+                </tr>
+                <tr>
+                  <th scope="row">Yttemperatur</th>
+                  {steps.map((s) => (
+                    <td key={lead(s)}>{fmtNum(s.values.surfaceTemperature?.value, "°")}</td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p className={styles.weatherSource}>
+            {join(
+              `MEPS · körning ${formatShortDateTime(run.modelRun)}`,
+              q?.resolutionM ? `${fmtNum(q.resolutionM / 1000, " km")}-rutor` : null,
+              q?.notes?.[0],
+            )}
+            <br />
+            Modellens sjöyta i rutan – inte uppmätt. MET Norway, CC BY 4.0
+          </p>
+        </>
+      ) : (
+        <Row
+          label="Istjocklek"
+          status={meps.status}
+          placeholder={placeholder}
+          placeholderTitle={meps.status === "unavailable" ? meps.reason : undefined}
+        />
+      )}
     </Section>
   );
 }

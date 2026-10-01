@@ -81,6 +81,8 @@ export interface Lake {
    */
   areaHistoricalColdAmount: HistoricalColdAmount | null;
   temperatureStation: TemperatureStation | null;
+  /** MEPS-gitterrutor [y, x] för vattnet. */
+  mepsCells: [number, number][];
 }
 
 /**
@@ -100,6 +102,8 @@ export interface LakeIndexEntry {
   countyCode: string | null;
   areaType: AreaType;
   parent: ParentAreaRef | null;
+  /** MEPS-gitterrutor [y, x] vars mittpunkt ligger i vattnet (max 25), annars närmaste ruta. */
+  mepsCells: [number, number][];
 }
 
 /** Properties på features i genererad lakes.geojson. Hålls minimala. */
