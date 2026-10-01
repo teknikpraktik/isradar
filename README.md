@@ -11,7 +11,7 @@ ISRADAR kombinerar historisk köldmängd, aktuell köldmängd, MEPS sjöismodell
 - Utvecklas och testas för **Värmland** (avgränsning för utveckling – arkitekturen är nationell).
 - Ansluten data: **historisk köldmängd** (Skridskonätet), koppling till temperaturstation och **aktuell köldmängd** (beräknad ur SMHI:s dygnsmedeltemperaturer) samt **väder** (SMHI, uppmätt senaste 24 h och prognos).
 - Ansluten: **MEPS sjöismodell** (MET Norway, FLake).
-- Sentinel: senaste passager (Copernicus STAC, utan konto). Is/vatten-klassning ej ansluten.
+- **Sentinel-satellitbilder som kartlager** (radar och optisk, Microsoft Planetary Computer, utan konto). Ingen is/vatten-klassning.
 - Väderobservationer kompletteras med **Trafikverket VViS**. Finns i UI och datamodell som "Ej ansluten".
 
 ## Kom igång
@@ -109,6 +109,18 @@ Beräknas av ISRADAR per temperaturstation och visas för alla vatten som använ
 - **Avståndsgräns 50 km:** i Värmland har 259/261 vatten temperatur, 256 vind och 241 nederbörd inom gränsen. Övriga visar "Ingen station inom 50 km".
 - **Prognos (FORECAST):** SMHI punktprognos `snow1g` (ersätter `pmp3g`) vid vattnets centroid, sammanfattad för 0–24 h och 24–48 h: temperatur, **tid under 0 °C** (antal prognostimmar med lufttemperatur < 0 °C), nederbörd, vind och byvind. All väderformatering ligger i `lib/weather/format.ts` (testad). Modellkörningstid (`referenceTime`) visas.
 - **Endast nuläge:** med `?asOf=` visas "Endast nuläge" – inget väder hämtas.
+
+### Sentinel-satellitbilder (kartlager)
+
+`GET /api/satellite?lon&lat` (`lib/server/planetary.ts`) söker scener som täcker vattnets centroid de senaste 30 dagarna i Microsoft Planetary Computers öppna STAC och returnerar färdiga XYZ-tilemallar. Ingen nyckel eller env-variabel krävs.
+
+- **Sentinel-1:** `sentinel-1-rtc` (terrängkorrigerad), VV i dB (`10*log10(vv)`, −25–0 dB, gråskala). Upp till 8 scener.
+- **Sentinel-2:** `sentinel-2-l2a`, sann färg (`visual`), scener med ≤ 30 % molnighet (för hela 100 km-rutan); annars senaste oavsett moln. Dubbletter från överlappande rutor tas bort.
+- **Leverans:** MapLibre-rasterkälla med tiles direkt från Planetary Computer (CORS öppet, PNG med genomskinlighet utanför scenen, tiles cachas 1 h hos dem; scensökning cachas 1 h på servern). Inga rasterfiler laddas ned till servern.
+- **Lagerordning:** baskarta → satellitraster → ortnamn → sjöpolygoner → etiketter. Sjöfyllningen tonas ned (0,12) när satellitlager visas; konturer, hover och klick finns kvar.
+- **UI:** ett lager åt gången, opacitet 30–100 % (default 70 %), bläddring mellan scener, tidsetikett på kartan. Stängs vid byte av vatten. Tile-fel ger "Satellitbild kunde inte laddas".
+- **Begränsningar:** Planetary Computer publicerar Sentinel-1 RTC med några timmars fördröjning. Scener kan täcka vattnet bara delvis (stråkets kant). Radarbilden är rå SAR – ingen klassning.
+- **Framåt:** is/vatten-klassning och förändringsdetektion kan byggas på samma scen-id:n (t.ex. Planetary Computers statistik-endpoint per polygon, eller differens mellan två RTC-scener).
 
 ### Trafikverket VViS (kompletterande observationer)
 

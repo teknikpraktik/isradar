@@ -8,6 +8,7 @@
  *   SatelliteObservation  – observation
  *   WeatherObservation    – observation;  WeatherForecast – forecast
  */
+import type { SatelliteScene } from "@/lib/satellite/api";
 import type { LakeId } from "./lake";
 import type {
   DataQuality,
@@ -100,27 +101,16 @@ export interface SatelliteObservation {
 }
 
 /**
- * En satellitpassage över vattnet (OBSERVATION av att bild finns – ingen
- * tolkning av is/vatten). Steg 1 av satellitlagret.
+ * Sentinel-scener som täcker vattnet och kan visas som rasterlager (OBSERVATION:
+ * rå satellitbild, ingen tolkning av is/vatten).
  */
-export interface SatellitePass {
-  lakeId: LakeId;
-  productId: string;
-  /** t.ex. "Sentinel-1C" */
-  platform: string;
-  sensor: SatelliteSensor;
-  orbitState: string | null;
-  /** quality.cloudCoverPct = molnighet för hela tile-rutan (~110 km), inte vattnet. */
-  provenance: Provenance<ObservationTime>;
-}
-
-export interface SatellitePasses {
-  /** Senaste radarpassage (Sentinel-1, ser genom moln/mörker). */
-  sar: SatellitePass | null;
-  /** Senaste optiska passage (Sentinel-2), oavsett moln. */
-  optical: SatellitePass | null;
-  /** Senaste optiska med tile-molnighet ≤ clearMaxCloudPct. */
-  opticalClear: SatellitePass | null;
+export interface SatelliteScenes {
+  /** Radar (Sentinel-1 RTC), nyast först. */
+  sar: SatelliteScene[];
+  /** Optiska (Sentinel-2) med molnighet ≤ clearMaxCloudPct, nyast först. */
+  optical: SatelliteScene[];
+  /** Senaste optiska oavsett moln, om inga klara finns. */
+  opticalAny: SatelliteScene | null;
   windowDays: number;
   clearMaxCloudPct: number;
 }

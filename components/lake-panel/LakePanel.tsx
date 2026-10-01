@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { loadLakeConditions, type LakeConditions } from "@/lib/data/conditions";
 import { formatCoord } from "@/lib/format";
 import type { Lake } from "@/types/lake";
+import type { SatelliteScene } from "@/lib/satellite/api";
 import styles from "./LakePanel.module.css";
 import { LOADING } from "./parts";
 import { ModelSection, OverviewSection, SatelliteSection, WeatherSection } from "./sections";
@@ -14,9 +15,12 @@ interface Props {
   onShowInfo: () => void;
   /** Visa läget ett tidigare datum (YYYY-MM-DD). */
   asOf?: string;
+  satellite?: { scene: SatelliteScene; opacity: number } | null;
+  onSatellite?: (scene: SatelliteScene | null) => void;
+  onSatelliteOpacity?: (opacity: number) => void;
 }
 
-export default function LakePanel({ lake, onClose, onShowInfo, asOf }: Props) {
+export default function LakePanel({ lake, onClose, onShowInfo, asOf, satellite = null, onSatellite, onSatelliteOpacity }: Props) {
   const [loaded, setLoaded] = useState<{ key: string; data: Partial<LakeConditions> }>({ key: "", data: {} });
   const [expanded, setExpanded] = useState(false);
 
@@ -67,7 +71,12 @@ export default function LakePanel({ lake, onClose, onShowInfo, asOf }: Props) {
       <div className={styles.body}>
         <OverviewSection lake={lake} cold={c.currentCold ?? LOADING} asOf={asOf} />
         <ModelSection meps={c.meps ?? LOADING} />
-        <SatelliteSection sat={c.satellite ?? LOADING} />
+        <SatelliteSection
+          sat={c.satellite ?? LOADING}
+          active={satellite}
+          onShow={onSatellite ?? (() => {})}
+          onOpacity={onSatelliteOpacity ?? (() => {})}
+        />
         <WeatherSection recent={c.weatherRecent ?? LOADING} forecast={c.weatherForecast ?? LOADING} />
 
         <p className={styles.disclaimer}>

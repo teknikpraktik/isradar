@@ -1,44 +1,39 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isIsoDate, type ApiError } from "@/lib/cold/api";
 import { CLEAR_MAX_CLOUD_PCT, SATELLITE_WINDOW_DAYS, type SatelliteApiResponse } from "@/lib/satellite/api";
-import { COPERNICUS_SOURCE, StacError, latestPasses } from "@/lib/server/stac";
+import { PLANETARY_SOURCE, PlanetaryError, scenesAt } from "@/lib/server/planetary";
 
-/** Senaste Sentinel-1/2-passager över ett vattens bbox (metadata, ingen bildanalys). */
+/** Sentinel-1/2-scener som täcker en punkt, med tile-URL:er för kartan. */
 export async function GET(request: NextRequest) {
   const p = request.nextUrl.searchParams;
-  const bbox = (p.get("bbox") ?? "").split(",").map(Number) as [number, number, number, number];
-  const valid =
-    bbox.length === 4 &&
-    bbox.every(Number.isFinite) &&
-    bbox[0] < bbox[2] &&
-    bbox[1] < bbox[3] &&
-    bbox[0] > 10 && bbox[2] < 25 && bbox[1] > 54.5 && bbox[3] < 69.5 &&
-    bbox[2] - bbox[0] < 3 && bbox[3] - bbox[1] < 3;
-  if (!valid) return NextResponse.json<ApiError>({ error: "Ogiltig bbox" }, { status: 400 });
-
+  const lon = Number(p.get("lon"));
+  const lat = Number(p.get("lat"));
+  if (!Number.isFinite(lon) || !Number.isFinite(lat) || lon < 10 || lon > 25 || lat < 54.5 || lat > 69.5) {
+    return NextResponse.json<ApiError>({ error: "Ogiltig position" }, { status: 400 });
+  }
   const asOf = p.get("asOf");
   if (asOf !== null && !isIsoDate(asOf)) return NextResponse.json<ApiError>({ error: "Ogiltigt asOf" }, { status: 400 });
-  // Sökfönstrets slut: slutet av asOf-dygnet, annars nu (avrundat till timme för cache).
+  // Fönstrets slut avrundas till timme så att svaret kan cachas.
   const to = asOf
     ? new Date(Math.min(Date.parse(`${asOf}T23:59:59Z`), Date.now()))
     : new Date(Math.ceil(Date.now() / 3_600_000) * 3_600_000);
 
   try {
-    const passes = await latestPasses(bbox, to, { days: SATELLITE_WINDOW_DAYS, clearMaxCloud: CLEAR_MAX_CLOUD_PCT });
+    const scenes = await scenesAt([lon, lat], to, { days: SATELLITE_WINDOW_DAYS, maxCloud: CLEAR_MAX_CLOUD_PCT });
     const body: SatelliteApiResponse = {
       to: to.toISOString(),
       windowDays: SATELLITE_WINDOW_DAYS,
       clearMaxCloudPct: CLEAR_MAX_CLOUD_PCT,
-      ...passes,
-      source: COPERNICUS_SOURCE,
+      ...scenes,
+      source: PLANETARY_SOURCE,
       retrievedAt: new Date().toISOString(),
     };
     return NextResponse.json(body, {
-      headers: { "Cache-Control": "public, max-age=0, s-maxage=1800, stale-while-revalidate=3600" },
+      headers: { "Cache-Control": "public, max-age=0, s-maxage=3600, stale-while-revalidate=7200" },
     });
   } catch (err) {
     console.error(err);
-    const msg = err instanceof StacError ? err.message : "Kunde inte hämta satellitkatalogen";
+    const msg = err instanceof PlanetaryError ? err.message : "Kunde inte hämta satellitscener";
     return NextResponse.json<ApiError>({ error: msg }, { status: 502 });
   }
 }

@@ -2,13 +2,14 @@
 
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef, useState } from "react";
-import type { GeoJSONSource, Map as MlMap, Marker } from "maplibre-gl";
+import type { ErrorEvent, GeoJSONSource, Map as MlMap, Marker } from "maplibre-gl";
 import type { LakeFeatureCollection } from "@/lib/data/lakes";
 import { LAKE_LABEL_FONT, basemapStyle } from "@/lib/map/basemap";
 import { COLLECTION_AREA_STYLE, coldFillColor, coldLineColor, isCollectionAreaFilter } from "@/lib/map/coldScale";
 import { loadMapLibre } from "@/lib/map/maplibre";
 import type { BBox, LakeId, LngLat } from "@/types/lake";
 import type { RegionDefinition } from "@/types/region";
+import type { SatelliteScene } from "@/lib/satellite/api";
 import styles from "./LakeMap.module.css";
 
 export interface FocusRequest {
@@ -24,7 +25,15 @@ interface Props {
   focus: FocusRequest | null;
   userPosition: LngLat | null;
   onSelect: (id: LakeId | null) => void;
+  /** Aktivt satellitlager (ett åt gången) eller null. */
+  satellite?: { scene: SatelliteScene; opacity: number } | null;
+  onSatelliteError?: () => void;
 }
+
+const SAT_SOURCE = "satellite";
+const SAT_LAYER = "satellite-raster";
+/** Sjöfyllning när satellitbild visas – tonas ned så att bilden syns. Konturer kvar. */
+const DIMMED_FILL = { lakes: 0.12, collection: 0.06 };
 
 const SOURCE = "lakes";
 // Ordning spelar ingen roll för träffar: queryRenderedFeatures ger översta först.
@@ -39,7 +48,20 @@ function focusPadding(map: MlMap) {
     : { top: 90, left: 60, right: 440, bottom: 60 };
 }
 
-export default function LakeMap({ region, lakes, selectedId, focus, userPosition, onSelect }: Props) {
+export default function LakeMap({
+  region,
+  lakes,
+  selectedId,
+  focus,
+  userPosition,
+  onSelect,
+  satellite = null,
+  onSatelliteError,
+}: Props) {
+  const onSatErrorRef = useRef(onSatelliteError);
+  useEffect(() => {
+    onSatErrorRef.current = onSatelliteError;
+  }, [onSatelliteError]);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MlMap | null>(null);
   const markerRef = useRef<Marker | null>(null);
@@ -138,6 +160,52 @@ export default function LakeMap({ region, lakes, selectedId, focus, userPosition
     if (!ready || !map || !lakes) return;
     (map.getSource(SOURCE) as GeoJSONSource).setData(lakes);
   }, [ready, lakes]);
+
+  // Satellitlager: rasterkälla under ortnamn och sjölager (baskarta → satellit
+  // → sjöar → etiketter). Byts helt vid ny scen; städas bort när det stängs.
+  const sceneId = satellite?.scene.id ?? null;
+  const sceneTiles = satellite?.scene.tileUrl ?? null;
+  const sceneBounds = satellite?.scene.bounds ?? null;
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map) return;
+    if (map.getLayer(SAT_LAYER)) map.removeLayer(SAT_LAYER);
+    if (map.getSource(SAT_SOURCE)) map.removeSource(SAT_SOURCE);
+    const dim = sceneId !== null;
+    map.setPaintProperty("lakes-fill", "fill-opacity", (dim ? DIMMED_FILL.lakes : ["case", ["boolean", ["feature-state", "hover"], false], 0.97, 0.85]) as never);
+    map.setPaintProperty("collection-fill", "fill-opacity", (dim ? DIMMED_FILL.collection : ["case", ["boolean", ["feature-state", "hover"], false], COLLECTION_AREA_STYLE.fillOpacity + 0.2, COLLECTION_AREA_STYLE.fillOpacity]) as never);
+    if (!sceneId || !sceneTiles) return;
+    map.addSource(SAT_SOURCE, {
+      type: "raster",
+      tiles: [sceneTiles],
+      tileSize: 256,
+      maxzoom: 14,
+      ...(sceneBounds ? { bounds: sceneBounds } : {}),
+      attribution: "Copernicus Sentinel-data · Microsoft Planetary Computer",
+    });
+    map.addLayer(
+      { id: SAT_LAYER, type: "raster", source: SAT_SOURCE, paint: { "raster-opacity": 0.7, "raster-fade-duration": 150 } },
+      map.getLayer("place-label") ? "place-label" : "collection-fill",
+    );
+    let reported = false;
+    const onError = (e: ErrorEvent & { sourceId?: string }) => {
+      if (e.sourceId === SAT_SOURCE && !reported) {
+        reported = true;
+        onSatErrorRef.current?.();
+      }
+    };
+    map.on("error", onError);
+    return () => {
+      map.off("error", onError);
+    };
+  }, [ready, sceneId, sceneTiles, sceneBounds]);
+
+  const satOpacity = satellite?.opacity ?? null;
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map || satOpacity === null || !map.getLayer(SAT_LAYER)) return;
+    map.setPaintProperty(SAT_LAYER, "raster-opacity", satOpacity);
+  }, [ready, satOpacity, sceneId]);
 
   // Markering
   useEffect(() => {

@@ -4,13 +4,13 @@
  */
 import { getCurrentColdAmount } from "@/lib/data/cold";
 import { getMepsRun } from "@/lib/data/meps";
-import { getSatellitePasses } from "@/lib/data/satellite";
+import { getSatelliteScenes } from "@/lib/data/satellite";
 import { getRecentWeather, getWeatherForecast } from "@/lib/data/weather";
 import type { Lake } from "@/types/lake";
 import type {
   ColdAmountObservation,
   MepsRun,
-  SatellitePasses,
+  SatelliteScenes,
   WeatherForecast,
   WeatherObservation,
 } from "@/types/observations";
@@ -19,7 +19,7 @@ import type { DataResult } from "@/types/provenance";
 export interface LakeConditions {
   currentCold: DataResult<ColdAmountObservation>;
   meps: DataResult<MepsRun>;
-  satellite: DataResult<SatellitePasses>;
+  satellite: DataResult<SatelliteScenes>;
   weatherRecent: DataResult<WeatherObservation>;
   weatherForecast: DataResult<WeatherForecast[]>;
 }
@@ -30,7 +30,7 @@ export async function getLakeConditions(lake: Lake, asOf?: string): Promise<Lake
     await Promise.all([
       getCurrentColdAmount(lake, asOf),
       getMepsRun(lake, asOf),
-      getSatellitePasses(lake, asOf),
+      getSatelliteScenes(lake, asOf),
       getRecentWeather(lake, asOf),
       getWeatherForecast(lake, asOf),
     ]);
@@ -48,7 +48,7 @@ export function loadLakeConditions(
 ): void {
   getCurrentColdAmount(lake, asOf).then((v) => onPart("currentCold", v));
   getMepsRun(lake, asOf).then((v) => onPart("meps", v));
-  getSatellitePasses(lake, asOf).then((v) => onPart("satellite", v));
+  getSatelliteScenes(lake, asOf).then((v) => onPart("satellite", v));
   getRecentWeather(lake, asOf).then((v) => onPart("weatherRecent", v));
   getWeatherForecast(lake, asOf).then((v) => onPart("weatherForecast", v));
 }

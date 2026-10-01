@@ -10,7 +10,8 @@ import LakeSearch from "@/components/search/LakeSearch";
 import InfoDialog from "@/components/ui/InfoDialog";
 import { isIsoDate } from "@/lib/cold/api";
 import { buildLake, lakeRepository, type RegionLakeData } from "@/lib/data/lakes";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatShortDateTime } from "@/lib/format";
+import type { SatelliteScene } from "@/lib/satellite/api";
 import { getRegion } from "@/lib/regions";
 import type { LakeId, LakeIndexEntry, LngLat } from "@/types/lake";
 import styles from "./IsradarApp.module.css";
@@ -27,6 +28,10 @@ export default function IsradarApp({ regionId }: { regionId?: string }) {
   const [userPosition, setUserPosition] = useState<LngLat | null>(null);
   const [infoOpen, setInfoOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  // Satellitlager: ett åt gången. Stängs när användaren byter vatten.
+  const [satellite, setSatellite] = useState<{ scene: SatelliteScene; opacity: number } | null>(null);
+  const [satLakeId, setSatLakeId] = useState<LakeId | null>(null);
+  const activeSatellite = satellite && satLakeId === selectedId ? satellite : null;
   const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
@@ -76,7 +81,19 @@ export default function IsradarApp({ regionId }: { regionId?: string }) {
         focus={focus}
         userPosition={userPosition}
         onSelect={setSelectedId}
+        satellite={activeSatellite}
+        onSatelliteError={() => {
+          setSatellite(null);
+          showMessage("Satellitbild kunde inte laddas");
+        }}
       />
+
+      {activeSatellite && (
+        <div className={styles.satLabel} role="status">
+          <span>{activeSatellite.scene.sensor === "SAR" ? "Sentinel-1 radar" : "Sentinel-2 optisk"}</span>
+          <span className="num">{formatShortDateTime(activeSatellite.scene.acquiredAt)}</span>
+        </div>
+      )}
 
       <div className={styles.topBar}>
         <div className={styles.brand}>
@@ -122,6 +139,12 @@ export default function IsradarApp({ regionId }: { regionId?: string }) {
           onClose={() => setSelectedId(null)}
           onShowInfo={() => setInfoOpen(true)}
           asOf={asOf}
+          satellite={activeSatellite}
+          onSatellite={(scene) => {
+            setSatLakeId(lake.id);
+            setSatellite(scene ? { scene, opacity: satellite?.opacity ?? 0.7 } : null);
+          }}
+          onSatelliteOpacity={(opacity) => setSatellite((s) => (s ? { ...s, opacity } : s))}
         />
       )}
 

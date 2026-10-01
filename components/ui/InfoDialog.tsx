@@ -119,8 +119,10 @@ export default function InfoDialog({ open, onClose, region, manifest, showCollec
             </dd>
           </div>
           <div>
-            <dt>Ej ansluten</dt>
-            <dd>Sentinel</dd>
+            <dt>Satellit</dt>
+            <dd>
+              Copernicus Sentinel-data via <a href="https://planetarycomputer.microsoft.com">Microsoft Planetary Computer</a>
+            </dd>
           </div>
         </dl>
 

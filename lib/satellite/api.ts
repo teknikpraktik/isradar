@@ -1,28 +1,33 @@
 /**
- * Kontrakt för GET /api/satellite?bbox=x0,y0,x1,y1[&asOf=YYYY-MM-DD]
+ * Kontrakt för GET /api/satellite?lon=..&lat=..[&asOf=YYYY-MM-DD]
  */
 import type { DataSource, IsoDateTime } from "@/types/provenance";
 
-export interface SatellitePassInfo {
-  productId: string;
+/** En Sentinel-scen som kan visas som rasterlager på kartan. */
+export interface SatelliteScene {
+  id: string;
+  sensor: "SAR" | "optical";
   acquiredAt: IsoDateTime;
   /** t.ex. "Sentinel-1C" */
   platform: string;
-  sensor: "SAR" | "optical";
-  /** Molnighet för hela produktens tile (~110 km), inte för vattnet. Endast optisk. */
-  tileCloudCoverPct: number | null;
-  /** "ascending" | "descending" */
+  /** Molnighet för hela scenrutan (~100 km), inte vattnet. Endast optisk. */
+  cloudCoverPct: number | null;
   orbitState: string | null;
+  bounds: [number, number, number, number] | null;
+  /** XYZ-tilemall för MapLibre ({z}/{x}/{y}). */
+  tileUrl: string;
 }
 
 export interface SatelliteApiResponse {
-  /** Sökfönstrets slut (asOf eller nu). */
   to: IsoDateTime;
   windowDays: number;
   clearMaxCloudPct: number;
-  sar: SatellitePassInfo | null;
-  optical: SatellitePassInfo | null;
-  opticalClear: SatellitePassInfo | null;
+  /** Radarscener, nyast först. */
+  sar: SatelliteScene[];
+  /** Optiska scener med molnighet ≤ clearMaxCloudPct, nyast först. */
+  optical: SatelliteScene[];
+  /** Senaste optiska oavsett moln – bara om inga klara scener finns. */
+  opticalAny: SatelliteScene | null;
   source: DataSource;
   retrievedAt: IsoDateTime;
 }

@@ -3,10 +3,10 @@
 import type { LakeConditions } from "@/lib/data/conditions";
 import { distanceKm, formatDate, formatDateShort, formatShortDateTime } from "@/lib/format";
 import { COLLECTION_AREA_NOTE, getColdDayStyle } from "@/lib/map/coldScale";
+import type { SatelliteScene } from "@/lib/satellite/api";
 import { compassSv } from "@/lib/weather/compute";
 import type {
   ColdAmountObservation,
-  SatellitePass,
   WeatherForecast,
   WeatherStation,
 } from "@/types/observations";
@@ -244,58 +244,159 @@ export function ModelSection({ meps }: { meps: L<"meps"> }) {
 
 const ORBIT: Record<string, string> = { ascending: "stigande", descending: "fallande" };
 
-function passValue(p: SatellitePass | null) {
-  if (!p || p.provenance.time.kind !== "observation") return undefined;
-  return formatShortDateTime(p.provenance.time.observedAt);
+type ActiveSat = { scene: SatelliteScene; opacity: number } | null;
+
+const sceneMeta = (s: SatelliteScene) =>
+  join(s.platform, s.cloudCoverPct !== null && `moln ${Math.round(s.cloudCoverPct)} %`, s.orbitState && ORBIT[s.orbitState]);
+
+/** "1 okt" – datumdel av kort tid. */
+const shortDay = (iso: string) => formatShortDateTime(iso).split(" ").slice(0, 2).join(" ");
+
+/** Ett sensorblock: senaste scen, knapp, och när aktivt: opacitet + scenbyte. */
+function SensorBlock({
+  title,
+  showLabel,
+  activeLabel,
+  scenes,
+  emptyText,
+  active,
+  onShow,
+  onOpacity,
+}: {
+  title: string;
+  showLabel: string;
+  activeLabel: string;
+  scenes: SatelliteScene[];
+  emptyText: string;
+  active: ActiveSat;
+  onShow: (s: SatelliteScene | null) => void;
+  onOpacity: (o: number) => void;
+}) {
+  const idx = active ? scenes.findIndex((s) => s.id === active.scene.id) : -1;
+  const isActive = idx >= 0;
+  const scene = isActive ? scenes[idx] : scenes[0];
+  return (
+    <div className={styles.satBlock}>
+      <h4 className={styles.subhead}>{title}</h4>
+      {scene ? (
+        <>
+          <div className={styles.satTime}>{formatShortDateTime(scene.acquiredAt)}</div>
+          <p className={styles.satMeta}>{sceneMeta(scene)}</p>
+          <button
+            type="button"
+            className={isActive ? `${styles.satBtn} ${styles.satBtnOn}` : styles.satBtn}
+            aria-pressed={isActive}
+            onClick={() => onShow(isActive ? null : scene)}
+          >
+            {isActive ? `✓ ${activeLabel}` : showLabel}
+          </button>
+          {isActive && active && (
+            <div className={styles.satControls}>
+              <label className={styles.opacity}>
+                <span>Opacitet</span>
+                <input
+                  type="range"
+                  min={30}
+                  max={100}
+                  step={5}
+                  value={Math.round(active.opacity * 100)}
+                  onChange={(e) => onOpacity(Number(e.target.value) / 100)}
+                  aria-label="Satellitbildens opacitet"
+                />
+                <span className="num">{Math.round(active.opacity * 100)} %</span>
+              </label>
+              {scenes.length > 1 && (
+                <div className={styles.sceneNav}>
+                  <button
+                    type="button"
+                    disabled={idx >= scenes.length - 1}
+                    onClick={() => onShow(scenes[idx + 1])}
+                    aria-label="Äldre scen"
+                  >
+                    ‹ {idx < scenes.length - 1 ? shortDay(scenes[idx + 1].acquiredAt) : ""}
+                  </button>
+                  <span className="num">
+                    {idx + 1}/{scenes.length}
+                  </span>
+                  <button type="button" disabled={idx <= 0} onClick={() => onShow(scenes[idx - 1])} aria-label="Nyare scen">
+                    {idx > 0 ? shortDay(scenes[idx - 1].acquiredAt) : ""} ›
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      ) : (
+        <p className={styles.satMeta}>{emptyText}</p>
+      )}
+    </div>
+  );
 }
 
-function passMeta(p: SatellitePass | null) {
-  if (!p) return undefined;
-  const cloud = p.provenance.quality?.cloudCoverPct;
-  return join(p.platform, cloud !== undefined && `moln ${cloud} %`, p.orbitState && ORBIT[p.orbitState]);
-}
-
-export function SatelliteSection({ sat }: { sat: L<"satellite"> }) {
+export function SatelliteSection({
+  sat,
+  active,
+  onShow,
+  onOpacity,
+}: {
+  sat: L<"satellite">;
+  active: ActiveSat;
+  onShow: (s: SatelliteScene | null) => void;
+  onOpacity: (o: number) => void;
+}) {
   const v = sat.status === "ok" ? sat.value : null;
-  const none = v ? `Ingen inom ${v.windowDays} d` : undefined;
+  const optical = v ? (v.optical.length ? v.optical : v.opticalAny ? [v.opticalAny] : []) : [];
   return (
     <Section
       title="Satellit · Sentinel"
       kinds={["observation"]}
-      status={sat.status}
-      hintLabel="Information om satellitpassager"
+      status={sat.status === "unavailable" ? "ok" : sat.status}
+      hintLabel="Information om Sentinel-satellitdata"
       hint={
         <>
-          <p className={styles.hintTitle}>Senaste passager</p>
-          <p>När Sentinel senast tog en bild över vattnet. Ingen tolkning av is eller vatten ännu.</p>
-          <p>Radar (Sentinel-1) ser genom moln och mörker. Optisk (Sentinel-2) kräver klart väder.</p>
-          <p>Molnighet gäller hela bildrutan (~110 km), inte vattnet.</p>
-          <p>Copernicus Data Space Ecosystem</p>
+          <p className={styles.hintTitle}>Sentinel-satellitdata</p>
+          <p>Sentinel-1 är radar och fungerar genom moln och mörker.</p>
+          <p>
+            Radarbilden mäter inte istjocklek eller säker is. Vatten, is, snö och vindpåverkad yta kan ge olika
+            radarsignaturer.
+          </p>
+          <p>Sentinel-2 är optisk och påverkas av moln och dagsljus. Molnighet gäller hela bildrutan.</p>
+          <p>Tolka tillsammans med övriga indikatorer.</p>
+          <p>Copernicus Sentinel-data · Microsoft Planetary Computer</p>
         </>
       }
     >
-      <Row
-        label="Radar"
-        status={sat.status}
-        value={v ? passValue(v.sar) : undefined}
-        placeholder={v && !v.sar ? none : undefined}
-        meta={v ? passMeta(v.sar) : undefined}
-      />
-      <Row
-        label="Optisk"
-        status={sat.status}
-        value={v ? passValue(v.optical) : undefined}
-        placeholder={v && !v.optical ? none : undefined}
-        meta={v ? passMeta(v.optical) : undefined}
-      />
-      <Row
-        label={v ? `Optisk ≤ ${v.clearMaxCloudPct} % moln` : "Optisk, klar"}
-        status={sat.status}
-        value={v ? passValue(v.opticalClear) : undefined}
-        placeholder={v && !v.opticalClear ? none : undefined}
-        meta={v ? passMeta(v.opticalClear) : undefined}
-      />
-      <Row label="Is/vatten" status="not_connected" placeholder="Ej ansluten" />
+      {v ? (
+        <>
+          <SensorBlock
+            title="Radar"
+            showLabel="Visa radar på kartan"
+            activeLabel="Radar visas"
+            scenes={v.sar}
+            emptyText={`Ingen radarbild senaste ${v.windowDays} d`}
+            active={active?.scene.sensor === "SAR" ? active : null}
+            onShow={onShow}
+            onOpacity={onOpacity}
+          />
+          <SensorBlock
+            title={v.optical.length ? `Optisk ≤ ${v.clearMaxCloudPct} % moln` : "Optisk"}
+            showLabel="Visa optisk bild"
+            activeLabel="Optisk bild visas"
+            scenes={optical}
+            emptyText={`Ingen optisk bild senaste ${v.windowDays} d`}
+            active={active?.scene.sensor === "optical" ? active : null}
+            onShow={onShow}
+            onOpacity={onOpacity}
+          />
+        </>
+      ) : (
+        <Row
+          label="Satellitbilder"
+          status={sat.status}
+          placeholder={sat.status === "unavailable" ? "Kunde inte hämtas" : undefined}
+          placeholderTitle={sat.status === "unavailable" ? sat.reason : undefined}
+        />
+      )}
     </Section>
   );
 }
