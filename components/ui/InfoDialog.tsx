@@ -77,7 +77,10 @@ export default function InfoDialog({ open, onClose, region, manifest }: Props) {
           <li>
             Historisk köldmängd: <a href={SOURCES.skridskonatet.url}>{SOURCES.skridskonatet.name}</a>
           </li>
-          <li>Aktuell köldmängd: ej ansluten</li>
+          <li>
+            Aktuell köldmängd: beräknad av ISRADAR ur{" "}
+            <a href="https://www.smhi.se/data/oppna-data">SMHI Öppna data</a> (CC BY 4.0)
+          </li>
           <li>{SOURCES.meps.name}: ej ansluten</li>
           <li>{SOURCES.sentinel.name}: ej ansluten</li>
           <li>{SOURCES.weather.name}: ej ansluten</li>

@@ -2,17 +2,41 @@
 
 import { HISTORICAL_COLD_METHOD } from "@/lib/data/cold";
 import { MEPS_LEAD_TIMES_H } from "@/lib/data/meps";
-import { describeTime, distanceKm, formatDateTime } from "@/lib/format";
+import { describeTime, distanceKm, formatAge, formatDate, formatDateTime } from "@/lib/format";
 import { SOURCES } from "@/lib/sources";
 import type { LakeConditions } from "@/lib/data/conditions";
+import type { ColdAmountObservation } from "@/types/observations";
 import type { Lake } from "@/types/lake";
-import { Row, Section, fmtPct, fmtQ } from "./parts";
+import { Row, Section, fmtPct, fmtQ, fmtSignedQ, type Loadable } from "./parts";
+
+/** Datakälla som kan vara under hämtning. */
+type L<K extends keyof LakeConditions> = LakeConditions[K] | { status: "loading" };
+
+/** "Dygnsmedel t.o.m. 15 feb 2026 · SMHI Blomskog A · 2 dygn saknas" */
+function coldMeta(c: ColdAmountObservation, asOf?: string): string {
+  const t = c.provenance.time;
+  if (t.kind !== "observation") return "";
+  const lastDay = new Date(Date.parse(t.observedAt) - 1).toISOString().slice(0, 10);
+  const parts = [`Dygnsmedel t.o.m. ${formatDate(lastDay)}`];
+  if (!asOf) parts[0] += ` (${formatAge(t.observedAt)} sedan)`;
+  parts.push(`SMHI ${c.measuringStation.name}`);
+  if (c.missingDays > 0) parts.push(`${c.missingDays} dygn saknas`);
+  return parts.join(" · ");
+}
 
 /* ------------------------------------------------------------------ */
 /* ÖVERSIKT                                                            */
 /* ------------------------------------------------------------------ */
 
-export function OverviewSection({ lake, cold }: { lake: Lake; cold: LakeConditions["currentCold"] }) {
+export function OverviewSection({
+  lake,
+  cold,
+  asOf,
+}: {
+  lake: Lake;
+  cold: Loadable<ColdAmountObservation>;
+  asOf?: string;
+}) {
   const hca = lake.historicalColdAmount;
   const station = lake.temperatureStation;
   const current = cold.status === "ok" ? cold.value : null;
@@ -42,13 +66,32 @@ export function OverviewSection({ lake, cold }: { lake: Lake; cold: LakeConditio
         hint="Station vars temperaturserie Skridskonätets modell använder för detta vatten."
       />
       <Row
-        label="Aktuell köldmängd"
+        label={asOf ? `Köldmängd ${formatDate(asOf)}` : "Aktuell köldmängd"}
         status={cold.status}
+        placeholder={cold.status === "unavailable" ? cold.reason : undefined}
         value={fmtQ(current?.accumulated)}
-        meta={current ? describeTime(current.provenance.time) : undefined}
+        meta={current ? coldMeta(current, asOf) : undefined}
+        hint={
+          <>
+            Beräknad av ISRADAR ur SMHI:s uppmätta dygnsmedeltemperaturer vid temperaturstationen,
+            från 1 oktober. Minusgrader ökar och plusgrader minskar värdet, som aldrig blir under 0.
+            Gäller stationen, inte vattnet. Metoden kan avvika från Skridskonätets beräkning av den
+            historiska köldmängden.
+          </>
+        }
       />
-      <Row label="Förändring 24 h" status={cold.status} value={fmtQ(current?.change24h)} />
-      <Row label="Förändring 7 dygn" status={cold.status} value={fmtQ(current?.change7d)} />
+      <Row
+        label="Förändring 24 h"
+        status={cold.status}
+        placeholder={cold.status === "unavailable" || (current && !current.change24h) ? "–" : undefined}
+        value={fmtSignedQ(current?.change24h)}
+      />
+      <Row
+        label="Förändring 7 dygn"
+        status={cold.status}
+        placeholder={cold.status === "unavailable" || (current && !current.change7d) ? "–" : undefined}
+        value={fmtSignedQ(current?.change7d)}
+      />
     </Section>
   );
 }
@@ -57,7 +100,7 @@ export function OverviewSection({ lake, cold }: { lake: Lake; cold: LakeConditio
 /* MODELL – MEPS                                                       */
 /* ------------------------------------------------------------------ */
 
-export function ModelSection({ meps }: { meps: LakeConditions["meps"] }) {
+export function ModelSection({ meps }: { meps: L<"meps"> }) {
   const run = meps.status === "ok" ? meps.value : null;
   const a = run?.analysis;
   return (
@@ -97,7 +140,7 @@ export function ModelSection({ meps }: { meps: LakeConditions["meps"] }) {
 /* SATELLIT – Sentinel                                                 */
 /* ------------------------------------------------------------------ */
 
-export function SatelliteSection({ sat }: { sat: LakeConditions["satellite"] }) {
+export function SatelliteSection({ sat }: { sat: L<"satellite"> }) {
   const o = sat.status === "ok" ? sat.value : null;
   const q = o?.provenance.quality;
   const quality = q
@@ -138,8 +181,8 @@ export function WeatherSection({
   recent,
   forecast,
 }: {
-  recent: LakeConditions["weatherRecent"];
-  forecast: LakeConditions["weatherForecast"];
+  recent: L<"weatherRecent">;
+  forecast: L<"weatherForecast">;
 }) {
   const w = recent.status === "ok" ? recent.value : null;
   const v = w?.values;

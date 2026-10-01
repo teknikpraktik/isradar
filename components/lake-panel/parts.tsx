@@ -5,11 +5,16 @@ import { KIND_DESCRIPTION, KIND_LABEL } from "@/lib/format";
 import type { DataKind, DataResult, Quantity } from "@/types/provenance";
 import styles from "./LakePanel.module.css";
 
-export type SectionStatus = DataResult<unknown>["status"];
+/** DataResult eller "hämtas". */
+export type Loadable<T> = DataResult<T> | { status: "loading" };
+export const LOADING = { status: "loading" } as const;
+
+export type SectionStatus = Loadable<unknown>["status"];
 
 export const PLACEHOLDER: Record<Exclude<SectionStatus, "ok">, string> = {
   not_connected: "Data kommer senare",
   unavailable: "Ej tillgänglig",
+  loading: "Hämtar…",
 };
 
 export function KindBadge({ kind }: { kind: DataKind }) {
@@ -60,12 +65,15 @@ export function Row({
   value,
   meta,
   status = "ok",
+  placeholder,
   hint,
 }: {
   label: ReactNode;
   value?: ReactNode;
   meta?: ReactNode;
   status?: SectionStatus;
+  /** Ersätter standardtexten när värde saknas, t.ex. en orsak. */
+  placeholder?: string;
   hint?: ReactNode;
 }) {
   const [showHint, setShowHint] = useState(false);
@@ -87,7 +95,7 @@ export function Row({
         )}
       </dt>
       <dd className={empty ? styles.placeholder : styles.value}>
-        {empty ? (status === "ok" ? "–" : PLACEHOLDER[status]) : value}
+        {empty ? (placeholder ?? (status === "ok" ? "–" : PLACEHOLDER[status])) : value}
         {meta && !empty && <span className={styles.meta}>{meta}</span>}
       </dd>
       {hint && showHint && <p className={styles.hint}>{hint}</p>}
@@ -109,6 +117,18 @@ export function fmtQ(q: Quantity | null | undefined): ReactNode {
       ) : (
         <span className="unit">{q.unit}</span>
       )}
+    </>
+  );
+}
+
+/** Förändring med tecken: "+3,2 GD", "−1,5 GD", "±0 GD". */
+export function fmtSignedQ(q: Quantity | null | undefined): ReactNode {
+  if (!q) return undefined;
+  const sign = q.value > 0 ? "+" : q.value < 0 ? "−" : "±";
+  return (
+    <>
+      <span className="num">{sign}</span>
+      {fmtQ({ ...q, value: Math.abs(q.value) })}
     </>
   );
 }

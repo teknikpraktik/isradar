@@ -23,15 +23,28 @@ import type {
 /* Aktuell köldmängd                                                   */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Aktuell köldmängd vid sjöns temperaturstation, härledd ur uppmätta
+ * dygnsmedeltemperaturer. Värdet gäller stationen, inte sjön själv.
+ */
 export interface ColdAmountObservation {
   lakeId: LakeId;
   stationId: number;
+  /** Mätstationen data kommer från (t.ex. SMHI "Örebro Flygplats"). */
+  measuringStation: { id: string; name: string };
   /** Ackumulerad köldmängd för säsongen fram till observedAt. */
   accumulated: Quantity<"GD">;
   /** Från vilken tidpunkt säsongens ackumulering räknas. */
   seasonStart: IsoDateTime;
   change24h: Quantity<"GD"> | null;
   change7d: Quantity<"GD"> | null;
+  /** Antal dygn i säsongen som saknar temperaturvärde (hoppas över). */
+  missingDays: number;
+  methodDescription: string;
+  /**
+   * provenance.time.observedAt = slutet av sista dygnet med data,
+   * time.period = säsongsstart → observedAt.
+   */
   provenance: Provenance<ObservationTime>;
 }
 

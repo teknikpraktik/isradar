@@ -9,8 +9,8 @@ ISRADAR kombinerar historisk köldmängd, aktuell köldmängd, MEPS sjöismodell
 ## Status (V1)
 
 - Utvecklas och testas för **Värmland** (avgränsning för utveckling – arkitekturen är nationell).
-- Ansluten data: **historisk köldmängd** (Skridskonätet) och koppling till temperaturstation.
-- Ej anslutet ännu: aktuell köldmängd, MEPS, Sentinel, väder. Finns i UI och datamodell som "Ej ansluten".
+- Ansluten data: **historisk köldmängd** (Skridskonätet), koppling till temperaturstation och **aktuell köldmängd** (beräknad ur SMHI:s dygnsmedeltemperaturer).
+- Ej anslutet ännu: MEPS, Sentinel, väder. Finns i UI och datamodell som "Ej ansluten".
 
 ## Kom igång
 
@@ -30,6 +30,7 @@ npm run dev      # kör först prepare-assets (data + MapLibre-worker), sedan ne
 | `npm run build`     | Produktionsbygge (kör `prepare-assets` först)                           |
 | `npm run typecheck` | `next typegen` + `tsc --noEmit`                                         |
 | `npm run lint`      | ESLint                                                                 |
+| `npm test`          | Enhetstester (`node --test`, inga beroenden)                            |
 
 ## Data
 
@@ -85,6 +86,17 @@ npm run data
 Utan länskod/region skrivs bara `scb-lan.geojson`. En region utan `countyCodes` filtreras med punkt-i-polygon mot `boundary.geometry` (används t.ex. för egna testområden).
 
 Ny region: lägg till `data/regions/<id>.json`, registrera i `lib/regions.ts`, kör `npm run data`, välj via `NEXT_PUBLIC_ISRADAR_REGION`.
+
+### Aktuell köldmängd (SMHI)
+
+Beräknas av ISRADAR per temperaturstation och visas för alla vatten som använder stationen.
+
+- **Data:** SMHI Öppna data, meteorologiska observationer, parameter 2 (dygnsmedeltemperatur). Licens **CC BY 4.0** – källan anges i appens info-dialog. `latest-months` (cache 1 h) kompletteras med `corrected-archive` (cache 24 h) när säsongen sträcker sig längre bak än fyra månader.
+- **Stationskoppling:** `data/stations/smhi.json` kopplar Skridskonätets 28 stationer (`measurepoint`) till närmaste aktiva SMHI-station (alla inom 650 m och med samma namn, t.ex. Örebro A → Örebro Flygplats). Genereras med `node scripts/map-smhi-stations.mts` (kräver `isradar_koldmangd/stations.csv`).
+- **Metod** (`lib/cold/compute.ts`, beslut 2026-10-01): säsongen börjar **1 oktober**; **netto med golv vid 0** – minusgrader ökar, plusgrader minskar, summan blir aldrig negativ. Saknade dygn interpoleras inte utan hoppas över och redovisas. Förändring 24 h / 7 dygn blir tom om jämförelsedygnet saknas.
+- **Obs:** metoden är ISRADAR:s egen och kan avvika från hur Skridskonätet räknat fram den historiska köldmängden (deras metod är inte dokumenterad för oss).
+- **API:** `GET /api/cold/station/[measurepoint]?asOf=YYYY-MM-DD` returnerar ackumulerat värde, förändringar, saknade dygn, SMHI-kvalitetskoder och hela säsongsserien (grund för kommande ICE SCOUT).
+- **Tidigare datum:** `/?asOf=2026-02-15` visar köldmängden ett tidigare datum. Datumet markeras tydligt i toppfältet; × återgår till nuläget.
 
 ### Kända egenheter i källdatan
 

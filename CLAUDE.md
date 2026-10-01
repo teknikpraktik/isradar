@@ -7,4 +7,4 @@
 - Håll isär `observation` / `model` / `forecast` / `historical_reference` (se `types/provenance.ts`). Gissa aldrig värden – använd `DataResult`.
 - `objektid` är primärnyckel; sjönamn är inte unika.
 - Inget får hårdkodas till Värmland – regioner definieras i `data/regions/`.
-- Kontroll: `npm run typecheck && npm run lint && npm run build`.
+- Kontroll: `npm run typecheck && npm run lint && npm test && npm run build`.

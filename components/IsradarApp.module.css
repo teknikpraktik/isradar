@@ -134,3 +134,37 @@
     right: 414px;
   }
 }
+
+/* Tydlig markering när ett tidigare datum visas (?asOf=) */
+.asOf {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 38px;
+  padding: 0 10px;
+  background: var(--surface);
+  border: 1px solid var(--kind-forecast);
+  border-radius: var(--radius);
+  color: var(--text-strong);
+  font-size: 12px;
+  line-height: 1.1;
+  text-decoration: none;
+  position: relative;
+  padding-right: 22px;
+}
+
+.asOf span:first-child {
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--kind-forecast);
+}
+
+.asOf span:last-child {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+}

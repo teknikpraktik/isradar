@@ -14,6 +14,18 @@ export function formatDateTime(iso: IsoDateTime): string {
   }).format(new Date(iso));
 }
 
+/** "15 feb 2026" för ett kalenderdatum (YYYY-MM-DD). */
+export function formatDate(date: string): string {
+  return new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "UTC",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  })
+    .format(new Date(`${date}T00:00:00Z`))
+    .replace(".", "");
+}
+
 /** "12 min", "5 h", "3 d" – ålder relativt nu. */
 export function formatAge(iso: IsoDateTime, now: Date = new Date()): string {
   const s = Math.max(0, (now.getTime() - new Date(iso).getTime()) / 1000);

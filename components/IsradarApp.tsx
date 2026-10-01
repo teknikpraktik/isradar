@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import LakePanel from "@/components/lake-panel/LakePanel";
 import LakeMap, { type FocusRequest } from "@/components/map/LakeMap";
@@ -7,13 +8,18 @@ import LocateButton from "@/components/map/LocateButton";
 import MapLegend from "@/components/map/MapLegend";
 import LakeSearch from "@/components/search/LakeSearch";
 import InfoDialog from "@/components/ui/InfoDialog";
+import { isIsoDate } from "@/lib/cold/api";
 import { buildLake, lakeRepository, type RegionLakeData } from "@/lib/data/lakes";
+import { formatDate } from "@/lib/format";
 import { getRegion } from "@/lib/regions";
 import type { LakeId, LakeIndexEntry, LngLat } from "@/types/lake";
 import styles from "./IsradarApp.module.css";
 
 export default function IsradarApp({ regionId }: { regionId?: string }) {
   const region = useMemo(() => getRegion(regionId), [regionId]);
+  // ?asOf=YYYY-MM-DD visar läget ett tidigare datum (t.ex. förra vintern).
+  const asOfParam = useSearchParams().get("asOf");
+  const asOf = asOfParam && isIsoDate(asOfParam) ? asOfParam : undefined;
   const [data, setData] = useState<RegionLakeData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<LakeId | null>(null);
@@ -48,10 +54,10 @@ export default function IsradarApp({ regionId }: { regionId?: string }) {
     toastTimer.current = setTimeout(() => setToast(null), 4000);
   }, []);
 
-  const pickFromSearch = useCallback((entry: LakeIndexEntry) => {
+  const pickFromSearch = (entry: LakeIndexEntry) => {
     setSelectedId(entry.id);
     setFocus({ bbox: entry.bbox, key: Date.now() });
-  }, []);
+  };
 
   return (
     <main className={styles.app}>
@@ -75,6 +81,13 @@ export default function IsradarApp({ regionId }: { regionId?: string }) {
           onPick={pickFromSearch}
           disabled={!data}
         />
+        {asOf && (
+          <a href="?" className={styles.asOf} title="Visar ett tidigare datum. Klicka för nuläget.">
+            <span>Datum</span>
+            <span className="num">{formatDate(asOf)}</span>
+            <span aria-hidden>×</span>
+          </a>
+        )}
         <button
           type="button"
           className={styles.iconBtn}
@@ -100,6 +113,7 @@ export default function IsradarApp({ regionId }: { regionId?: string }) {
           lake={lake}
           onClose={() => setSelectedId(null)}
           onShowInfo={() => setInfoOpen(true)}
+          asOf={asOf}
         />
       )}
 

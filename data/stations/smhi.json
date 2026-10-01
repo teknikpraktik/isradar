@@ -1,0 +1,198 @@
+[
+  {
+    "measurepoint": 1165,
+    "name": "Abisko",
+    "smhiId": "188790",
+    "smhiName": "Abisko Aut",
+    "distanceM": 36
+  },
+  {
+    "measurepoint": 782,
+    "name": "Arjeplog A",
+    "smhiId": "167710",
+    "smhiName": "Arjeplog A",
+    "distanceM": 224
+  },
+  {
+    "measurepoint": 789,
+    "name": "Blomskog A",
+    "smhiId": "92130",
+    "smhiName": "Blomskog A",
+    "distanceM": 154
+  },
+  {
+    "measurepoint": 981,
+    "name": "Borås",
+    "smhiId": "72450",
+    "smhiName": "Borås",
+    "distanceM": 155
+  },
+  {
+    "measurepoint": 798,
+    "name": "Delsbo A",
+    "smhiId": "116490",
+    "smhiName": "Delsbo A",
+    "distanceM": 190
+  },
+  {
+    "measurepoint": 819,
+    "name": "Gäddede A",
+    "smhiId": "144310",
+    "smhiName": "Gäddede A",
+    "distanceM": 207
+  },
+  {
+    "measurepoint": 824,
+    "name": "Hagshult Mo",
+    "smhiId": "74180",
+    "smhiName": "Hagshult",
+    "distanceM": 187
+  },
+  {
+    "measurepoint": 826,
+    "name": "Hallhåxåsen A",
+    "smhiId": "135460",
+    "smhiName": "Hallhåxåsen A",
+    "distanceM": 189
+  },
+  {
+    "measurepoint": 844,
+    "name": "Hörby A",
+    "smhiId": "53530",
+    "smhiName": "Hörby A",
+    "distanceM": 141
+  },
+  {
+    "measurepoint": 861,
+    "name": "Kiruna Flygplats",
+    "smhiId": "180940",
+    "smhiName": "Kiruna Flygplats",
+    "distanceM": 0
+  },
+  {
+    "measurepoint": 884,
+    "name": "Malmslätt",
+    "smhiId": "85240",
+    "smhiName": "Linköping-Malmslätt",
+    "distanceM": 625
+  },
+  {
+    "measurepoint": 879,
+    "name": "Ljungby A",
+    "smhiId": "63510",
+    "smhiName": "Ljungby A",
+    "distanceM": 171
+  },
+  {
+    "measurepoint": 880,
+    "name": "Luleå Flygplats",
+    "smhiId": "162860",
+    "smhiName": "Luleå-Kallax Flygplats",
+    "distanceM": 221
+  },
+  {
+    "measurepoint": 886,
+    "name": "Malung A",
+    "smhiId": "103420",
+    "smhiName": "Malung A",
+    "distanceM": 177
+  },
+  {
+    "measurepoint": 891,
+    "name": "Målilla A",
+    "smhiId": "75250",
+    "smhiName": "Målilla A",
+    "distanceM": 171
+  },
+  {
+    "measurepoint": 1630,
+    "name": "Prästkulla",
+    "smhiId": "74440",
+    "smhiName": "Prästkulla",
+    "distanceM": 0
+  },
+  {
+    "measurepoint": 922,
+    "name": "Skellefteå Flygplats",
+    "smhiId": "151380",
+    "smhiName": "Skellefteå Flygplats",
+    "distanceM": 0
+  },
+  {
+    "measurepoint": 928,
+    "name": "Stockholm-Bromma",
+    "smhiId": "97200",
+    "smhiName": "Stockholm-Bromma Flygplats",
+    "distanceM": 0
+  },
+  {
+    "measurepoint": 941,
+    "name": "Särna A",
+    "smhiId": "113420",
+    "smhiName": "Särna A",
+    "distanceM": 198
+  },
+  {
+    "measurepoint": 1023,
+    "name": "Tingsryd-Degerhaga",
+    "smhiId": "64320",
+    "smhiName": "Tingsryd-Degerhaga",
+    "distanceM": 184
+  },
+  {
+    "measurepoint": 947,
+    "name": "Torpshammar A",
+    "smhiId": "126290",
+    "smhiName": "Torpshammar A",
+    "distanceM": 187
+  },
+  {
+    "measurepoint": 950,
+    "name": "Tännäs A",
+    "smhiId": "122260",
+    "smhiName": "Tännäs A",
+    "distanceM": 161
+  },
+  {
+    "measurepoint": 951,
+    "name": "Ullared A",
+    "smhiId": "72090",
+    "smhiName": "Ullared A",
+    "distanceM": 159
+  },
+  {
+    "measurepoint": 952,
+    "name": "Umeå Flygplats",
+    "smhiId": "140480",
+    "smhiName": "Umeå Flygplats",
+    "distanceM": 606
+  },
+  {
+    "measurepoint": 954,
+    "name": "Uppsala Flygplats",
+    "smhiId": "97530",
+    "smhiName": "Uppsala Flygplats",
+    "distanceM": 523
+  },
+  {
+    "measurepoint": 963,
+    "name": "Västmarkum A",
+    "smhiId": "138070",
+    "smhiName": "Västmarkum A",
+    "distanceM": 206
+  },
+  {
+    "measurepoint": 968,
+    "name": "Åmot A",
+    "smhiId": "106570",
+    "smhiName": "Åmot A",
+    "distanceM": 185
+  },
+  {
+    "measurepoint": 1029,
+    "name": "Örebro A",
+    "smhiId": "95130",
+    "smhiName": "Örebro Flygplats",
+    "distanceM": 0
+  }
+]

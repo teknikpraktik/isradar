@@ -24,10 +24,11 @@ export interface LakeConditions {
   weatherForecast: DataResult<WeatherForecast[]>;
 }
 
-export async function getLakeConditions(lake: Lake): Promise<LakeConditions> {
+/** asOf (YYYY-MM-DD) visar läget ett tidigare datum; utelämnas för nuläget. */
+export async function getLakeConditions(lake: Lake, asOf?: string): Promise<LakeConditions> {
   const [currentCold, meps, satellite, weatherRecent, weatherForecast] =
     await Promise.all([
-      getCurrentColdAmount(lake),
+      getCurrentColdAmount(lake, asOf),
       getMepsRun(lake),
       getLatestSatelliteObservation(lake),
       getRecentWeather(lake),
