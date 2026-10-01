@@ -62,6 +62,8 @@ export interface LakeIndexEntry {
   hca: number | null;
   stationId: number | null;
   hasPolygon: boolean;
+  /** SCB-länskod, t.ex. "17". null om inget län kunde tilldelas. */
+  countyCode: string | null;
 }
 
 /** Properties på features i genererad lakes.geojson. Hålls minimala. */

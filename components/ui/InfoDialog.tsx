@@ -81,6 +81,7 @@ export default function InfoDialog({ open, onClose, region, manifest }: Props) {
           <li>{SOURCES.meps.name}: ej ansluten</li>
           <li>{SOURCES.sentinel.name}: ej ansluten</li>
           <li>{SOURCES.weather.name}: ej ansluten</li>
+          <li>Länsgränser: SCB, digitala gränser (CC0)</li>
           <li>Bakgrundskarta: © OpenStreetMap-bidragsgivare, OpenMapTiles, OpenFreeMap</li>
         </ul>
 

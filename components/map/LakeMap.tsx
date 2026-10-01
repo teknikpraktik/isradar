@@ -73,10 +73,17 @@ export default function LakeMap({ region, lakes, selectedId, focus, userPosition
         map.addControl(new ml.ScaleControl({ unit: "metric", maxWidth: 90 }), "bottom-left");
         map.getCanvas().setAttribute("aria-label", `Karta över ${region.name}`);
 
-        map.on("load", () => {
+        // style.load väntar inte på basemap-tiles (till skillnad från load),
+        // så sjöarna kan visas direkt.
+        map.once("style.load", () => {
           if (cancelled || !map) return;
+          addRegionOutline(map, region);
           addLakeLayers(map);
           mapRef.current = map;
+          // Endast i utveckling: gör kartan inspekterbar från konsolen/testverktyg.
+          if (process.env.NODE_ENV === "development") {
+            (window as unknown as { __isradarMap?: MlMap }).__isradarMap = map;
+          }
           setReady(true);
         });
 
@@ -181,6 +188,25 @@ export default function LakeMap({ region, lakes, selectedId, focus, userPosition
       {error && <div className={styles.error}>{error}</div>}
     </div>
   );
+}
+
+/** Diskret kontur för utvecklingsregionen (länsgräns eller bbox). */
+function addRegionOutline(map: MlMap, region: RegionDefinition) {
+  map.addSource("region", {
+    type: "geojson",
+    data: { type: "Feature", properties: {}, geometry: region.boundary.geometry },
+  });
+  map.addLayer({
+    id: "region-outline",
+    type: "line",
+    source: "region",
+    paint: {
+      "line-color": "#8b97a3",
+      "line-width": ["interpolate", ["linear"], ["zoom"], 5, 0.8, 10, 1.6],
+      "line-opacity": 0.55,
+      "line-dasharray": [3, 2],
+    },
+  });
 }
 
 function addLakeLayers(map: MlMap) {

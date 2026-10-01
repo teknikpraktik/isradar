@@ -15,8 +15,13 @@
  *   public/data/generated/<region>/stations.json
  *   public/data/generated/<region>/manifest.json
  *
- * Regionfiltrering sker GEOMETRISKT: ett vatten ingår om dess centroid ligger
- * inom regionens boundary-polygon (data/regions/<id>.json). Sjönamn används
+ * Regionfiltrering sker GEOMETRISKT (data/regions/<id>.json):
+ *  - med boundary.countyCodes: varje vatten tilldelas ett län ur
+ *    data/boundaries/scb-lan.geojson – länet som innehåller centroiden, annars
+ *    närmaste län inom 20 km (SCB:s länspolygoner omfattar bara land, så
+ *    t.ex. Vänerns delar hamnar hos närmaste strandlän);
+ *  - annars: centroiden ska ligga inom boundary.geometry.
+ * Sjönamn används
  * aldrig för att avgöra region.
  *
  * Kräver Node >= 22.18 / 24 (kör TypeScript direkt via type stripping).
@@ -184,6 +189,71 @@ function pointInGeometry(p: LngLat, g: Polygon | MultiPolygon): boolean {
   );
 }
 
+/** Avstånd i km från punkt till geometrins ringar (lokal plan approximation). */
+function distanceToGeometryKm([px, py]: LngLat, g: Polygon | MultiPolygon): number {
+  const kx = 111.32 * Math.cos((py * Math.PI) / 180);
+  const ky = 110.57;
+  let best = Infinity;
+  for (const rings of polygonsOf(g))
+    for (const ring of rings)
+      for (let i = 0; i < ring.length - 1; i++) {
+        const ax = (ring[i][0] - px) * kx;
+        const ay = (ring[i][1] - py) * ky;
+        const bx = (ring[i + 1][0] - px) * kx;
+        const by = (ring[i + 1][1] - py) * ky;
+        const dx = bx - ax;
+        const dy = by - ay;
+        const len2 = dx * dx + dy * dy;
+        const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, -(ax * dx + ay * dy) / len2));
+        best = Math.min(best, Math.hypot(ax + t * dx, ay + t * dy));
+      }
+  return best;
+}
+
+/* ------------------------------------------------------------------ */
+/* Län                                                                 */
+/* ------------------------------------------------------------------ */
+
+type County = { code: string; name: string; geometry: Polygon | MultiPolygon; bbox: BBox };
+
+/** Vatten utanför alla länspolygoner (Vänern, kust) tilldelas närmaste län inom denna gräns. */
+const NEAREST_COUNTY_MAX_KM = 20;
+
+function loadCounties(): County[] {
+  const file = join(ROOT, "data", "boundaries", "scb-lan.geojson");
+  if (!existsSync(file)) return [];
+  const fc = JSON.parse(readFileSync(file, "utf8")) as GeoJSON.FeatureCollection<
+    Polygon | MultiPolygon,
+    { code: string; name: string }
+  >;
+  return fc.features.map((f) => ({ ...f.properties, geometry: f.geometry, bbox: bboxOf(f.geometry) }));
+}
+
+/**
+ * Län för en punkt: det län vars polygon innehåller punkten, annars närmaste
+ * län inom NEAREST_COUNTY_MAX_KM. SCB:s länspolygoner omfattar bara land, så
+ * t.ex. Vänerns delar fördelas på närmaste strandlän.
+ */
+function assignCounty(p: LngLat, counties: County[]): { code: string; nearest: boolean } | null {
+  const [x, y] = p;
+  for (const c of counties) {
+    const [x0, y0, x1, y1] = c.bbox;
+    if (x >= x0 && x <= x1 && y >= y0 && y <= y1 && pointInGeometry(p, c.geometry)) {
+      return { code: c.code, nearest: false };
+    }
+  }
+  let best: County | null = null;
+  let bestKm = Infinity;
+  for (const c of counties) {
+    const d = distanceToGeometryKm(p, c.geometry);
+    if (d < bestKm) {
+      bestKm = d;
+      best = c;
+    }
+  }
+  return best && bestKm <= NEAREST_COUNTY_MAX_KM ? { code: best.code, nearest: true } : null;
+}
+
 /* ------------------------------------------------------------------ */
 /* Huvudflöde                                                          */
 /* ------------------------------------------------------------------ */
@@ -245,7 +315,10 @@ function main() {
   }
 
   const waterRows = parseCsv(readFileSync(watersCsv, "utf8"));
+  const counties = loadCounties();
   let kmMismatch = 0;
+  let nearestAssigned = 0;
+  let noCounty = 0;
 
   type Prepared = { feature: LakeFeature; index: LakeIndexEntry };
   const all: Prepared[] = [];
@@ -272,6 +345,10 @@ function main() {
       bbox = [centroid[0], centroid[1], centroid[0], centroid[1]];
     }
 
+    const county = counties.length ? assignCounty(centroid, counties) : null;
+    if (county?.nearest) nearestAssigned++;
+    if (counties.length && !county) noCounty++;
+
     all.push({
       feature: {
         type: "Feature",
@@ -279,15 +356,35 @@ function main() {
         geometry: geometry ?? { type: "Point", coordinates: centroid },
         properties: { id, name, hca, stationId },
       },
-      index: { id, name, centroid, bbox, hca, stationId, hasPolygon: geometry !== null },
+      index: {
+        id,
+        name,
+        centroid,
+        bbox,
+        hca,
+        stationId,
+        hasPolygon: geometry !== null,
+        countyCode: county?.code ?? null,
+      },
     });
   }
 
   console.log(`[data] ${all.length} vatten lästa, ${geomById.size} med polygon.`);
   if (kmMismatch) console.warn(`[data] VARNING: ${kmMismatch} vatten har olika km i CSV och GeoJSON (CSV används).`);
+  if (counties.length) {
+    console.log(
+      `[data] Län: ${counties.length} läst, ${nearestAssigned} vatten tilldelade närmaste län, ${noCounty} utan län.`,
+    );
+  }
 
   for (const region of regions) {
-    const selected = all.filter((p) => pointInGeometry(p.index.centroid, region.boundary.geometry));
+    const codes = region.boundary.countyCodes;
+    if (codes && !counties.length) {
+      throw new Error(`Region ${region.id} anger countyCodes men data/boundaries/scb-lan.geojson saknas.`);
+    }
+    const selected = codes
+      ? all.filter((p) => p.index.countyCode !== null && codes.includes(p.index.countyCode))
+      : all.filter((p) => pointInGeometry(p.index.centroid, region.boundary.geometry));
     selected.sort((a, b) => a.index.name.localeCompare(b.index.name, "sv") || a.index.id - b.index.id);
 
     const usedStations = [...new Set(selected.map((p) => p.index.stationId))]

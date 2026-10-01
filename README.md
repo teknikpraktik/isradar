@@ -65,7 +65,24 @@ Saknas källdatan men genererade filer finns hoppar skriptet över med en varnin
 
 ### Regionavgränsning
 
-`data/regions/varmland.json` innehåller just nu en **dokumenterad rektangel** (11.6–14.55° E, 58.85–61.1° N) som omsluter Värmlands län inkl. norra Vänern. Den tar även med vissa vatten i norra Dalsland, västra Örebro län och sydvästra Dalarna (Värmland: 364 vatten). För riktig länsgräns: ersätt `boundary.geometry` med länspolygonen (t.ex. från Lantmäteriet/SCB), sätt `kind: "official"` och kör `npm run data`. Ingen kod behöver ändras.
+Regioner avgränsas med **SCB:s länsgränser** (`data/boundaries/scb-lan.geojson`, alla 21 län, [SCB digitala gränser](https://www.scb.se/hitta-statistik/regional-statistik-och-kartor/regionala-indelningar/digitala-granser/), licens CC0, omräknade från SWEREF 99 TM till WGS84). `data/regions/varmland.json` anger `countyCodes: ["17"]` och innehåller länspolygonen för kartkonturen.
+
+Varje vatten tilldelas ett län (`countyCode` i indexet):
+
+1. länet vars polygon innehåller vattnets centroid, annars
+2. närmaste län inom 20 km. SCB:s polygoner omfattar bara **land**, så Vänern, Vättern, Mälaren och kustvatten ligger utanför alla län – deras delar tilldelas närmaste strandlän (t.ex. hamnar Norra Vänern och Värmlandsskärgården i Värmland).
+
+Gränserna är förenklade (Värmland: 125 punkter), så enstaka små vatten precis vid länsgränsen kan hamna i grannlänet. Värmland: 261 vatten.
+
+Uppdatera eller lägg till län:
+
+```bash
+# ladda ner "Län, kommuner och LA-regioner, ArcView-shape" från SCB och packa upp LanSweref99TM.zip
+node scripts/import-scb-counties.mts <Lan_Sweref99TM_region.shp> 17 varmland
+npm run data
+```
+
+Utan länskod/region skrivs bara `scb-lan.geojson`. En region utan `countyCodes` filtreras med punkt-i-polygon mot `boundary.geometry` (används t.ex. för egna testområden).
 
 Ny region: lägg till `data/regions/<id>.json`, registrera i `lib/regions.ts`, kör `npm run data`, välj via `NEXT_PUBLIC_ISRADAR_REGION`.
 
@@ -128,7 +145,7 @@ Web app manifest (`app/manifest.ts`), ikoner, `theme-color`, `viewport-fit=cover
 
 ## Skalning till hela Sverige
 
-GeoJSON räcker för Värmland (~360 polygoner, ~2,5 MB okomprimerat). Nationellt (~2 500+ vatten, fler med tiden) bör man gå över till:
+GeoJSON räcker för Värmland (~260 polygoner, ~2,5 MB okomprimerat). Nationellt (~2 500+ vatten, fler med tiden) bör man gå över till:
 
 - **PostGIS** för sjöar, regioner och tidsserier (satellit, MEPS, köldmängd). `LakeRepository` och `lib/data/*` får då implementationer mot ett API – komponenterna påverkas inte.
 - **Vector tiles** (t.ex. PMTiles eller `ST_AsMVT` från PostGIS) för sjögeometrin istället för en stor GeoJSON-fil.

@@ -1,17 +1,17 @@
 {
   "regionId": "varmland",
-  "generatedAt": "2026-10-01T12:20:30.357Z",
-  "boundaryKind": "bbox_approximation",
+  "generatedAt": "2026-10-01T13:26:38.357Z",
+  "boundaryKind": "official",
   "counts": {
-    "lakes": 364,
-    "withPolygon": 364,
+    "lakes": 261,
+    "withPolygon": 261,
     "pointOnly": 0
   },
   "historicalColdAmount": {
     "min": 7,
-    "p25": 36,
-    "median": 66,
-    "p75": 98.25,
+    "p25": 32,
+    "median": 59,
+    "p75": 93,
     "max": 418
   },
   "sources": [

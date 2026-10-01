@@ -5,14 +5,14 @@
  * medvetet enfärgad (en blågrå ljushetsramp) för att inte likna en
  * säkerhetsklassning – inga trafikljusfärger.
  *
- * Intervallen är valda efter fördelningen i Värmlandsdatan (364 vatten,
- * p25 36, median 66, p75 98 GD) så att klasserna blir ungefär jämnstora:
- *   <30: 61   30–50: 69   50–80: 93   80–120: 90   ≥120: 51
+ * Intervallen är valda efter fördelningen i Värmlandsdatan (261 vatten inom
+ * länsgränsen, p25 32, median 59, p75 93 GD) så att klasserna blir ungefär
+ * jämnstora:  <30: 57   30–50: 45   50–80: 64   80–120: 64   ≥120: 31
  * Se över intervallen när fler regioner läggs till.
  */
 import type { ExpressionSpecification } from "maplibre-gl";
 
-export const COLD_BREAKS =[30, 50, 80, 120] as const;
+export const COLD_BREAKS = [30, 50, 80, 120] as const;
 
 export const COLD_COLORS = [
   "#c4dbe6",

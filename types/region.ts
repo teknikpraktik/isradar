@@ -8,6 +8,12 @@ export interface RegionDefinition {
     /** "bbox_approximation" under utveckling, "official" när riktig gräns används. */
     kind: "bbox_approximation" | "official";
     note?: string;
+    /**
+     * SCB-länskoder som regionen består av. Om satt avgörs tillhörighet via
+     * vattnets tilldelade län (se scripts/build-region-data.mts), annars via
+     * punkt-i-polygon mot `geometry`.
+     */
+    countyCodes?: string[];
     geometry: Polygon | MultiPolygon;
   };
   view: {
