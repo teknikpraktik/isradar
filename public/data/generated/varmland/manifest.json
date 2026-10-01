@@ -1,0 +1,31 @@
+{
+  "regionId": "varmland",
+  "generatedAt": "2026-10-01T12:20:30.357Z",
+  "boundaryKind": "bbox_approximation",
+  "counts": {
+    "lakes": 364,
+    "withPolygon": 364,
+    "pointOnly": 0
+  },
+  "historicalColdAmount": {
+    "min": 7,
+    "p25": 36,
+    "median": 66,
+    "p75": 98.25,
+    "max": 418
+  },
+  "sources": [
+    {
+      "file": "isradar_koldmangd/waters.csv",
+      "bytes": 213237
+    },
+    {
+      "file": "isradar_koldmangd/waters_unique.geojson",
+      "bytes": 17599346
+    },
+    {
+      "file": "isradar_koldmangd/stations.csv",
+      "bytes": 970
+    }
+  ]
+}

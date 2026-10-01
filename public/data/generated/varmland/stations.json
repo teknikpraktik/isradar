@@ -1,0 +1,26 @@
+[
+  {
+    "id": 789,
+    "name": "Blomskog A",
+    "position": [
+      12.078,
+      59.2217
+    ]
+  },
+  {
+    "id": 886,
+    "name": "Malung A",
+    "position": [
+      13.71,
+      60.6773
+    ]
+  },
+  {
+    "id": 1029,
+    "name": "Örebro A",
+    "position": [
+      15.0455,
+      59.2289
+    ]
+  }
+]

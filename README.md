@@ -43,7 +43,7 @@ npm run dev      # kör först prepare-assets (data + MapLibre-worker), sedan ne
 
 `km` = **historisk köldmängd** i graddagar (GD): median av tidigare säsongers köldmängd den dag vattnet först rapporterades som åkbart. Det är en historisk referens, **inte en säkerhetsgräns**.
 
-> ⚠️ Återpubliceringsrätten för researchdatan är inte fastställd. `isradar_koldmangd/`, `curl.txt` (innehåller sessionscookie) och all **genererad** data under `public/data/generated/` är git-ignorerade och ska inte behandlas som produktionsdata.
+> ⚠️ Återpubliceringsrätten för researchdatan är inte fastställd. `isradar_koldmangd/` och `curl.txt` (innehåller sessionscookie) är git-ignorerade. Den **genererade** datan under `public/data/generated/` committas däremot (beslut 2026-10-01) så att Vercel kan bygga utan källdatan – den publiceras alltså via GitHub och deployen. Kör `npm run data` och committa om när källdatan uppdateras.
 
 ### Generering – `scripts/build-region-data.mts`
 

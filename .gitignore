@@ -46,6 +46,5 @@ curl.txt
 .venv/
 isradar_koldmangd/
 __pycache__/
-# Genererad data härleds ur researchdatan och omfattas av samma begränsning
-/public/data/generated/
+# public/data/generated/ committas medvetet (beslut 2026-10-01) så att Vercel kan bygga
 /public/vendor/
