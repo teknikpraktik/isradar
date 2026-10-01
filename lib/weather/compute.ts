@@ -106,3 +106,14 @@ export function compassSv(deg: number): string {
   const dirs = ["N", "NO", "O", "SO", "S", "SV", "V", "NV"];
   return dirs[Math.round((((deg % 360) + 360) % 360) / 45) % 8];
 }
+
+/** Antal timvärden under `threshold` (°C) i fönstret. null om inga värden finns. */
+export function hoursBelow(
+  vals: HourlyValue[],
+  w: Window,
+  threshold = 0,
+): { hours: number; coverage: Coverage } | null {
+  const xs = inWindow(vals, w);
+  if (xs.length === 0) return null;
+  return { hours: xs.filter((x) => x.v < threshold).length, coverage: coverage(xs.length, w) };
+}

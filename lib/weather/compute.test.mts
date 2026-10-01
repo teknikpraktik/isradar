@@ -48,3 +48,13 @@ test("väderstreck", () => {
   assert.equal(compassSv(225), "SV");
   assert.equal(compassSv(100), "O");
 });
+
+test("timmar under 0 °C", async () => {
+  const { hoursBelow } = await import("./compute.ts");
+  assert.deepEqual(hoursBelow([at(1, 2), at(2, 0), at(3, -0.1), at(4, -5)], w), {
+    hours: 2,
+    coverage: { hours: 4, expectedHours: 24 },
+  });
+  assert.equal(hoursBelow([at(1, 3)], w)?.hours, 0, "0 h är ett riktigt värde");
+  assert.equal(hoursBelow([], w), null, "saknad prognos är inte 0 h");
+});

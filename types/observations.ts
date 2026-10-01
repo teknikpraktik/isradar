@@ -160,6 +160,8 @@ export interface WeatherForecast {
     frozenPrecipitationProbabilityMax: Quantity<"%"> | null;
     windMax: Quantity<"m/s"> | null;
     gustMax: Quantity<"m/s"> | null;
+    /** Prognostimmar med lufttemperatur under 0 °C. */
+    subzeroHours: Quantity<"h"> | null;
   };
   /** time.validAt = fönstrets slut, leadTimeHours = window[1]. */
   provenance: Provenance<ForecastTime>;

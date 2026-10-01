@@ -16,6 +16,7 @@ import {
   type WeatherApiResponse,
 } from "@/lib/weather/api";
 import {
+  hoursBelow,
   maxInWindow,
   summarizePrecipitation,
   summarizeTemperature,
@@ -113,6 +114,7 @@ export async function GET(request: NextRequest) {
         frozenPrecipitationProbabilityMax: frozen ? Math.round(frozen.max * 100) : null,
         windMax: maxInWindow(series("windSpeed"), w)?.max ?? null,
         gustMax: maxInWindow(series("windGust"), w)?.max ?? null,
+        subzeroHours: hoursBelow(temps, w)?.hours ?? null,
         coverage: t?.coverage ?? { hours: 0, expectedHours: b - a },
       };
     });
@@ -132,6 +134,6 @@ export async function GET(request: NextRequest) {
     retrievedAt: new Date().toISOString(),
   };
   return NextResponse.json(body, {
-    headers: { "Cache-Control": "public, s-maxage=600, stale-while-revalidate=1800" },
+    headers: { "Cache-Control": "public, max-age=0, s-maxage=600, stale-while-revalidate=1800" },
   });
 }

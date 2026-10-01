@@ -114,7 +114,7 @@ export interface Quantity<U extends Unit = Unit> {
   unit: U;
 }
 
-export type Unit = "GD" | "cm" | "°C" | "mm" | "m/s" | "%" | "deg";
+export type Unit = "GD" | "cm" | "°C" | "mm" | "m/s" | "%" | "deg" | "h";
 
 /* ------------------------------------------------------------------ */
 /* Resultat från en datakälla                                          */

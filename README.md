@@ -105,7 +105,7 @@ Beräknas av ISRADAR per temperaturstation och visas för alla vatten som använ
 - **Uppmätt senaste 24 h (OBSERVATION):** SMHI metobs `latest-day` (timvärden, cache 15 min). Temperatur (param 1: min/max/senaste), nederbörd (param 7: summa), vind (param 4 + riktning 3 + byar 21). **Närmaste aktiva station väljs per variabel** inom 50 km – nederbörd mäts på färre stationer än temperatur. Vindriktning och byar tas från samma station som vindhastigheten.
 - **Täckning redovisas:** saknade timmar visas ("18 av 24 h") och en ofullständig nederbördssumma visas som "minst …". Inga värden interpoleras.
 - **Avståndsgräns 50 km:** i Värmland har 259/261 vatten temperatur, 256 vind och 241 nederbörd inom gränsen. Övriga visar "Ingen station inom 50 km".
-- **Prognos (FORECAST):** SMHI punktprognos `snow1g` (ersätter `pmp3g`) vid vattnets centroid, sammanfattad för +0–24 h och +24–48 h: temperatur, nederbörd, vind/byar och högsta sannolikhet för fryst nederbörd. Modellkörningstid (`referenceTime`) visas.
+- **Prognos (FORECAST):** SMHI punktprognos `snow1g` (ersätter `pmp3g`) vid vattnets centroid, sammanfattad för 0–24 h och 24–48 h: temperatur, **tid under 0 °C** (antal prognostimmar med lufttemperatur < 0 °C), nederbörd, vind och byvind. All väderformatering ligger i `lib/weather/format.ts` (testad). Modellkörningstid (`referenceTime`) visas.
 - **Endast nuläge:** med `?asOf=` visas "Endast nuläge" – inget väder hämtas.
 
 ### Kända egenheter i källdatan

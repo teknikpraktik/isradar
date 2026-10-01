@@ -37,6 +37,8 @@ export interface ForecastWindow {
   frozenPrecipitationProbabilityMax: number | null;
   windMax: number | null;
   gustMax: number | null;
+  /** Antal prognostimmar med lufttemperatur < 0 °C. */
+  subzeroHours: number | null;
   coverage: Coverage;
 }
 

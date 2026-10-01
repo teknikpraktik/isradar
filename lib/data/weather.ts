@@ -141,6 +141,7 @@ export async function getWeatherForecast(
           frozenPrecipitationProbabilityMax: qn(w.frozenPrecipitationProbabilityMax, "%"),
           windMax: qn(w.windMax, "m/s"),
           gustMax: qn(w.gustMax, "m/s"),
+          subzeroHours: qn(w.subzeroHours, "h"),
         },
         provenance: {
           source: r.sources.forecast,

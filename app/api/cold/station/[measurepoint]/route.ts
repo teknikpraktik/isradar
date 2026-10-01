@@ -61,7 +61,7 @@ export async function GET(
       retrievedAt: new Date().toISOString(),
     };
     return NextResponse.json(body, {
-      headers: { "Cache-Control": "public, s-maxage=1800, stale-while-revalidate=3600" },
+      headers: { "Cache-Control": "public, max-age=0, s-maxage=1800, stale-while-revalidate=3600" },
     });
   } catch (err) {
     console.error(err);
