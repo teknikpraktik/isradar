@@ -136,6 +136,7 @@ export default function IsradarApp({ regionId }: { regionId?: string }) {
         onClose={() => setInfoOpen(false)}
         region={region}
         manifest={data?.manifest ?? null}
+        showLargeLakeNote={legendFlags.showOpenWater}
       />
     </main>
   );

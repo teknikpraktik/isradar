@@ -152,9 +152,9 @@ Varje vatten har en `modelType`:
 - `STANDARD_LAKE` – vanlig GD-klassning via temperaturstation.
 - `LARGE_LAKE_OPEN_WATER` – öppen huvudbassäng i stor sjö. Får **ingen** GD-klass, ingen stationskoppling (ingen fallback till närmaste station) och visas neutralt skrafferad. I panelen: "Vänern – öppet vatten · Köldmängd: ej klassificerad". Aktuell köldmängd returnerar `not_applicable`, som hålls isär från saknad data och 0 GD.
 
-Konfigureras i `data/large-lakes.json` via `objektid`. Vänern finns inte som ett objekt i källdatan utan i ~20 namngivna delar, så identifieringen är **manuell**. Just nu: Norra Vänern (17739), Södra Vänern (39553), Yttre Dalbosjön (248906). Vikar och skärgårdar som egna vattenobjekt (t.ex. Kattfjorden, Värmlandsskärgården) klassificeras som vanligt.
+Konfigureras i `data/large-lakes.json` via `objektid`. Vänern finns inte som ett objekt i källdatan utan i ~20 namngivna delar, så identifieringen är **manuell**. Just nu: Södra Vänern (39553) och Yttre Dalbosjön (248906), båda utanför Värmland. Norra Vänern (17739) GD-klassas som vanlig sjö (beslut 2026-10-01; station Örebro A, 83 km). `clipContainedObjektIds` styr separat vilka omslutande polygoner som klipps. Vikar och skärgårdar som egna vattenobjekt (t.ex. Kattfjorden, Värmlandsskärgården) klassificeras som vanligt.
 
-Källans polygon för t.ex. Norra Vänern omsluter även ~50 vikar och skärgårdar som finns som egna objekt. Byggskriptet klipper därför bort alla överlappande vatten ur det öppna vattnets geometri (`polygon-clipping`, används bara vid bygget), och kartan ritar öppet vatten i ett lager under vanliga sjöar. Vikarna behåller sin GD-klass och får klicken.
+Källans polygon för t.ex. Norra Vänern omsluter även ~50 vikar och skärgårdar som finns som egna objekt. Byggskriptet klipper därför bort alla överlappande vatten ur polygonerna i `clipContainedObjektIds`, oavsett om de GD-klassas (`polygon-clipping`, används bara vid bygget), och kartan ritar öppet vatten i ett lager under vanliga sjöar. Vikarna behåller sin GD-klass och får klicken.
 
 MapLibre 6 laddar sin worker relativt `import.meta.url`, vilket inte överlever bundling; `scripts/copy-maplibre-worker.mjs` kopierar därför workern till `public/vendor/maplibre/` och `lib/map/maplibre.ts` sätter `setWorkerUrl`.
 

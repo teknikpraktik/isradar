@@ -262,7 +262,15 @@ function assignCounty(p: LngLat, counties: County[]): { code: string; nearest: b
 /* ------------------------------------------------------------------ */
 
 interface LargeLakeConfig {
-  lakes: { id: string; name: string; openWaterObjektIds: number[] }[];
+  lakes: { id: string; name: string; openWaterObjektIds: number[]; clipContainedObjektIds?: number[] }[];
+}
+
+/** objektid för källpolygoner som omsluter andra vattenobjekt och ska klippas. */
+function loadClipContained(): Set<number> {
+  const file = join(ROOT, "data", "large-lakes.json");
+  if (!existsSync(file)) return new Set();
+  const cfg = JSON.parse(readFileSync(file, "utf8")) as LargeLakeConfig;
+  return new Set(cfg.lakes.flatMap((l) => l.clipContainedObjektIds ?? []));
 }
 
 /** objektid → stor sjö, för vatten som ska vara LARGE_LAKE_OPEN_WATER. */
@@ -276,22 +284,22 @@ function loadLargeLakeOpenWater(): Map<number, LargeLakeRef> {
 }
 
 /**
- * Källans polygoner för stora sjöars öppna vatten (t.ex. "Norra Vänern")
- * omsluter ofta även vikar och skärgårdar som finns som egna vattenobjekt.
- * Vi klipper bort alla sådana överlappande vatten, så att den ej
- * GD-klassade ytan bara omfattar det som faktiskt är öppet vatten och vikarna
- * behåller sin vanliga klassning (samt får klicken).
+ * Vissa källpolygoner (t.ex. "Norra Vänern") omsluter även vikar och
+ * skärgårdar som finns som egna vattenobjekt. Vi klipper bort alla sådana
+ * överlappande vatten (clipContainedObjektIds i data/large-lakes.json), så att
+ * polygonen bara omfattar sin egen yta och vikarna inte ritas över – oavsett
+ * om den omslutande polygonen är GD-klassad eller öppet vatten.
  */
-function clipOpenWater(all: { feature: LakeFeature; index: LakeIndexEntry }[]) {
+function clipContainedWaters(all: { feature: LakeFeature; index: LakeIndexEntry }[], clipIds: Set<number>) {
   const overlaps = (a: BBox, b: BBox) => a[0] <= b[2] && b[0] <= a[2] && a[1] <= b[3] && b[1] <= a[3];
   for (const open of all) {
-    if (open.index.modelType !== "LARGE_LAKE_OPEN_WATER") continue;
+    if (!clipIds.has(open.index.id)) continue;
     const g = open.feature.geometry;
     if (g.type === "Point") continue;
     const others = all.filter(
       (o) =>
         o !== open &&
-        o.index.modelType === "STANDARD_LAKE" &&
+        !clipIds.has(o.index.id) &&
         o.feature.geometry.type !== "Point" &&
         overlaps(open.index.bbox, o.index.bbox),
     );
@@ -435,7 +443,7 @@ function main() {
     });
   }
 
-  clipOpenWater(all);
+  clipContainedWaters(all, loadClipContained());
 
   console.log(`[data] ${all.length} vatten lästa, ${geomById.size} med polygon.`);
   if (kmMismatch) console.warn(`[data] VARNING: ${kmMismatch} vatten har olika km i CSV och GeoJSON (CSV används).`);

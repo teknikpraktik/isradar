@@ -15,11 +15,13 @@ interface Props {
   onClose: () => void;
   region: RegionDefinition;
   manifest: RegionDataManifest | null;
+  /** Visa stycket om stora sjöar (om det finns ej klassificerat öppet vatten i datan). */
+  showLargeLakeNote?: boolean;
 }
 
 const KINDS: DataKind[] = ["observation", "model", "forecast", "historical_reference"];
 
-export default function InfoDialog({ open, onClose, region, manifest }: Props) {
+export default function InfoDialog({ open, onClose, region, manifest, showLargeLakeNote = false }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -77,12 +79,16 @@ export default function InfoDialog({ open, onClose, region, manifest }: Props) {
           oktober), beräknad ur SMHI:s uppmätta temperaturer. Den blandas inte ihop med den historiska.
         </p>
 
-        <h3>Stora sjöar</h3>
-        <p>
-          Vänerns öppna huvudbassäng (skrafferad) klassificeras medvetet inte med köldmängd.{" "}
-          {LARGE_LAKE_COLD_REASON} Vikar och skärgårdar som finns som egna vattenobjekt klassificeras
-          som vanligt.
-        </p>
+        {showLargeLakeNote && (
+          <>
+            <h3>Stora sjöar</h3>
+            <p>
+              Öppet vatten i vissa stora sjöar (skrafferat) klassificeras medvetet inte med
+              köldmängd. {LARGE_LAKE_COLD_REASON} Vikar och skärgårdar som finns som egna
+              vattenobjekt klassificeras som vanligt.
+            </p>
+          </>
+        )}
 
         <h3>Källor och status</h3>
         <ul className={styles.sources}>
