@@ -51,8 +51,9 @@ export function Section({
           {status === "unavailable" && <span className={styles.status}>Saknas</span>}
         </div>
       </header>
-      <dl className={styles.rows}>{children}</dl>
-      {source && <p className={styles.source}>Källa: {source}</p>}
+      {/* Ej anslutna källor: bara rubrik + tagg, inga tomma rader. */}
+      {status !== "not_connected" && <div className={styles.rows}>{children}</div>}
+      {source && <p className={styles.source}>{source}</p>}
     </section>
   );
 }
@@ -84,7 +85,7 @@ export function Row({
   const empty = value === undefined || value === null;
   return (
     <div className={styles.row}>
-      <dt>
+      <span className={styles.label}>
         {label}
         {hint && (
           <button
@@ -97,11 +98,11 @@ export function Row({
             ?
           </button>
         )}
-      </dt>
-      <dd className={empty ? styles.placeholder : styles.value} title={empty ? placeholderTitle : undefined}>
+      </span>
+      <span className={empty ? styles.placeholder : styles.value} title={empty ? placeholderTitle : undefined}>
         {empty ? (placeholder ?? (status === "ok" ? "–" : PLACEHOLDER[status])) : value}
-        {meta && !empty && <span className={styles.meta}>{meta}</span>}
-      </dd>
+      </span>
+      {meta && !empty && <p className={styles.meta}>{meta}</p>}
       {hint && showHint && <p className={styles.hint}>{hint}</p>}
     </div>
   );

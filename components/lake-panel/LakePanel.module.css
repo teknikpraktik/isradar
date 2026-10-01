@@ -193,22 +193,23 @@
 
 .row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: baseline;
-  gap: 2px 12px;
+  column-gap: 12px;
   padding: 5px 0;
 }
 
-.row dt {
+.row .label {
   font-size: 13px;
   color: var(--text-muted);
   display: flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
 }
 
-.row dd {
-  margin: 0;
+.row .value,
+.row .placeholder {
   text-align: right;
   font-size: 14px;
 }
@@ -223,11 +224,14 @@
   font-style: italic;
 }
 
+/* Station, tid, täckning – egen rad under värdet, högerställd */
 .meta {
-  display: block;
+  grid-column: 1 / -1;
+  margin: 1px 0 0;
+  text-align: right;
   font-size: 11px;
+  line-height: 1.35;
   color: var(--text-faint);
-  font-style: normal;
 }
 
 .hintBtn {
@@ -312,4 +316,48 @@
   font-size: 12.5px;
   line-height: 1.45;
   color: var(--text-muted);
+}
+
+/* Prognostabell i vädersektionen */
+.forecast {
+  padding: 6px 0 2px;
+}
+
+.forecast table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.forecast th,
+.forecast td {
+  padding: 3px 0;
+  text-align: right;
+  font-weight: normal;
+}
+
+.forecast thead th {
+  font-size: 11px;
+  color: var(--text-faint);
+  padding-bottom: 4px;
+}
+
+.forecast thead th:first-child,
+.forecast tbody th {
+  text-align: left;
+  color: var(--text-muted);
+}
+
+.forecast tbody th {
+  font-size: 12px;
+}
+
+.forecast td {
+  color: var(--text-strong);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.dim {
+  color: var(--text-faint);
 }

@@ -56,10 +56,10 @@ export const KIND_LABEL: Record<DataTime["kind"], string> = {
 };
 
 export const KIND_DESCRIPTION: Record<DataTime["kind"], string> = {
-  observation: "Observation – uppmätt eller observerat värde",
-  model: "Modell – modellens skattning av nuläget",
-  forecast: "Prognos – modellens skattning framåt i tiden",
-  historical_reference: "Historisk referens – statistik från tidigare säsonger",
+  observation: "Uppmätt",
+  model: "Modellerat nuläge",
+  forecast: "Modellerad framtid",
+  historical_reference: "Tidigare säsonger",
 };
 
 export function formatCoord([lon, lat]: LngLat): string {
@@ -81,4 +81,21 @@ export function distanceKm([lon1, lat1]: LngLat, [lon2, lat2]: LngLat): number {
 /** Gemener utan diakritiska tecken – för sökning ("vanern" hittar "Vänern"). */
 export function normalizeForSearch(s: string): string {
   return s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().trim();
+}
+
+/** "15 feb" – kort datum utan år (YYYY-MM-DD). */
+export function formatDateShort(date: string): string {
+  return new Intl.DateTimeFormat("sv-SE", { timeZone: "UTC", day: "numeric", month: "short" })
+    .format(new Date(`${date}T00:00:00Z`))
+    .replace(".", "");
+}
+
+/** "1 okt 18:45" i svensk tid. */
+export function formatShortDateTime(iso: IsoDateTime): string {
+  const d = new Date(iso);
+  const date = new Intl.DateTimeFormat("sv-SE", { timeZone: TZ, day: "numeric", month: "short" })
+    .format(d)
+    .replace(".", "");
+  const time = new Intl.DateTimeFormat("sv-SE", { timeZone: TZ, hour: "2-digit", minute: "2-digit" }).format(d);
+  return `${date} ${time}`;
 }

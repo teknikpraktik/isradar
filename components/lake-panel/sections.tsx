@@ -1,11 +1,11 @@
 "use client";
 
-import { HISTORICAL_COLD_METHOD, LARGE_LAKE_COLD_REASON } from "@/lib/data/cold";
-import { MEPS_LEAD_TIMES_H } from "@/lib/data/meps";
-import { describeTime, distanceKm, formatAge, formatDate, formatDateTime } from "@/lib/format";
-import { COLD_INDICATOR_NOTE, coldDayClassFor } from "@/lib/map/coldScale";
-import { SOURCES } from "@/lib/sources";
+import type { ReactNode } from "react";
+import { LARGE_LAKE_COLD_REASON } from "@/lib/data/cold";
 import type { LakeConditions } from "@/lib/data/conditions";
+import { MEPS_LEAD_TIMES_H } from "@/lib/data/meps";
+import { describeTime, distanceKm, formatDate, formatDateShort, formatShortDateTime } from "@/lib/format";
+import { coldDayClassFor } from "@/lib/map/coldScale";
 import { compassSv } from "@/lib/weather/compute";
 import type {
   ColdAmountObservation,
@@ -18,39 +18,34 @@ import type { Lake } from "@/types/lake";
 import styles from "./LakePanel.module.css";
 import { Row, Section, fmtPct, fmtQ, fmtSignedQ, type Loadable } from "./parts";
 
+/*
+ * Textprincip: siffror först, minimalt med ord. Station, tid och täckning
+ * står på en kort metarad. Förklaringar ligger bakom "?" och är en rad.
+ */
+
 const nf1 = (v: number) => new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 1 }).format(v);
+const join = (...parts: (string | false | null | undefined)[]) => parts.filter(Boolean).join(" · ");
 
 /** Datakälla som kan vara under hämtning. */
 type L<K extends keyof LakeConditions> = LakeConditions[K] | { status: "loading" };
 
-/** "Dygnsmedel t.o.m. 15 feb 2026 · SMHI Blomskog A · 2 dygn saknas" */
-function coldMeta(c: ColdAmountObservation, asOf?: string): string {
+/* ------------------------------------------------------------------ */
+/* KÖLDMÄNGD                                                           */
+/* ------------------------------------------------------------------ */
+
+/** "t.o.m. 15 feb · Örebro Flygplats · 2 d saknas" */
+function coldMeta(c: ColdAmountObservation): string {
   const t = c.provenance.time;
   if (t.kind !== "observation") return "";
   const lastDay = new Date(Date.parse(t.observedAt) - 1).toISOString().slice(0, 10);
-  const parts = [`Dygnsmedel t.o.m. ${formatDate(lastDay)}`];
-  if (!asOf) parts[0] += ` (${formatAge(t.observedAt)} sedan)`;
-  parts.push(`SMHI ${c.measuringStation.name}`);
-  if (c.missingDays > 0) parts.push(`${c.missingDays} dygn saknas`);
-  return parts.join(" · ");
+  return join(`t.o.m. ${formatDateShort(lastDay)}`, c.measuringStation.name, c.missingDays > 0 && `${c.missingDays} d saknas`);
 }
 
-/* ------------------------------------------------------------------ */
-/* ÖVERSIKT                                                            */
-/* ------------------------------------------------------------------ */
-
-const GD_HINT = (
-  <>
-    <abbr title="graddagar">GD</abbr> = graddagar, ett mått på ackumulerad kyla (dygnsmedeltemperaturer
-    under 0 °C summerade över tid). {COLD_INDICATOR_NOTE}
-  </>
-);
-
-/** Platshållare för aktuell köldmängd när värde saknas – aldrig "0 GD" om data saknas. */
+/** Aldrig "0 GD" när data saknas. */
 function currentColdPlaceholder(cold: Loadable<ColdAmountObservation>, row: "value" | "change") {
   if (cold.status !== "unavailable") return undefined;
-  if (cold.code === "no_data_yet") return row === "value" ? "Ingen ackumulerad köld ännu" : "Ingen data ännu";
-  return "N/A";
+  if (row === "change") return "–";
+  return cold.code === "no_data_yet" ? "Ingen ackumulerad köld ännu" : "N/A";
 }
 
 export function OverviewSection({
@@ -73,26 +68,14 @@ export function OverviewSection({
       <Row
         label="Historisk köldmängd"
         value={hca ? <ColdValue gd={hca.amount.value} /> : undefined}
-        placeholder={hca ? undefined : "Värde saknas"}
-        hint={
-          <>
-            {HISTORICAL_COLD_METHOD}. Beräknat ur tidigare säsonger av Skridskonätet. Ett historiskt
-            referensvärde – ingen säkerhetsgräns och ingen beskrivning av isen nu.
-            <br />
-            {GD_HINT}
-          </>
-        }
+        placeholder={hca ? undefined : "Saknas"}
+        hint="Median vid första rapporterade åkning (Skridskonätet). GD = graddagar. Ingen säkerhetsgräns."
       />
       <Row
         label="Temperaturstation"
         value={station?.name}
-        placeholder={station ? undefined : "Ingen kopplad"}
-        meta={
-          station
-            ? `${Math.round(distanceKm(lake.centroid, station.position))} km från vattnet`
-            : undefined
-        }
-        hint="Station vars temperaturserie Skridskonätets modell använder för detta vatten."
+        placeholder={station ? undefined : "Ingen"}
+        meta={station ? `${Math.round(distanceKm(lake.centroid, station.position))} km` : undefined}
       />
       <Row
         label={asOf ? `Köldmängd ${formatDate(asOf)}` : "Aktuell köldmängd"}
@@ -100,28 +83,20 @@ export function OverviewSection({
         placeholder={currentColdPlaceholder(cold, "value")}
         placeholderTitle={reason}
         value={current ? <ColdValue gd={current.accumulated.value} /> : undefined}
-        meta={current ? coldMeta(current, asOf) : undefined}
-        hint={
-          <>
-            Innevarande säsong, separat från den historiska köldmängden. Beräknad av ISRADAR ur
-            SMHI:s uppmätta dygnsmedeltemperaturer vid temperaturstationen, från 1 oktober.
-            Minusgrader ökar och plusgrader minskar värdet, som aldrig blir under 0. Gäller
-            stationen, inte vattnet. Metoden kan avvika från Skridskonätets beräkning av den
-            historiska köldmängden.
-          </>
-        }
+        meta={current ? coldMeta(current) : undefined}
+        hint="Från 1 okt. SMHI-dygnsmedel vid stationen, netto, golv 0."
       />
       <Row
         label="Förändring 24 h"
         status={cold.status}
-        placeholder={currentColdPlaceholder(cold, "change") ?? (current && !current.change24h ? "Jämförelsedygn saknas" : undefined)}
+        placeholder={currentColdPlaceholder(cold, "change") ?? (current && !current.change24h ? "–" : undefined)}
         placeholderTitle={reason}
         value={fmtSignedQ(current?.change24h)}
       />
       <Row
-        label="Förändring 7 dygn"
+        label="Förändring 7 d"
         status={cold.status}
-        placeholder={currentColdPlaceholder(cold, "change") ?? (current && !current.change7d ? "Jämförelsedygn saknas" : undefined)}
+        placeholder={currentColdPlaceholder(cold, "change") ?? (current && !current.change7d ? "–" : undefined)}
         placeholderTitle={reason}
         value={fmtSignedQ(current?.change7d)}
       />
@@ -144,23 +119,8 @@ function ColdValue({ gd }: { gd: number }) {
 function LargeLakeOverview({ lake }: { lake: Lake }) {
   return (
     <Section title="Köldmängd" kinds={[]} status="not_applicable">
-      <p className={styles.largeLake}>
-        <strong>{lake.largeLake?.name ?? "Stor sjö"} – öppet vatten</strong>
-      </p>
-      <Row
-        label="Köldmängd"
-        status="not_applicable"
-        hint={
-          <>
-            Medvetet modellval, inte saknad data. Vänern har stor termisk tröghet och stora
-            skillnader mellan öppet vatten, grunda vikar, skärgård och kustnära vatten – en enda
-            lufttemperaturbaserad GD-siffra skulle bli missvisande. Vikar och skärgårdar som egna
-            vattenobjekt klassificeras som vanligt. Senare kan t.ex. ytvattentemperatur, vind,
-            satellit- och isobservationer användas här.
-          </>
-        }
-      />
-      <p className={styles.largeLakeNote}>{LARGE_LAKE_COLD_REASON}</p>
+      <p className={styles.largeLake}>{lake.largeLake?.name ?? "Stor sjö"} – öppet vatten</p>
+      <Row label="Köldmängd" status="not_applicable" hint={LARGE_LAKE_COLD_REASON} />
     </Section>
   );
 }
@@ -177,7 +137,7 @@ export function ModelSection({ meps }: { meps: L<"meps"> }) {
       title="Modell · MEPS"
       kinds={["model", "forecast"]}
       status={meps.status}
-      source={run ? `${SOURCES.meps.name}, körning ${formatDateTime(run.modelRun)}` : undefined}
+      source={run ? `MEPS · körning ${formatShortDateTime(run.modelRun)}` : undefined}
     >
       <Row
         label="Istjocklek"
@@ -191,15 +151,7 @@ export function ModelSection({ meps }: { meps: L<"meps"> }) {
         const f = run?.forecasts.find(
           (x) => x.provenance.time.kind === "forecast" && x.provenance.time.leadTimeHours === h,
         );
-        return (
-          <Row
-            key={h}
-            label={`Prognos +${h} h`}
-            status={meps.status}
-            value={fmtQ(f?.values.iceThickness)}
-            meta={f ? describeTime(f.provenance.time) : undefined}
-          />
-        );
+        return <Row key={h} label={`Istjocklek +${h} h`} status={meps.status} value={fmtQ(f?.values.iceThickness)} />;
       })}
     </Section>
   );
@@ -213,31 +165,20 @@ export function SatelliteSection({ sat }: { sat: L<"satellite"> }) {
   const o = sat.status === "ok" ? sat.value : null;
   const q = o?.provenance.quality;
   const quality = q
-    ? [
-        q.flag && `kvalitet ${q.flag}`,
-        q.cloudCoverPct !== undefined && `moln ${q.cloudCoverPct} %`,
-        q.resolutionM !== undefined && `${q.resolutionM} m`,
-      ]
-        .filter(Boolean)
-        .join(" · ")
+    ? join(q.flag, q.cloudCoverPct !== undefined && `moln ${q.cloudCoverPct} %`, q.resolutionM !== undefined && `${q.resolutionM} m`)
     : undefined;
   return (
     <Section title="Satellit · Sentinel" kinds={["observation"]} status={sat.status}>
-      <Row label="Senaste observation" status={sat.status} value={o?.platform} />
       <Row
-        label="Observationstid"
+        label="Senaste"
         status={sat.status}
-        value={o ? describeTime(o.provenance.time) : undefined}
+        value={o ? `${o.platform} ${o.sensor === "SAR" ? "radar" : "optisk"}` : undefined}
+        meta={o ? describeTime(o.provenance.time) : undefined}
       />
       <Row label="Is" status={sat.status} value={fmtPct(o?.icePct)} />
       <Row label="Vatten" status={sat.status} value={fmtPct(o?.waterPct)} />
       <Row label="Okänt" status={sat.status} value={fmtPct(o?.unknownPct)} />
-      <Row
-        label="Satellittyp"
-        status={sat.status}
-        value={o ? (o.sensor === "SAR" ? "Radar (SAR)" : "Optisk") : undefined}
-      />
-      <Row label="Datakvalitet" status={sat.status} value={quality || undefined} />
+      <Row label="Kvalitet" status={sat.status} value={quality || undefined} />
     </Section>
   );
 }
@@ -246,24 +187,24 @@ export function SatelliteSection({ sat }: { sat: L<"satellite"> }) {
 /* VÄDER                                                               */
 /* ------------------------------------------------------------------ */
 
-/** Platshållare för väder när hela källan saknas. */
 function weatherPlaceholder(r: L<"weatherRecent"> | L<"weatherForecast">): string | undefined {
   if (r.status !== "unavailable") return undefined;
   if (r.code === "not_historical") return "Endast nuläge";
-  if (r.code === "no_data_yet") return "Ingen station inom 50 km";
+  if (r.code === "no_data_yet") return "Ingen station";
   return "N/A";
 }
 
-const stationMeta = (v: { station: WeatherStation; coverage: HourCoverage }) => {
-  const parts = [`SMHI ${v.station.name}, ${v.station.distanceKm} km`];
-  if (v.coverage.hours < v.coverage.expectedHours) parts.push(`${v.coverage.hours} av ${v.coverage.expectedHours} h`);
-  return parts.join(" · ");
-};
+/** "Karlstad Flygplats 18 km · 17/24 h" (täckning bara om ofullständig). */
+const stationMeta = (v: { station: WeatherStation; coverage: HourCoverage }) =>
+  join(
+    `${v.station.name} ${v.station.distanceKm} km`,
+    v.coverage.hours < v.coverage.expectedHours && `${v.coverage.hours}/${v.coverage.expectedHours} h`,
+  );
 
-const range = (a: Quantity | null | undefined, b: Quantity | null | undefined) =>
+const span = (a: Quantity | null | undefined, b: Quantity | null | undefined, unit = true): ReactNode =>
   a && b ? (
     <>
-      <span className="num">{nf1(a.value)}</span> … {fmtQ(b)}
+      <span className="num">{nf1(a.value)}</span> … {unit ? fmtQ(b) : <span className="num">{nf1(b.value)}</span>}
     </>
   ) : undefined;
 
@@ -276,35 +217,15 @@ export function WeatherSection({
 }) {
   const w = recent.status === "ok" ? recent.value : null;
   const fc = forecast.status === "ok" ? forecast.value : null;
-  const recentPh = weatherPlaceholder(recent);
-  const recentTitle = recent.status === "unavailable" ? recent.reason : undefined;
-  // En variabel kan saknas även när källan svarar (ingen station inom 50 km).
-  const missingVar = w ? "Ingen station inom 50 km" : recentPh;
+  const title = recent.status === "unavailable" ? recent.reason : undefined;
+  // En enskild variabel kan saknas även när källan svarar.
+  const missing = w ? "Ingen station" : weatherPlaceholder(recent);
+  const missingTitle = w ? "Ingen SMHI-station inom 50 km" : title;
 
   const t = w?.temperature;
   const p = w?.precipitation;
   const wind = w?.wind;
   const precipIncomplete = p && p.coverage.hours < p.coverage.expectedHours;
-
-  const fcRow = (f: WeatherForecast) => ({
-    value: (
-      <>
-        {range(f.values.temperatureMin, f.values.temperatureMax) ?? "–"}
-        {f.values.precipitation && <> · {fmtQ(f.values.precipitation)}</>}
-      </>
-    ),
-    meta: [
-      f.values.windMax &&
-        `vind max ${nf1(f.values.windMax.value)}${f.values.gustMax ? ` (byar ${nf1(f.values.gustMax.value)})` : ""} m/s`,
-      f.values.frozenPrecipitationProbabilityMax &&
-        f.values.precipitation &&
-        f.values.precipitation.value > 0 &&
-        `risk fryst nederbörd max ${f.values.frozenPrecipitationProbabilityMax.value} %`,
-      f.provenance.time.kind === "forecast" && `körning ${formatDateTime(f.provenance.time.modelRun)}`,
-    ]
-      .filter(Boolean)
-      .join(" · "),
-  });
 
   return (
     <Section
@@ -317,30 +238,29 @@ export function WeatherSection({
           ? "ok"
           : recent.status
       }
-      source={w || fc ? "SMHI Öppna data (CC BY 4.0)" : undefined}
+      source={w || fc ? "SMHI (CC BY 4.0)" : undefined}
     >
       <Row
-        label="Temperatur senaste 24 h"
+        label="Temperatur 24 h"
         status={recent.status}
-        placeholder={t ? undefined : missingVar}
-        placeholderTitle={recentTitle}
-        value={t ? range(t.values.min, t.values.max) : undefined}
-        meta={t ? `nu ${nf1(t.values.latest.value)} °C · ${stationMeta(t)}` : undefined}
+        placeholder={t ? undefined : missing}
+        placeholderTitle={missingTitle}
+        value={t ? span(t.values.min, t.values.max) : undefined}
+        meta={t ? join(`nu ${nf1(t.values.latest.value)} °C`, stationMeta(t)) : undefined}
       />
       <Row
-        label="Nederbörd senaste 24 h"
+        label="Nederbörd 24 h"
         status={recent.status}
-        placeholder={p ? undefined : missingVar}
-        placeholderTitle={recentTitle}
-        value={p ? <>{precipIncomplete && "minst "}{fmtQ(p.values.sum)}</> : undefined}
+        placeholder={p ? undefined : missing}
+        placeholderTitle={missingTitle}
+        value={p ? <>{precipIncomplete && "≥ "}{fmtQ(p.values.sum)}</> : undefined}
         meta={p ? stationMeta(p) : undefined}
-        hint="Uppmätt mängd vid stationen, oavsett om det fallit som regn eller snö. Saknas timmar är summan en underskattning."
       />
       <Row
         label="Vind"
         status={recent.status}
-        placeholder={wind ? undefined : missingVar}
-        placeholderTitle={recentTitle}
+        placeholder={wind ? undefined : missing}
+        placeholderTitle={missingTitle}
         value={
           wind ? (
             <>
@@ -351,30 +271,80 @@ export function WeatherSection({
         }
         meta={
           wind
-            ? [
-                `max medel ${nf1(wind.values.maxMean.value)}`,
+            ? join(
+                `max ${nf1(wind.values.maxMean.value)}`,
                 wind.values.gustMax && `byar ${nf1(wind.values.gustMax.value)}`,
-              ]
-                .filter(Boolean)
-                .join(" · ") + ` m/s senaste 24 h · ${stationMeta(wind)}`
+                stationMeta(wind),
+              )
             : undefined
         }
       />
-      {(fc ?? [null, null]).map((f, i) => {
-        const label = f ? `Prognos +${f.window[0]}–${f.window[1]} h` : i === 0 ? "Prognos +0–24 h" : "Prognos +24–48 h";
-        const row = f ? fcRow(f) : null;
-        return (
-          <Row
-            key={label}
-            label={label}
-            status={forecast.status}
-            placeholder={weatherPlaceholder(forecast)}
-            placeholderTitle={forecast.status === "unavailable" ? forecast.reason : undefined}
-            value={row?.value}
-            meta={row?.meta}
-          />
-        );
-      })}
+      {fc ? (
+        <ForecastTable forecasts={fc} />
+      ) : (
+        <Row
+          label="Prognos"
+          status={forecast.status}
+          placeholder={weatherPlaceholder(forecast)}
+          placeholderTitle={forecast.status === "unavailable" ? forecast.reason : undefined}
+        />
+      )}
     </Section>
+  );
+}
+
+/** Kompakt prognostabell: en kolumn per tidsfönster. */
+function ForecastTable({ forecasts }: { forecasts: WeatherForecast[] }) {
+  const anyPrecip = forecasts.some((f) => (f.values.precipitation?.value ?? 0) > 0);
+  const run = forecasts[0]?.provenance.time;
+  return (
+    <div className={styles.forecast}>
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Prognos</th>
+            {forecasts.map((f) => (
+              <th key={f.window[0]} scope="col" className="num">
+                +{f.window[0]}–{f.window[1]} h
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">°C</th>
+            {forecasts.map((f) => (
+              <td key={f.window[0]}>{span(f.values.temperatureMin, f.values.temperatureMax, false) ?? "–"}</td>
+            ))}
+          </tr>
+          <tr>
+            <th scope="row">mm</th>
+            {forecasts.map((f) => (
+              <td key={f.window[0]} className="num">
+                {f.values.precipitation ? nf1(f.values.precipitation.value) : "–"}
+              </td>
+            ))}
+          </tr>
+          <tr>
+            <th scope="row" title="Högsta medelvind (byar)">m/s</th>
+            {forecasts.map((f) => (
+              <td key={f.window[0]} className="num">
+                {f.values.windMax ? nf1(f.values.windMax.value) : "–"}
+                {f.values.gustMax && <span className={styles.dim}> ({nf1(f.values.gustMax.value)})</span>}
+              </td>
+            ))}
+          </tr>
+          {anyPrecip && (
+            <tr>
+              <th scope="row" title="Högsta sannolikhet för fryst nederbörd">Fryst %</th>
+              {forecasts.map((f) => (
+                <td key={f.window[0]}>{f.values.frozenPrecipitationProbabilityMax?.value ?? "–"}</td>
+              ))}
+            </tr>
+          )}
+        </tbody>
+      </table>
+      {run?.kind === "forecast" && <p className={styles.meta}>körning {formatShortDateTime(run.modelRun)}</p>}
+    </div>
   );
 }

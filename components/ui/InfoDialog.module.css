@@ -102,3 +102,38 @@
   font-size: 12px;
   color: var(--text-muted) !important;
 }
+
+.unit {
+  margin-left: 6px;
+  font-weight: normal;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-faint);
+}
+
+.terms {
+  margin: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.terms div {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.terms dt {
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+
+.terms dd {
+  margin: 0;
+  color: var(--text);
+}
+
+.terms a {
+  color: var(--text);
+}

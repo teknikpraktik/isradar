@@ -48,8 +48,7 @@ export const NO_VALUE_STYLE = {
   line: "#7d8995",
 } as const;
 
-export const COLD_INDICATOR_NOTE =
-  "Köldmängd är en temperaturbaserad indikator och säger inte i sig om is finns eller är säker.";
+export const COLD_INDICATOR_NOTE = "Temperaturbaserad indikator – säger inte om is finns eller är säker.";
 
 export function coldDayClassFor(gd: number): ColdDayClass {
   return COLD_DAY_CLASSES.find((c) => gd >= c.min && (c.max === null || gd < c.max)) ?? COLD_DAY_CLASSES[0];

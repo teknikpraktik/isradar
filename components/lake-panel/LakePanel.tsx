@@ -69,10 +69,9 @@ export default function LakePanel({ lake, onClose, onShowInfo, asOf }: Props) {
         <WeatherSection recent={c?.weatherRecent ?? LOADING} forecast={c?.weatherForecast ?? LOADING} />
 
         <p className={styles.disclaimer}>
-          Visar fjärranalys-, modell- och väderdata – inte om isen är bärig. Bedöm alltid isen på
-          plats.{" "}
+          Visar inte om isen är bärig. Bedöm alltid på plats.{" "}
           <button type="button" className={styles.linkBtn} onClick={onShowInfo}>
-            Om datan
+            Om ISRADAR
           </button>
         </p>
       </div>

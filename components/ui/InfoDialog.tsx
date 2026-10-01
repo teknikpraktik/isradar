@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { KIND_DESCRIPTION } from "@/lib/format";
-import { LARGE_LAKE_COLD_REASON } from "@/lib/data/cold";
-import { COLD_DAY_CLASSES, COLD_INDICATOR_NOTE } from "@/lib/map/coldScale";
+import { KIND_DESCRIPTION, formatShortDateTime } from "@/lib/format";
+import { COLD_DAY_CLASSES } from "@/lib/map/coldScale";
 import { SOURCES } from "@/lib/sources";
 import type { RegionDataManifest, RegionDefinition } from "@/types/region";
 import { KindBadge } from "@/components/lake-panel/parts";
@@ -48,11 +47,10 @@ export default function InfoDialog({ open, onClose, region, manifest, showLargeL
         </header>
 
         <p className={styles.notice}>
-          ISRADAR visar fjärranalys-, modell- och väderdata. Informationen visar inte om isen är
-          bärig. Bedöm alltid isen på plats.
+          Visar fjärranalys-, modell- och väderdata – inte om isen är bärig. Bedöm alltid isen på plats.
         </p>
 
-        <h3>Typer av data</h3>
+        <h3>Datatyper</h3>
         <dl className={styles.kinds}>
           {KINDS.map((k) => (
             <div key={k}>
@@ -64,65 +62,71 @@ export default function InfoDialog({ open, onClose, region, manifest, showLargeL
           ))}
         </dl>
 
-        <h3>Historisk köldmängd</h3>
-        <p>
-          Median köldmängd vid första historiskt rapporterade åkning, enligt Skridskonätets
-          empiriska modell. Anges i <strong>GD</strong> (graddagar), ett mått på ackumulerad kyla.
-          Värdet beskriver tidigare säsonger och är ingen säkerhetsgräns.
-        </p>
-        <p>
-          Kartans färger ({COLD_DAY_CLASSES.map((c) => c.label).join(", ")} GD) visar bara detta
-          historiska värde: ljusare = mindre, mörkare = mer ackumulerad kyla. {COLD_INDICATOR_NOTE}
-        </p>
-        <p>
-          <strong>Aktuell köldmängd</strong> är en separat variabel för innevarande säsong (från 1
-          oktober), beräknad ur SMHI:s uppmätta temperaturer. Den blandas inte ihop med den historiska.
-        </p>
-
-        {showLargeLakeNote && (
-          <>
-            <h3>Stora sjöar</h3>
-            <p>
-              Öppet vatten i vissa stora sjöar (skrafferat) klassificeras medvetet inte med
-              köldmängd. {LARGE_LAKE_COLD_REASON} Vikar och skärgårdar som finns som egna
-              vattenobjekt klassificeras som vanligt.
-            </p>
-          </>
-        )}
-
-        <h3>Källor och status</h3>
-        <ul className={styles.sources}>
-          <li>
-            Historisk köldmängd: <a href={SOURCES.skridskonatet.url}>{SOURCES.skridskonatet.name}</a>
-          </li>
-          <li>
-            Aktuell köldmängd: beräknad av ISRADAR ur{" "}
-            <a href="https://www.smhi.se/data/oppna-data">SMHI Öppna data</a> (CC BY 4.0)
-          </li>
-          <li>{SOURCES.meps.name}: ej ansluten</li>
-          <li>{SOURCES.sentinel.name}: ej ansluten</li>
-          <li>
-            Väder: uppmätt senaste 24 h (närmaste station inom 50 km per variabel) och
-            punktprognos från <a href="https://www.smhi.se/data/oppna-data">SMHI Öppna data</a> (CC BY 4.0)
-          </li>
-          <li>Länsgränser: SCB, digitala gränser (CC0)</li>
-          <li>Bakgrundskarta: © OpenStreetMap-bidragsgivare, OpenMapTiles, OpenFreeMap</li>
-        </ul>
-
-        <h3>Område</h3>
-        <p className={styles.small}>
-          {region.name}
-          {region.boundary.kind === "bbox_approximation" &&
-            " – preliminär rektangulär avgränsning under utveckling; vissa vatten utanför länet ingår."}
-          {manifest && (
-            <>
-              {" "}
-              {manifest.counts.lakes} vatten. Data genererad{" "}
-              {new Date(manifest.generatedAt).toLocaleString("sv-SE")}.
-            </>
+        <h3>
+          Köldmängd <span className={styles.unit}>GD = graddagar</span>
+        </h3>
+        <dl className={styles.terms}>
+          <div>
+            <dt>Historisk</dt>
+            <dd>Median vid första rapporterade åkning (Skridskonätet)</dd>
+          </div>
+          <div>
+            <dt>Aktuell</dt>
+            <dd>Från 1 okt · SMHI-dygnsmedel · netto, golv 0</dd>
+          </div>
+          <div>
+            <dt>Kartfärg</dt>
+            <dd>
+              Historisk GD ({COLD_DAY_CLASSES.map((c) => c.label).join(", ")}). Temperaturindikator,
+              inte isstatus.
+            </dd>
+          </div>
+          {showLargeLakeNote && (
+            <div>
+              <dt>Skrafferat</dt>
+              <dd>Öppet vatten i stor sjö – ej GD-klassat</dd>
+            </div>
           )}
+        </dl>
+
+        <h3>Källor</h3>
+        <dl className={styles.terms}>
+          <div>
+            <dt>Historisk GD</dt>
+            <dd>
+              <a href={SOURCES.skridskonatet.url}>Skridskonätet</a>
+            </dd>
+          </div>
+          <div>
+            <dt>Temp, väder</dt>
+            <dd>
+              <a href="https://www.smhi.se/data/oppna-data">SMHI</a> (CC BY 4.0) · station ≤ 50 km
+            </dd>
+          </div>
+          <div>
+            <dt>Länsgränser</dt>
+            <dd>SCB (CC0)</dd>
+          </div>
+          <div>
+            <dt>Karta</dt>
+            <dd>© OpenStreetMap, OpenMapTiles, OpenFreeMap</dd>
+          </div>
+          <div>
+            <dt>Ej anslutna</dt>
+            <dd>MEPS, Sentinel</dd>
+          </div>
+        </dl>
+
+        <p className={styles.small}>
+          {[
+            region.name + (region.boundary.kind === "bbox_approximation" ? " (preliminär avgränsning)" : ""),
+            manifest && `${manifest.counts.lakes} vatten`,
+            manifest && `data ${formatShortDateTime(manifest.generatedAt)}`,
+            "position endast lokalt",
+          ]
+            .filter(Boolean)
+            .join(" · ")}
         </p>
-        <p className={styles.small}>Din position används bara lokalt i webbläsaren och skickas inte någonstans.</p>
       </div>
     </dialog>
   );
