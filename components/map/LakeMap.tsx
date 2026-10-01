@@ -27,7 +27,8 @@ interface Props {
 }
 
 const SOURCE = "lakes";
-const CLICK_LAYERS = ["lakes-fill", "lakes-point"];
+// Ordning spelar ingen roll för träffar: queryRenderedFeatures ger översta först.
+const CLICK_LAYERS = ["lakes-fill", "lakes-point", "open-water-fill"];
 const SELECTED_COLOR = "#f2f5f7";
 
 /** Kartans synliga yta när sjöpanelen är öppen (bottom sheet resp. sidopanel). */
@@ -236,22 +237,37 @@ function addLakeLayers(map: MlMap) {
   const isPoint = ["==", ["geometry-type"], "Point"] as never;
   const none = ["==", ["get", "id"], -1] as never;
 
+  const hover = ["boolean", ["feature-state", "hover"], false];
+  const notOpenWater = ["!", isOpenWaterFilter];
+
+  // Stora sjöars öppna vatten ritas UNDER alla vanliga sjöar, så att det aldrig
+  // täcker vikar och skärgårdar (källpolygonerna kan överlappa).
   map.addLayer({
-    id: "lakes-fill",
+    id: "open-water-fill",
     type: "fill",
     source: SOURCE,
-    filter: isPolygon,
+    filter: ["all", isPolygon, isOpenWaterFilter] as never,
     paint: {
-      "fill-color": coldFillColor(),
-      "fill-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 0.97, 0.85],
+      "fill-color": OPEN_WATER_STYLE.fill,
+      "fill-opacity": ["case", hover, 0.95, 0.85] as never,
     },
   });
   map.addLayer({
-    id: "lakes-open-water-hatch",
+    id: "open-water-hatch",
     type: "fill",
     source: SOURCE,
     filter: ["all", isPolygon, isOpenWaterFilter] as never,
     paint: { "fill-pattern": "open-water-hatch", "fill-opacity": 0.7 },
+  });
+  map.addLayer({
+    id: "lakes-fill",
+    type: "fill",
+    source: SOURCE,
+    filter: ["all", isPolygon, notOpenWater] as never,
+    paint: {
+      "fill-color": coldFillColor(),
+      "fill-opacity": ["case", hover, 0.97, 0.85] as never,
+    },
   });
   map.addLayer({
     id: "lakes-line",

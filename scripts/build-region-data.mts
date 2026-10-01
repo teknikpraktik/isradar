@@ -28,6 +28,7 @@
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import polygonClipping from "polygon-clipping";
 import type { MultiPolygon, Polygon, Position } from "geojson";
 import type {
   BBox,
@@ -274,6 +275,44 @@ function loadLargeLakeOpenWater(): Map<number, LargeLakeRef> {
   return map;
 }
 
+/**
+ * Källans polygoner för stora sjöars öppna vatten (t.ex. "Norra Vänern")
+ * omsluter ofta även vikar och skärgårdar som finns som egna vattenobjekt.
+ * Vi klipper bort alla sådana överlappande vatten, så att den ej
+ * GD-klassade ytan bara omfattar det som faktiskt är öppet vatten och vikarna
+ * behåller sin vanliga klassning (samt får klicken).
+ */
+function clipOpenWater(all: { feature: LakeFeature; index: LakeIndexEntry }[]) {
+  const overlaps = (a: BBox, b: BBox) => a[0] <= b[2] && b[0] <= a[2] && a[1] <= b[3] && b[1] <= a[3];
+  for (const open of all) {
+    if (open.index.modelType !== "LARGE_LAKE_OPEN_WATER") continue;
+    const g = open.feature.geometry;
+    if (g.type === "Point") continue;
+    const others = all.filter(
+      (o) =>
+        o !== open &&
+        o.index.modelType === "STANDARD_LAKE" &&
+        o.feature.geometry.type !== "Point" &&
+        overlaps(open.index.bbox, o.index.bbox),
+    );
+    const clip = others.map((o) => (o.feature.geometry as Polygon | MultiPolygon).coordinates) as polygonClipping.Geom[];
+    const result = polygonClipping.difference(g.coordinates as polygonClipping.Geom, ...clip);
+    const before = polygonsOf(g).length;
+    if (result.length === 0) {
+      console.warn(`[data] ${open.index.name}: inget öppet vatten kvar efter klippning`);
+      continue;
+    }
+    const clipped: Polygon | MultiPolygon =
+      result.length === 1 ? { type: "Polygon", coordinates: result[0] } : { type: "MultiPolygon", coordinates: result };
+    const rounded = roundGeometry(clipped) ?? clipped;
+    open.feature.geometry = rounded;
+    open.index.bbox = bboxOf(rounded);
+    console.log(
+      `[data] ${open.index.name}: ${others.length} överlappande vatten bortklippta (${before} → ${polygonsOf(rounded).length} delytor).`,
+    );
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /* Huvudflöde                                                          */
 /* ------------------------------------------------------------------ */
@@ -395,6 +434,8 @@ function main() {
       },
     });
   }
+
+  clipOpenWater(all);
 
   console.log(`[data] ${all.length} vatten lästa, ${geomById.size} med polygon.`);
   if (kmMismatch) console.warn(`[data] VARNING: ${kmMismatch} vatten har olika km i CSV och GeoJSON (CSV används).`);

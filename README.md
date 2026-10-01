@@ -154,6 +154,8 @@ Varje vatten har en `modelType`:
 
 Konfigureras i `data/large-lakes.json` via `objektid`. Vänern finns inte som ett objekt i källdatan utan i ~20 namngivna delar, så identifieringen är **manuell**. Just nu: Norra Vänern (17739), Södra Vänern (39553), Yttre Dalbosjön (248906). Vikar och skärgårdar som egna vattenobjekt (t.ex. Kattfjorden, Värmlandsskärgården) klassificeras som vanligt.
 
+Källans polygon för t.ex. Norra Vänern omsluter även ~50 vikar och skärgårdar som finns som egna objekt. Byggskriptet klipper därför bort alla överlappande vatten ur det öppna vattnets geometri (`polygon-clipping`, används bara vid bygget), och kartan ritar öppet vatten i ett lager under vanliga sjöar. Vikarna behåller sin GD-klass och får klicken.
+
 MapLibre 6 laddar sin worker relativt `import.meta.url`, vilket inte överlever bundling; `scripts/copy-maplibre-worker.mjs` kopierar därför workern till `public/vendor/maplibre/` och `lib/map/maplibre.ts` sätter `setWorkerUrl`.
 
 ### Position
