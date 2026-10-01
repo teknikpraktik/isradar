@@ -1,0 +1,136 @@
+.app {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+/* --- toppfält ---------------------------------------------------- */
+
+.topBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: calc(env(safe-area-inset-top) + 10px) 10px 10px;
+  pointer-events: none;
+}
+
+.topBar > * {
+  pointer-events: auto;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 38px;
+  padding: 0 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  line-height: 1.05;
+}
+
+.logo {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  color: var(--text-strong);
+}
+
+.region {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.iconBtn {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font: 600 15px/1 var(--font-mono);
+  cursor: pointer;
+}
+
+.iconBtn:hover,
+.iconBtn:focus-visible {
+  background: var(--surface-hover);
+  outline: none;
+  border-color: var(--border-strong);
+}
+
+.iconBtn:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+/* --- kontroller och legend --------------------------------------- */
+
+.sideControls {
+  position: absolute;
+  right: 10px;
+  top: calc(env(safe-area-inset-top) + 58px);
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.legend {
+  position: absolute;
+  left: 10px;
+  bottom: 40px;
+  z-index: 10;
+}
+
+@media (max-width: 767px) {
+  .legend[data-hidden-mobile="true"] {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) {
+  .sideControls {
+    top: auto;
+    right: 10px;
+    bottom: 110px;
+  }
+  /* sidopanelen täcker högerkanten – flytta kontrollerna till vänster om den */
+  .app:has(aside) .sideControls {
+    right: 424px;
+  }
+}
+
+.toast {
+  position: absolute;
+  left: 50%;
+  top: calc(env(safe-area-inset-top) + 60px);
+  transform: translateX(-50%);
+  z-index: 40;
+  max-width: calc(100vw - 32px);
+  padding: 8px 14px;
+  background: var(--surface-solid);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  font-size: 13px;
+  color: var(--text);
+}
+
+@media (min-width: 768px) {
+  .app:has(aside) :global(.maplibregl-ctrl-bottom-right) {
+    right: 414px;
+  }
+}

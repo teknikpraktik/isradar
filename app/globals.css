@@ -1,0 +1,117 @@
+:root {
+  color-scheme: dark;
+
+  --bg: #0c1015;
+  --surface: rgb(18 24 31 / 0.92);
+  --surface-solid: #12181f;
+  --surface-hover: #1b232c;
+  --border: #232d38;
+  --border-strong: #34404d;
+
+  --text-strong: #eef2f5;
+  --text: #cdd5dc;
+  --text-muted: #8b97a3;
+  --text-faint: #5f6b77;
+
+  --accent: #9fd0e6;
+  --accent-rgb: 159 208 230;
+
+  /* Datakategorier – egna färger, aldrig trafikljus */
+  --kind-obs: #9fd0e6;
+  --kind-model: #b8a8e0;
+  --kind-forecast: #d6b88a;
+  --kind-hist: #8fa6b8;
+
+  --radius: 6px;
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+input {
+  font-family: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+abbr[title] {
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  cursor: help;
+}
+
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.unit {
+  font-size: 0.85em;
+  color: var(--text-muted);
+}
+
+/* --- MapLibre-kontroller i samma mörka formspråk ------------------- */
+
+.maplibregl-ctrl-group {
+  background: var(--surface) !important;
+  border: 1px solid var(--border);
+  box-shadow: none !important;
+  border-radius: var(--radius) !important;
+}
+
+.maplibregl-ctrl-group button + button {
+  border-top-color: var(--border) !important;
+}
+
+.maplibregl-ctrl-group button .maplibregl-ctrl-icon {
+  filter: invert(0.85);
+}
+
+.maplibregl-ctrl-scale {
+  background: rgb(12 16 21 / 0.7) !important;
+  border-color: var(--text-muted) !important;
+  color: var(--text-muted) !important;
+  font-family: var(--font-mono);
+  font-size: 10px !important;
+}
+
+.maplibregl-ctrl-attrib {
+  background: rgb(12 16 21 / 0.75) !important;
+  color: var(--text-faint) !important;
+  font-size: 10px;
+}
+
+.maplibregl-ctrl-attrib a {
+  color: var(--text-muted) !important;
+}
+
+.maplibregl-ctrl-attrib-button {
+  filter: invert(0.8);
+}
+
+@media (max-width: 767px) {
+  /* zoomknappar behövs inte på pekskärm – nyp för att zooma */
+  .maplibregl-ctrl-bottom-right .maplibregl-ctrl-group {
+    display: none;
+  }
+}

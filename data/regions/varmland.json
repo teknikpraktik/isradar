@@ -1,0 +1,28 @@
+{
+  "id": "varmland",
+  "name": "Värmland",
+  "boundary": {
+    "kind": "bbox_approximation",
+    "note": "UTVECKLINGSAVGRÄNSNING. Rektangel som omsluter Värmlands län (inkl. norra Vänern). Innehåller även vissa vatten i norra Dalsland, västra Örebro län, sydvästra Dalarna och längs norska gränsen. Ersätt geometry med riktig länsgräns (t.ex. Lantmäteriets/SCB:s länsindelning) – inget annat behöver ändras.",
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+        [
+          [11.6, 58.85],
+          [14.55, 58.85],
+          [14.55, 61.1],
+          [11.6, 61.1],
+          [11.6, 58.85]
+        ]
+      ]
+    }
+  },
+  "view": {
+    "center": [13.1, 59.85],
+    "zoom": 6.9,
+    "bounds": [
+      [11.6, 58.85],
+      [14.55, 61.1]
+    ]
+  }
+}
