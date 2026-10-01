@@ -101,7 +101,10 @@ export default function InfoDialog({ open, onClose, region, manifest, showLargeL
           </li>
           <li>{SOURCES.meps.name}: ej ansluten</li>
           <li>{SOURCES.sentinel.name}: ej ansluten</li>
-          <li>{SOURCES.weather.name}: ej ansluten</li>
+          <li>
+            Väder: uppmätt senaste 24 h (närmaste station inom 50 km per variabel) och
+            punktprognos från <a href="https://www.smhi.se/data/oppna-data">SMHI Öppna data</a> (CC BY 4.0)
+          </li>
           <li>Länsgränser: SCB, digitala gränser (CC0)</li>
           <li>Bakgrundskarta: © OpenStreetMap-bidragsgivare, OpenMapTiles, OpenFreeMap</li>
         </ul>

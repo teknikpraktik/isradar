@@ -103,26 +103,64 @@ export interface SatelliteObservation {
 /* Väder                                                               */
 /* ------------------------------------------------------------------ */
 
-export interface WeatherValues {
-  temperature?: Quantity<"°C">;
-  temperatureMin?: Quantity<"°C">;
-  temperatureMax?: Quantity<"°C">;
-  precipitation?: Quantity<"mm">;
-  windSpeed?: Quantity<"m/s">;
-  windGust?: Quantity<"m/s">;
-  windDirection?: Quantity<"deg">;
+/** Mätstation för en enskild vädervariabel. */
+export interface WeatherStation {
+  id: string;
+  name: string;
+  /** Avstånd från vattnets centroid. */
+  distanceKm: number;
 }
 
-/** Uppmätt väder, t.ex. senaste 24 h vid närmaste station. */
-export interface WeatherObservation {
-  lakeId: LakeId;
-  stationId?: string;
-  values: WeatherValues;
+/** Antal timmar med värde av förväntade – summor med luckor är underskattningar. */
+export interface HourCoverage {
+  hours: number;
+  expectedHours: number;
+}
+
+/**
+ * En uppmätt vädervariabel. Varje variabel bär egen station och proveniens,
+ * eftersom närmaste station med t.ex. nederbördsmätning kan vara en annan än
+ * för temperatur.
+ */
+export interface ObservedWeatherVariable<V> {
+  values: V;
+  station: WeatherStation;
+  coverage: HourCoverage;
+  /** time.period = mätperioden (senaste 24 h), time.observedAt = senaste värdet. */
   provenance: Provenance<ObservationTime>;
 }
 
+/** Uppmätt väder senaste 24 h vid närmaste SMHI-station (per variabel). */
+export interface WeatherObservation {
+  lakeId: LakeId;
+  temperature: ObservedWeatherVariable<{
+    min: Quantity<"°C">;
+    max: Quantity<"°C">;
+    latest: Quantity<"°C">;
+  }> | null;
+  precipitation: ObservedWeatherVariable<{ sum: Quantity<"mm"> }> | null;
+  wind: ObservedWeatherVariable<{
+    latest: Quantity<"m/s">;
+    latestDirection: Quantity<"deg"> | null;
+    maxMean: Quantity<"m/s">;
+    gustMax: Quantity<"m/s"> | null;
+  }> | null;
+}
+
+/** Prognos för ett tidsfönster (t.ex. 0–24 h) vid vattnets position. */
 export interface WeatherForecast {
   lakeId: LakeId;
-  values: WeatherValues;
+  /** Timmar från hämtningstillfället, t.ex. [0, 24]. */
+  window: [number, number];
+  values: {
+    temperatureMin: Quantity<"°C"> | null;
+    temperatureMax: Quantity<"°C"> | null;
+    precipitation: Quantity<"mm"> | null;
+    /** Högsta sannolikhet för fryst nederbörd i fönstret. */
+    frozenPrecipitationProbabilityMax: Quantity<"%"> | null;
+    windMax: Quantity<"m/s"> | null;
+    gustMax: Quantity<"m/s"> | null;
+  };
+  /** time.validAt = fönstrets slut, leadTimeHours = window[1]. */
   provenance: Provenance<ForecastTime>;
 }

@@ -31,8 +31,8 @@ export async function getLakeConditions(lake: Lake, asOf?: string): Promise<Lake
       getCurrentColdAmount(lake, asOf),
       getMepsRun(lake),
       getLatestSatelliteObservation(lake),
-      getRecentWeather(lake),
-      getWeatherForecast(lake),
+      getRecentWeather(lake, asOf),
+      getWeatherForecast(lake, asOf),
     ]);
   return { currentCold, meps, satellite, weatherRecent, weatherForecast };
 }

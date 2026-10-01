@@ -84,3 +84,158 @@ export const SMHI_SOURCE = {
   url: "https://www.smhi.se/data/oppna-data",
   license: "CC BY 4.0",
 } as const;
+
+/* ------------------------------------------------------------------ */
+/* Timvärden senaste dygnet (väder)                                    */
+/* ------------------------------------------------------------------ */
+
+/** SMHI-parametrar som används för väder. */
+export const SMHI_PARAM = {
+  temperature: 1, // Lufttemperatur, momentanvärde 1 gång/tim (°C)
+  precipitation: 7, // Nederbördsmängd, summa 1 timme (mm)
+  windSpeed: 4, // Vindhastighet, medelvärde 10 min, 1 gång/tim (m/s)
+  windDirection: 3, // Vindriktning, medelvärde 10 min, 1 gång/tim (grader)
+  gust: 21, // Byvind, max, 1 gång/tim (m/s)
+} as const;
+
+const REVALIDATE_STATIONS = 86400;
+const REVALIDATE_LATEST_DAY = 900;
+
+export interface SmhiStationInfo {
+  id: string;
+  name: string;
+  lat: number;
+  lon: number;
+  /** Senaste tidpunkt med data (ms). */
+  to: number;
+}
+
+async function stationsFor(param: number): Promise<SmhiStationInfo[]> {
+  const json = await getJson<{
+    station: { key: string; name: string; active: boolean; latitude: number; longitude: number; to: number }[];
+  }>(`${BASE}/parameter/${param}.json`, REVALIDATE_STATIONS);
+  return json.station
+    .filter((s) => s.active)
+    .map((s) => ({ id: s.key, name: s.name, lat: s.latitude, lon: s.longitude, to: s.to }));
+}
+
+export interface SmhiHourly {
+  t: number;
+  v: number;
+  quality: string;
+}
+
+async function latestDay(param: number, stationId: string): Promise<SmhiHourly[]> {
+  const url = `${BASE}/parameter/${param}/station/${stationId}/period/latest-day/data.json`;
+  const res = await fetch(url, { next: { revalidate: REVALIDATE_LATEST_DAY } });
+  if (res.status === 404) return [];
+  if (!res.ok) throw new SmhiError(`SMHI svarade ${res.status} för ${url}`);
+  const json = (await res.json()) as { value: { date: number; value: string; quality: string }[] | null };
+  return (json.value ?? [])
+    .map((x) => ({ t: x.date, v: Number(x.value), quality: x.quality }))
+    .filter((x) => Number.isFinite(x.v));
+}
+
+const distKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+  const r = (d: number) => (d * Math.PI) / 180;
+  const a =
+    Math.sin(r(lat2 - lat1) / 2) ** 2 +
+    Math.cos(r(lat1)) * Math.cos(r(lat2)) * Math.sin(r(lon2 - lon1) / 2) ** 2;
+  return 2 * 6371 * Math.asin(Math.sqrt(a));
+};
+
+export interface NearestSeries {
+  station: SmhiStationInfo & { distanceKm: number };
+  values: SmhiHourly[];
+}
+
+/**
+ * Timvärden senaste dygnet från närmaste aktiva station med parametern, inom
+ * maxKm. Stationer utan data hoppas över (upp till `tries` st). null om ingen
+ * station inom avståndet har data – då gissas inget.
+ */
+export async function nearestLatestDay(
+  param: number,
+  lat: number,
+  lon: number,
+  { maxKm = 50, tries = 3 } = {},
+): Promise<NearestSeries | null> {
+  const recent = Date.now() - 2 * 86_400_000;
+  const candidates = (await stationsFor(param))
+    .filter((s) => s.to >= recent)
+    .map((s) => ({ ...s, distanceKm: distKm(lat, lon, s.lat, s.lon) }))
+    .filter((s) => s.distanceKm <= maxKm)
+    .sort((a, b) => a.distanceKm - b.distanceKm)
+    .slice(0, tries);
+  for (const s of candidates) {
+    const values = await latestDay(param, s.id);
+    if (values.length) return { station: { ...s, distanceKm: Math.round(s.distanceKm) }, values };
+  }
+  return null;
+}
+
+/** Timvärden för en given station (t.ex. vindriktning vid samma station som vindhastighet). */
+export const latestDayForStation = latestDay;
+
+/* ------------------------------------------------------------------ */
+/* Punktprognos (snow1g)                                               */
+/* ------------------------------------------------------------------ */
+
+const FORECAST_BASE = "https://opendata-download-metfcst.smhi.se/api/category/snow1g/version/1";
+const REVALIDATE_FORECAST = 1800;
+
+export interface SmhiForecastStep {
+  t: number;
+  airTemperature?: number;
+  windSpeed?: number;
+  windGust?: number;
+  windFromDirection?: number;
+  /** Medelnederbörd under timmen före t (mm). */
+  precipitation?: number;
+  /** Sannolikhet för fryst nederbörd, 0–1. */
+  probabilityFrozenPrecipitation?: number;
+}
+
+export interface SmhiForecast {
+  /** Modellkörningens referenstid. */
+  referenceTime: string;
+  createdTime: string;
+  position: [number, number];
+  steps: SmhiForecastStep[];
+}
+
+export async function pointForecast(lat: number, lon: number): Promise<SmhiForecast> {
+  const f = (v: number) => v.toFixed(4);
+  const url = `${FORECAST_BASE}/geotype/point/lon/${f(lon)}/lat/${f(lat)}/data.json`;
+  const json = await getJson<{
+    createdTime: string;
+    referenceTime: string;
+    geometry: { coordinates: [number, number] };
+    timeSeries: { time: string; data: Record<string, number> }[];
+  }>(url, REVALIDATE_FORECAST);
+  // SMHI använder -9 som "saknas" i fält som aldrig kan vara negativa.
+  // Temperatur kan vara negativ och tas därför som den är.
+  const nonNeg = (v: number | undefined) => (typeof v === "number" && v >= 0 ? v : undefined);
+  const any = (v: number | undefined) => (typeof v === "number" && Number.isFinite(v) ? v : undefined);
+  return {
+    referenceTime: json.referenceTime,
+    createdTime: json.createdTime,
+    position: json.geometry.coordinates,
+    steps: json.timeSeries.map((s) => ({
+      t: Date.parse(s.time),
+      airTemperature: any(s.data.air_temperature),
+      windSpeed: nonNeg(s.data.wind_speed),
+      windGust: nonNeg(s.data.wind_speed_of_gust),
+      windFromDirection: nonNeg(s.data.wind_from_direction),
+      precipitation: nonNeg(s.data.precipitation_amount_mean),
+      probabilityFrozenPrecipitation: nonNeg(s.data.probability_of_frozen_precipitation),
+    })),
+  };
+}
+
+export const SMHI_FORECAST_SOURCE = {
+  id: "smhi-snow1g",
+  name: "SMHI Öppna data, punktprognos (snow1g)",
+  url: "https://www.smhi.se/data/oppna-data",
+  license: "CC BY 4.0",
+} as const;

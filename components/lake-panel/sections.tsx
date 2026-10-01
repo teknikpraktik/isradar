@@ -6,10 +6,19 @@ import { describeTime, distanceKm, formatAge, formatDate, formatDateTime } from 
 import { COLD_INDICATOR_NOTE, coldDayClassFor } from "@/lib/map/coldScale";
 import { SOURCES } from "@/lib/sources";
 import type { LakeConditions } from "@/lib/data/conditions";
-import type { ColdAmountObservation } from "@/types/observations";
+import { compassSv } from "@/lib/weather/compute";
+import type {
+  ColdAmountObservation,
+  HourCoverage,
+  WeatherForecast,
+  WeatherStation,
+} from "@/types/observations";
+import type { Quantity } from "@/types/provenance";
 import type { Lake } from "@/types/lake";
 import styles from "./LakePanel.module.css";
 import { Row, Section, fmtPct, fmtQ, fmtSignedQ, type Loadable } from "./parts";
+
+const nf1 = (v: number) => new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 1 }).format(v);
 
 /** Datakälla som kan vara under hämtning. */
 type L<K extends keyof LakeConditions> = LakeConditions[K] | { status: "loading" };
@@ -237,6 +246,27 @@ export function SatelliteSection({ sat }: { sat: L<"satellite"> }) {
 /* VÄDER                                                               */
 /* ------------------------------------------------------------------ */
 
+/** Platshållare för väder när hela källan saknas. */
+function weatherPlaceholder(r: L<"weatherRecent"> | L<"weatherForecast">): string | undefined {
+  if (r.status !== "unavailable") return undefined;
+  if (r.code === "not_historical") return "Endast nuläge";
+  if (r.code === "no_data_yet") return "Ingen station inom 50 km";
+  return "N/A";
+}
+
+const stationMeta = (v: { station: WeatherStation; coverage: HourCoverage }) => {
+  const parts = [`SMHI ${v.station.name}, ${v.station.distanceKm} km`];
+  if (v.coverage.hours < v.coverage.expectedHours) parts.push(`${v.coverage.hours} av ${v.coverage.expectedHours} h`);
+  return parts.join(" · ");
+};
+
+const range = (a: Quantity | null | undefined, b: Quantity | null | undefined) =>
+  a && b ? (
+    <>
+      <span className="num">{nf1(a.value)}</span> … {fmtQ(b)}
+    </>
+  ) : undefined;
+
 export function WeatherSection({
   recent,
   forecast,
@@ -245,38 +275,106 @@ export function WeatherSection({
   forecast: L<"weatherForecast">;
 }) {
   const w = recent.status === "ok" ? recent.value : null;
-  const v = w?.values;
-  const temp =
-    v?.temperatureMin && v?.temperatureMax ? (
-      <>
-        {fmtQ(v.temperatureMin)} … {fmtQ(v.temperatureMax)}
-      </>
-    ) : (
-      fmtQ(v?.temperature)
-    );
   const fc = forecast.status === "ok" ? forecast.value : null;
+  const recentPh = weatherPlaceholder(recent);
+  const recentTitle = recent.status === "unavailable" ? recent.reason : undefined;
+  // En variabel kan saknas även när källan svarar (ingen station inom 50 km).
+  const missingVar = w ? "Ingen station inom 50 km" : recentPh;
+
+  const t = w?.temperature;
+  const p = w?.precipitation;
+  const wind = w?.wind;
+  const precipIncomplete = p && p.coverage.hours < p.coverage.expectedHours;
+
+  const fcRow = (f: WeatherForecast) => ({
+    value: (
+      <>
+        {range(f.values.temperatureMin, f.values.temperatureMax) ?? "–"}
+        {f.values.precipitation && <> · {fmtQ(f.values.precipitation)}</>}
+      </>
+    ),
+    meta: [
+      f.values.windMax &&
+        `vind max ${nf1(f.values.windMax.value)}${f.values.gustMax ? ` (byar ${nf1(f.values.gustMax.value)})` : ""} m/s`,
+      f.values.frozenPrecipitationProbabilityMax &&
+        f.values.precipitation &&
+        f.values.precipitation.value > 0 &&
+        `risk fryst nederbörd max ${f.values.frozenPrecipitationProbabilityMax.value} %`,
+      f.provenance.time.kind === "forecast" && `körning ${formatDateTime(f.provenance.time.modelRun)}`,
+    ]
+      .filter(Boolean)
+      .join(" · "),
+  });
+
   return (
-    <Section title="Väder" kinds={["observation", "forecast"]} status={recent.status}>
+    <Section
+      title="Väder"
+      kinds={["observation", "forecast"]}
+      status={
+        recent.status === "ok" ||
+        forecast.status === "ok" ||
+        (recent.status === "unavailable" && recent.code === "not_historical")
+          ? "ok"
+          : recent.status
+      }
+      source={w || fc ? "SMHI Öppna data (CC BY 4.0)" : undefined}
+    >
       <Row
         label="Temperatur senaste 24 h"
         status={recent.status}
-        value={temp}
-        meta={w ? describeTime(w.provenance.time) : undefined}
+        placeholder={t ? undefined : missingVar}
+        placeholderTitle={recentTitle}
+        value={t ? range(t.values.min, t.values.max) : undefined}
+        meta={t ? `nu ${nf1(t.values.latest.value)} °C · ${stationMeta(t)}` : undefined}
       />
-      <Row label="Nederbörd senaste 24 h" status={recent.status} value={fmtQ(v?.precipitation)} />
-      <Row label="Vind" status={recent.status} value={fmtQ(v?.windSpeed)} />
       <Row
-        label="Prognos"
-        status={forecast.status}
+        label="Nederbörd senaste 24 h"
+        status={recent.status}
+        placeholder={p ? undefined : missingVar}
+        placeholderTitle={recentTitle}
+        value={p ? <>{precipIncomplete && "minst "}{fmtQ(p.values.sum)}</> : undefined}
+        meta={p ? stationMeta(p) : undefined}
+        hint="Uppmätt mängd vid stationen, oavsett om det fallit som regn eller snö. Saknas timmar är summan en underskattning."
+      />
+      <Row
+        label="Vind"
+        status={recent.status}
+        placeholder={wind ? undefined : missingVar}
+        placeholderTitle={recentTitle}
         value={
-          fc && fc.length > 0 ? (
+          wind ? (
             <>
-              {fmtQ(fc[0].values.temperature)} · {fmtQ(fc[0].values.precipitation)}
+              {fmtQ(wind.values.latest)}
+              {wind.values.latestDirection && <> {compassSv(wind.values.latestDirection.value)}</>}
             </>
           ) : undefined
         }
-        meta={fc?.[0] ? describeTime(fc[0].provenance.time) : undefined}
+        meta={
+          wind
+            ? [
+                `max medel ${nf1(wind.values.maxMean.value)}`,
+                wind.values.gustMax && `byar ${nf1(wind.values.gustMax.value)}`,
+              ]
+                .filter(Boolean)
+                .join(" · ") + ` m/s senaste 24 h · ${stationMeta(wind)}`
+            : undefined
+        }
       />
+      {(fc ?? [null, null]).map((f, i) => {
+        const label = f ? `Prognos +${f.window[0]}–${f.window[1]} h` : i === 0 ? "Prognos +0–24 h" : "Prognos +24–48 h";
+        const row = f ? fcRow(f) : null;
+        return (
+          <Row
+            key={label}
+            label={label}
+            status={forecast.status}
+            placeholder={weatherPlaceholder(forecast)}
+            placeholderTitle={forecast.status === "unavailable" ? forecast.reason : undefined}
+            value={row?.value}
+            meta={row?.meta}
+          />
+        );
+      })}
     </Section>
   );
 }

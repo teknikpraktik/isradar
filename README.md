@@ -9,8 +9,8 @@ ISRADAR kombinerar historisk köldmängd, aktuell köldmängd, MEPS sjöismodell
 ## Status (V1)
 
 - Utvecklas och testas för **Värmland** (avgränsning för utveckling – arkitekturen är nationell).
-- Ansluten data: **historisk köldmängd** (Skridskonätet), koppling till temperaturstation och **aktuell köldmängd** (beräknad ur SMHI:s dygnsmedeltemperaturer).
-- Ej anslutet ännu: MEPS, Sentinel, väder. Finns i UI och datamodell som "Ej ansluten".
+- Ansluten data: **historisk köldmängd** (Skridskonätet), koppling till temperaturstation och **aktuell köldmängd** (beräknad ur SMHI:s dygnsmedeltemperaturer) samt **väder** (SMHI, uppmätt senaste 24 h och prognos).
+- Ej anslutet ännu: MEPS, Sentinel. Finns i UI och datamodell som "Ej ansluten".
 
 ## Kom igång
 
@@ -97,6 +97,16 @@ Beräknas av ISRADAR per temperaturstation och visas för alla vatten som använ
 - **Obs:** metoden är ISRADAR:s egen och kan avvika från hur Skridskonätet räknat fram den historiska köldmängden (deras metod är inte dokumenterad för oss).
 - **API:** `GET /api/cold/station/[measurepoint]?asOf=YYYY-MM-DD` returnerar ackumulerat värde, förändringar, saknade dygn, SMHI-kvalitetskoder och hela säsongsserien (grund för kommande ICE SCOUT).
 - **Tidigare datum:** `/?asOf=2026-02-15` visar köldmängden ett tidigare datum. Datumet markeras tydligt i toppfältet; × återgår till nuläget.
+
+### Väder (SMHI)
+
+`GET /api/weather?lat=..&lon=..` (`app/api/weather/route.ts`, sammanfattning i `lib/weather/compute.ts`, testad).
+
+- **Uppmätt senaste 24 h (OBSERVATION):** SMHI metobs `latest-day` (timvärden, cache 15 min). Temperatur (param 1: min/max/senaste), nederbörd (param 7: summa), vind (param 4 + riktning 3 + byar 21). **Närmaste aktiva station väljs per variabel** inom 50 km – nederbörd mäts på färre stationer än temperatur. Vindriktning och byar tas från samma station som vindhastigheten.
+- **Täckning redovisas:** saknade timmar visas ("18 av 24 h") och en ofullständig nederbördssumma visas som "minst …". Inga värden interpoleras.
+- **Avståndsgräns 50 km:** i Värmland har 259/261 vatten temperatur, 256 vind och 241 nederbörd inom gränsen. Övriga visar "Ingen station inom 50 km".
+- **Prognos (FORECAST):** SMHI punktprognos `snow1g` (ersätter `pmp3g`) vid vattnets centroid, sammanfattad för +0–24 h och +24–48 h: temperatur, nederbörd, vind/byar och högsta sannolikhet för fryst nederbörd. Modellkörningstid (`referenceTime`) visas.
+- **Endast nuläge:** med `?asOf=` visas "Endast nuläge" – inget väder hämtas.
 
 ### Kända egenheter i källdatan
 

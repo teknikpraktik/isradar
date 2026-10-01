@@ -131,8 +131,9 @@ export type DataResult<T> =
       status: "unavailable";
       source: DataSource;
       reason: string;
-      /** no_data_yet = källan svarar men har inga värden ännu (t.ex. säsongsstart). */
-      code?: "no_data_yet" | "error";
+      /** no_data_yet = källan svarar men har inga värden ännu (t.ex. säsongsstart).
+       *  not_historical = källan har bara aktuella värden och kan inte visa ett tidigare datum. */
+      code?: "no_data_yet" | "error" | "not_historical";
     }
   /**
    * Medvetet modellval: datakällan används inte för detta vatten (t.ex. GD för
