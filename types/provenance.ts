@@ -92,6 +92,8 @@ export interface DataQuality {
   cloudCoverPct?: number;
   /** Andel av ytan som inte kunnat klassas, procent. */
   unknownPct?: number;
+  /** Gitterrutor: hur många som gav värde av hur många som efterfrågades. */
+  cells?: { valid: number; total: number };
   /** Fri text från källan eller pipeline. */
   notes?: string[];
 }

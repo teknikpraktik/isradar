@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { KIND_DESCRIPTION, KIND_LABEL } from "@/lib/format";
 import type { DataKind, DataResult, Quantity } from "@/types/provenance";
 import styles from "./LakePanel.module.css";
@@ -26,23 +26,64 @@ export function KindBadge({ kind }: { kind: DataKind }) {
   );
 }
 
+/**
+ * Appens informationsmönster: litet "?" som fäller ut en förklaring i flödet
+ * (kapas aldrig av panelens kanter). Klick/tap/Enter växlar; tap utanför och
+ * Escape stänger.
+ */
+function useHint(): [boolean, () => void, RefObject<HTMLDivElement | null>] {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+  return [open, () => setOpen((v) => !v), ref];
+}
+
+export function HintButton({ open, onToggle, label }: { open: boolean; onToggle: () => void; label: string }) {
+  return (
+    <button type="button" className={styles.hintBtn} onClick={onToggle} aria-expanded={open} aria-label={label}>
+      ?
+    </button>
+  );
+}
+
 export function Section({
   title,
   kinds,
   status,
   source,
+  hint,
+  hintLabel,
   children,
 }: {
   title: string;
   kinds: DataKind[];
   status: SectionStatus;
   source?: string;
+  /** Förklaring/metadata bakom "?" vid rubriken. */
+  hint?: ReactNode;
+  hintLabel?: string;
   children: ReactNode;
 }) {
+  const [open, toggle, ref] = useHint();
   return (
-    <section className={styles.section}>
+    <section className={styles.section} ref={ref as RefObject<HTMLElement | null>}>
       <header className={styles.sectionHead}>
-        <h3>{title}</h3>
+        <h3 className={styles.sectionTitle}>
+          {title}
+          {hint && <HintButton open={open} onToggle={toggle} label={hintLabel ?? `Information om ${title}`} />}
+        </h3>
         <div className={styles.sectionTags}>
           {kinds.map((k) => (
             <KindBadge key={k} kind={k} />
@@ -51,6 +92,7 @@ export function Section({
           {status === "unavailable" && <span className={styles.status}>Saknas</span>}
         </div>
       </header>
+      {hint && open && <div className={styles.hint}>{hint}</div>}
       {/* Ej anslutna källor: bara rubrik + tagg, inga tomma rader. */}
       {status !== "not_connected" && <div className={styles.rows}>{children}</div>}
       {source && <p className={styles.source}>{source}</p>}
@@ -81,22 +123,14 @@ export function Row({
   placeholderTitle?: string;
   hint?: ReactNode;
 }) {
-  const [showHint, setShowHint] = useState(false);
+  const [showHint, toggleHint, ref] = useHint();
   const empty = value === undefined || value === null;
   return (
-    <div className={styles.row}>
+    <div className={styles.row} ref={ref}>
       <span className={styles.label}>
         {label}
         {hint && (
-          <button
-            type="button"
-            className={styles.hintBtn}
-            onClick={() => setShowHint((v) => !v)}
-            aria-expanded={showHint}
-            aria-label="Förklaring"
-          >
-            ?
-          </button>
+          <HintButton open={showHint} onToggle={toggleHint} label={`Förklaring: ${typeof label === "string" ? label : ""}`} />
         )}
       </span>
       <span className={empty ? styles.placeholder : styles.value} title={empty ? placeholderTitle : undefined}>

@@ -48,7 +48,7 @@ function toObservation(lake: Lake, r: MepsApiResponse, s: MepsStep): MepsObserva
       retrievedAt: r.retrievedAt,
       quality: {
         resolutionM: r.resolutionM,
-        notes: [`${r.validCells} av ${r.totalCells} rutor med sjöyta`],
+        cells: { valid: r.validCells, total: r.totalCells },
       },
     },
   };

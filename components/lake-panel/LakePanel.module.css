@@ -423,3 +423,40 @@
   line-height: 1.4;
   color: var(--text-faint);
 }
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hint p {
+  margin: 0 0 6px;
+}
+
+.hint p:last-child {
+  margin-bottom: 0;
+}
+
+.hintTitle {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.hintMeta {
+  margin: 0 0 6px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1px 10px;
+  font-size: 11.5px;
+}
+
+.hintMeta dt {
+  color: var(--text-faint);
+}
+
+.hintMeta dd {
+  margin: 0;
+  color: var(--text);
+  font-family: var(--font-mono);
+}

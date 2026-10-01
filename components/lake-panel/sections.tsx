@@ -153,6 +153,7 @@ export function ModelSection({ meps }: { meps: L<"meps"> }) {
   const steps = run ? [run.analysis, ...run.forecasts].filter((s): s is NonNullable<typeof s> => !!s) : [];
   const lead = (s: (typeof steps)[number]) => (s.provenance.time.kind === "forecast" ? s.provenance.time.leadTimeHours : 0);
   const q = steps[0]?.provenance.quality;
+  const cellCount = q?.cells ? `${q.cells.valid} av ${q.cells.total} med sjöyta` : null;
   const placeholder =
     meps.status === "unavailable"
       ? meps.code === "not_historical"
@@ -163,7 +164,32 @@ export function ModelSection({ meps }: { meps: L<"meps"> }) {
       : undefined;
 
   return (
-    <Section title="Modell · MEPS" kinds={["model", "forecast"]} status={meps.status === "unavailable" ? "ok" : meps.status}>
+    <Section
+      title="Modell · MEPS"
+      kinds={["model", "forecast"]}
+      status={meps.status === "unavailable" ? "ok" : meps.status}
+      hintLabel="Information om MEPS-modellen"
+      hint={
+        <>
+          <p className={styles.hintTitle}>MEPS modellprognos</p>
+          <p>
+            Beräknade förhållanden i modellrutor med cirka 2,5 km upplösning. Inte en lokal mätning av sjön.
+          </p>
+          <p>Modellen använder den sjöyta som finns representerad i MEPS-rutan.</p>
+          {run && (
+            <dl className={styles.hintMeta}>
+              <dt>Körning</dt>
+              <dd>{formatShortDateTime(run.modelRun)}</dd>
+              <dt>Upplösning</dt>
+              <dd>~{fmtNum((q?.resolutionM ?? 2500) / 1000, " km")}</dd>
+              <dt>Sjörutor</dt>
+              <dd>{cellCount ?? "–"}</dd>
+            </dl>
+          )}
+          <p>MET Norway · CC BY 4.0</p>
+        </>
+      }
+    >
       {run ? (
         <>
           <div className={styles.forecast}>
@@ -200,15 +226,6 @@ export function ModelSection({ meps }: { meps: L<"meps"> }) {
               </tbody>
             </table>
           </div>
-          <p className={styles.weatherSource}>
-            {join(
-              `MEPS · körning ${formatShortDateTime(run.modelRun)}`,
-              q?.resolutionM ? `${fmtNum(q.resolutionM / 1000, " km")}-rutor` : null,
-              q?.notes?.[0],
-            )}
-            <br />
-            Modellens sjöyta i rutan – inte uppmätt. MET Norway, CC BY 4.0
-          </p>
         </>
       ) : (
         <Row
