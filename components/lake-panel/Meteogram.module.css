@@ -1,0 +1,141 @@
+/* Horisontell scroll endast inom diagrammet om panelen är smalare än 320 px */
+.wrap {
+  position: relative;
+  overflow-x: auto;
+  overflow-y: visible;
+  margin-top: 4px;
+  outline: none;
+  touch-action: pan-y;
+}
+
+.wrap:focus-visible {
+  box-shadow: 0 0 0 1px var(--accent);
+  border-radius: 4px;
+}
+
+.svg {
+  display: block;
+  max-width: none;
+  font-family: var(--font-mono);
+}
+
+.grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+/* 0 °C – tydlig men inte dominerande */
+.zero {
+  stroke: #9fb2c2;
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+}
+
+.midnight {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+  stroke-dasharray: 1 3;
+}
+
+.axis {
+  fill: var(--text-faint);
+  font-size: 9.5px;
+  text-anchor: end;
+}
+
+.zeroLabel {
+  fill: var(--text);
+}
+
+.day {
+  fill: var(--text-muted);
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+}
+
+.time {
+  fill: var(--text-faint);
+  font-size: 9.5px;
+  text-anchor: middle;
+}
+
+/* Huvudkurvan */
+.temp {
+  fill: none;
+  stroke: var(--text-strong);
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.tempDot {
+  fill: var(--text-strong);
+}
+
+.arrow {
+  fill: var(--text-muted);
+}
+
+.wind {
+  fill: var(--text);
+  font-size: 10px;
+  text-anchor: middle;
+}
+
+.cursor {
+  stroke: var(--accent);
+  stroke-width: 1;
+  opacity: 0.7;
+}
+
+.cursorDot {
+  fill: var(--accent);
+  stroke: var(--bg);
+  stroke-width: 1.5;
+}
+
+.tip {
+  position: absolute;
+  top: 18px;
+  width: 140px;
+  padding: 6px 8px;
+  background: var(--surface-solid);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.45);
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--text);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.tipTime {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.tipTemp {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--text-strong);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 4px;
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.legendNote {
+  color: var(--text-faint);
+}

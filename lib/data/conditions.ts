@@ -21,7 +21,7 @@ export interface LakeConditions {
   meps: DataResult<MepsRun>;
   satellite: DataResult<SatelliteScenes>;
   weatherRecent: DataResult<WeatherObservation>;
-  weatherForecast: DataResult<WeatherForecast[]>;
+  weatherForecast: DataResult<WeatherForecast>;
 }
 
 /** asOf (YYYY-MM-DD) visar läget ett tidigare datum; utelämnas för nuläget. */

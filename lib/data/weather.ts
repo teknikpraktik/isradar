@@ -121,43 +121,33 @@ export async function getRecentWeather(
 export async function getWeatherForecast(
   lake: Lake,
   asOf?: string,
-): Promise<DataResult<WeatherForecast[]>> {
+): Promise<DataResult<WeatherForecast>> {
   if (asOf) return notHistorical();
   try {
     const r = await fetchWeather(lake);
-    if (!r.forecast) {
+    const fc = r.forecast;
+    if (!fc || fc.hours.length === 0) {
       return { status: "unavailable", source: SOURCES.weather, reason: "Prognosen kunde inte hämtas", code: "error" };
     }
-    const fc = r.forecast;
     return {
       status: "ok",
-      value: fc.windows.map((w) => ({
+      value: {
         lakeId: lake.id,
-        window: [w.fromH, w.toH],
-        values: {
-          temperatureMin: qn(w.temperatureMin, "°C"),
-          temperatureMax: qn(w.temperatureMax, "°C"),
-          precipitation: qn(w.precipitation, "mm"),
-          frozenPrecipitationProbabilityMax: qn(w.frozenPrecipitationProbabilityMax, "%"),
-          windMax: qn(w.windMax, "m/s"),
-          gustMax: qn(w.gustMax, "m/s"),
-          subzeroHours: qn(w.subzeroHours, "h"),
-          precipitationType: w.precipitationType,
-          forecastSnowfall: w.snowfallCm
-            ? { minCm: w.snowfallCm[0], maxCm: w.snowfallCm[1], estimated: w.estimatedSnowfall }
-            : null,
-        },
+        hours: fc.hours,
+        forecastSnowfall: fc.snowfall48hCm
+          ? { minCm: fc.snowfall48hCm[0], maxCm: fc.snowfall48hCm[1], estimated: fc.estimatedSnowfall }
+          : null,
         provenance: {
           source: r.sources.forecast,
           time: {
             kind: "forecast",
             modelRun: fc.referenceTime,
-            validAt: w.to,
-            leadTimeHours: w.toH,
+            validAt: fc.hours[fc.hours.length - 1].time,
+            leadTimeHours: 48,
           },
           retrievedAt: r.retrievedAt,
         },
-      })),
+      },
     };
   } catch (err) {
     return failed(err);

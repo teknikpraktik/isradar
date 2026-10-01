@@ -12,12 +12,11 @@ import {
 } from "@/lib/server/smhi";
 import {
   WEATHER_STATION_MAX_KM,
-  type ForecastWindow,
+  type ForecastHour,
   type ObservedVariable,
   type WeatherApiResponse,
 } from "@/lib/weather/api";
 import {
-  hoursBelow,
   maxInWindow,
   summarizePrecipitation,
   summarizeTemperature,
@@ -25,7 +24,7 @@ import {
   type HourlyValue,
   type Window,
 } from "@/lib/weather/compute";
-import { summarizePrecipitationTyped } from "@/lib/weather/precipitation";
+import { hourType, summarizePrecipitationTyped } from "@/lib/weather/precipitation";
 import { chooseBest, type ObservationParameter, type ScoredSeries, type StationSeries } from "@/lib/weather/stations";
 import { VVIS_SOURCE, nearbyVvis, vvisSeries, vvisStations } from "@/lib/server/vvis";
 
@@ -128,48 +127,35 @@ export async function GET(request: NextRequest) {
 
   let forecast: WeatherApiResponse["forecast"] = null;
   if (fc) {
-    const series = (k: "airTemperature" | "precipitation" | "windSpeed" | "windGust" | "probabilityFrozenPrecipitation") =>
-      fc.steps.flatMap((s) => (s[k] === undefined ? [] : [{ t: s.t, v: s[k] as number }]));
-    const temps = series("airTemperature");
-    const windows: ForecastWindow[] = [
-      [0, 24],
-      [24, 48],
-    ].map(([a, b]) => {
-      const w = { from: now + a * HOUR, to: now + b * HOUR };
-      const t = summarizeTemperature(temps, w);
-      const p = summarizePrecipitation(series("precipitation"), w);
-      const frozen = maxInWindow(series("probabilityFrozenPrecipitation"), w);
-      // Typ och nysnö avgörs per timme (modellens ptype → fryst andel → temperatur).
-      const typed = summarizePrecipitationTyped(
-        fc.steps
-          .filter((s) => s.t > w.from && s.t <= w.to && s.precipitation !== undefined)
-          .map((s) => ({
-            t: s.t,
-            mm: s.precipitation as number,
-            ptype: s.precipitationType,
-            frozenPct: s.frozenPartPct,
-            tempC: s.airTemperature,
-          })),
-      );
+    // En gemensam tidslinje: alla variabler per prognostimme (t = timmens slut).
+    const steps = fc.steps.filter((s) => s.t > now && s.t <= now + 48 * HOUR);
+    const hours: ForecastHour[] = steps.map((s) => {
+      const mm = s.precipitation ?? null;
       return {
-        fromH: a,
-        toH: b,
-        from: iso(w.from),
-        to: iso(w.to),
-        temperatureMin: t?.min ?? null,
-        temperatureMax: t?.max ?? null,
-        precipitation: p?.sum ?? null,
-        precipitationType: p ? typed.type : null,
-        snowfallCm: p ? typed.snowfallCm : null,
-        estimatedSnowfall: typed.estimatedSnowfall,
-        frozenPrecipitationProbabilityMax: frozen ? Math.round(frozen.max * 100) : null,
-        windMax: maxInWindow(series("windSpeed"), w)?.max ?? null,
-        gustMax: maxInWindow(series("windGust"), w)?.max ?? null,
-        subzeroHours: hoursBelow(temps, w)?.hours ?? null,
-        coverage: t?.coverage ?? { hours: 0, expectedHours: b - a },
+        time: iso(s.t),
+        temperature: s.airTemperature ?? null,
+        precipitationMm: mm,
+        precipitationType:
+          mm !== null && mm > 0
+            ? hourType({ t: s.t, mm, ptype: s.precipitationType, frozenPct: s.frozenPartPct, tempC: s.airTemperature })
+            : null,
+        windSpeed: s.windSpeed ?? null,
+        windFromDirection: s.windFromDirection ?? null,
+        gust: s.windGust ?? null,
       };
     });
-    forecast = { referenceTime: fc.referenceTime, createdTime: fc.createdTime, windows };
+    const typed = summarizePrecipitationTyped(
+      steps
+        .filter((s) => s.precipitation !== undefined)
+        .map((s) => ({ t: s.t, mm: s.precipitation as number, ptype: s.precipitationType, frozenPct: s.frozenPartPct, tempC: s.airTemperature })),
+    );
+    forecast = {
+      referenceTime: fc.referenceTime,
+      createdTime: fc.createdTime,
+      hours,
+      snowfall48hCm: typed.snowfallCm,
+      estimatedSnowfall: typed.estimatedSnowfall,
+    };
   }
 
   const body: WeatherApiResponse = {

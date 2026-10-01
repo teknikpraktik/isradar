@@ -3,7 +3,6 @@
  * Delas av API-routen (server) och lib/data/weather.ts (klient).
  */
 import type {
-  Coverage,
   PrecipitationSummary,
   TemperatureSummary,
   WindSummary,
@@ -26,29 +25,19 @@ export interface ObservedVariable<T> {
   summary: T;
 }
 
-export interface ForecastWindow {
-  /** Timmar från "nu" (from exklusiv, to inklusiv). */
-  fromH: number;
-  toH: number;
-  from: IsoDateTime;
-  to: IsoDateTime;
-  temperatureMin: number | null;
-  temperatureMax: number | null;
-  /** Summa medelnederbörd, mm VATTENEKVIVALENT (kg/m²). */
-  precipitation: number | null;
-  /** Dominerande nederbördstyp, null när ingen nederbörd. */
+/** En prognostimme. Alla variabler delar samma tidsstämpel. */
+export interface ForecastHour {
+  /** Timmens slut (UTC). Nederbörd avser timmen före. */
+  time: IsoDateTime;
+  temperature: number | null;
+  /** mm VATTENEKVIVALENT under timmen. */
+  precipitationMm: number | null;
+  /** null när ingen nederbörd faller. */
   precipitationType: PrecipitationType | null;
-  /** Beräknad nysnö (cm, min–max). null = ingen snöuppskattning. */
-  snowfallCm: [number, number] | null;
-  /** true = egen uppskattning (snow1g saknar direkt snöparameter). */
-  estimatedSnowfall: boolean;
-  /** Högsta sannolikhet för fryst nederbörd (0–100 %). */
-  frozenPrecipitationProbabilityMax: number | null;
-  windMax: number | null;
-  gustMax: number | null;
-  /** Antal prognostimmar med lufttemperatur < 0 °C. */
-  subzeroHours: number | null;
-  coverage: Coverage;
+  windSpeed: number | null;
+  /** Meteorologisk riktning: varifrån vinden blåser (grader). */
+  windFromDirection: number | null;
+  gust: number | null;
 }
 
 export interface WeatherApiResponse {
@@ -61,7 +50,11 @@ export interface WeatherApiResponse {
   forecast: {
     referenceTime: IsoDateTime;
     createdTime: IsoDateTime;
-    windows: ForecastWindow[];
+    /** Närmaste 48 timmarna, en post per timme. */
+    hours: ForecastHour[];
+    /** Beräknad nysnö över 48 h (cm, min–max), null om ingen. */
+    snowfall48hCm: [number, number] | null;
+    estimatedSnowfall: boolean;
   } | null;
   sources: { observed: DataSource; observedSecondary: DataSource; forecast: DataSource };
   /** Delar som inte kunde hämtas (övriga delar kan ändå vara giltiga). */

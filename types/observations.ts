@@ -9,6 +9,7 @@
  *   WeatherObservation    – observation;  WeatherForecast – forecast
  */
 import type { SatelliteScene } from "@/lib/satellite/api";
+import type { ForecastHour } from "@/lib/weather/api";
 import type { LakeId } from "./lake";
 import type {
   DataQuality,
@@ -165,29 +166,15 @@ export interface WeatherObservation {
   }> | null;
 }
 
-/** Prognos för ett tidsfönster (t.ex. 0–24 h) vid vattnets position. */
+/** 48 h prognos vid vattnets position: en tidslinje per timme. */
 export interface WeatherForecast {
   lakeId: LakeId;
-  /** Timmar från hämtningstillfället, t.ex. [0, 24]. */
-  window: [number, number];
-  values: {
-    temperatureMin: Quantity<"°C"> | null;
-    temperatureMax: Quantity<"°C"> | null;
-    precipitation: Quantity<"mm"> | null;
-    /** Högsta sannolikhet för fryst nederbörd i fönstret. */
-    frozenPrecipitationProbabilityMax: Quantity<"%"> | null;
-    windMax: Quantity<"m/s"> | null;
-    gustMax: Quantity<"m/s"> | null;
-    /** Prognostimmar med lufttemperatur under 0 °C. */
-    subzeroHours: Quantity<"h"> | null;
-    /** Dominerande typ för precipitation (mm vattenekvivalent). */
-    precipitationType: "rain" | "snow" | "mixed" | "unknown" | null;
-    /**
-     * PROGNOSTISERAD NYSNÖ (cm nyfallen snö) – inte detsamma som nederbörd
-     * (mm vattenekvivalent) eller MEPS "snö på is" (befintligt snötäcke).
-     */
-    forecastSnowfall: { minCm: number; maxCm: number; estimated: boolean } | null;
-  };
-  /** time.validAt = fönstrets slut, leadTimeHours = window[1]. */
+  hours: ForecastHour[];
+  /**
+   * BERÄKNAD NYSNÖ (cm nyfallen snö) över perioden – inte detsamma som
+   * nederbörd (mm vattenekvivalent) eller MEPS "snö på is".
+   */
+  forecastSnowfall: { minCm: number; maxCm: number; estimated: boolean } | null;
+  /** time.validAt = sista timmen, leadTimeHours = 48. */
   provenance: Provenance<ForecastTime>;
 }

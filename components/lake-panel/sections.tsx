@@ -5,13 +5,13 @@ import { distanceKm, formatDate, formatDateShort, formatShortDateTime } from "@/
 import { COLLECTION_AREA_NOTE, getColdDayStyle } from "@/lib/map/coldScale";
 import type { SatelliteScene } from "@/lib/satellite/api";
 import { compassSv } from "@/lib/weather/compute";
-import { PRECIP_TYPE_LABEL, formatSnowfall } from "@/lib/weather/precipitation";
+import { formatSnowfall } from "@/lib/weather/precipitation";
+import Meteogram from "./Meteogram";
 
 const PRECIP_HINT =
   "Anges som vattenekvivalent: 1 mm = 1 liter vatten per m². Vid snöfall kan nysnön bli flera gånger djupare. SMHI:s prognos saknar egen snöparameter – beräknad nysnö är en grov temperaturbaserad uppskattning. Skiljs från MEPS snö på is (befintligt snötäcke).";
 import type {
   ColdAmountObservation,
-  WeatherForecast,
   WeatherStation,
 } from "@/types/observations";
 import type { Lake } from "@/types/lake";
@@ -439,7 +439,7 @@ export function WeatherSection({
   const t = w?.temperature;
   const p = w?.precipitation;
   const wind = w?.wind;
-  const run = fc?.[0]?.provenance.time;
+  const run = fc?.provenance.time;
   const notHistorical = recent.status === "unavailable" && recent.code === "not_historical";
 
   return (
@@ -493,14 +493,18 @@ export function WeatherSection({
       />
 
       <h4 className={styles.subhead}>
-        Prognos <KindBadge kind="forecast" />
+        Prognos · 48 h <KindBadge kind="forecast" />
       </h4>
       {fc ? (
-        <div className={styles.forecastGrid}>
-          {fc.map((f) => (
-            <ForecastBlock key={f.window[0]} f={f} />
-          ))}
-        </div>
+        <>
+          <Meteogram hours={fc.hours} />
+          {fc.forecastSnowfall && (
+            <p className={styles.snowNote}>
+              {fc.forecastSnowfall.estimated ? "Beräknad nysnö 48 h" : "Nysnö 48 h"}{" "}
+              {formatSnowfall([fc.forecastSnowfall.minCm, fc.forecastSnowfall.maxCm])}
+            </p>
+          )}
+        </>
       ) : (
         <Row
           label="Prognos"
@@ -520,38 +524,5 @@ export function WeatherSection({
         </p>
       )}
     </Section>
-  );
-}
-
-/** Ett prognosfönster: temperatur, nederbörd, vind, byvind. */
-function ForecastBlock({ f }: { f: WeatherForecast }) {
-  const v = f.values;
-  const temp = formatTemperatureRange(v.temperatureMin?.value ?? null, v.temperatureMax?.value ?? null, 0);
-  const cold = (v.temperatureMin?.value ?? 1) < 0;
-  const precip = formatPrecipitation(v.precipitation?.value ?? null);
-  const wind = formatWind(v.windMax?.value ?? null);
-  const gust = formatWind(v.gustMax?.value ?? null);
-  return (
-    <div className={styles.fcBlock}>
-      <div className={styles.fcWindow}>
-        {f.window[0]}–{f.window[1]} h
-      </div>
-      <div className={cold ? `${styles.fcTemp} ${styles.cold}` : styles.fcTemp}>{temp ?? "Ingen data"}</div>
-      <div className={styles.fcLine}>
-        {precip === null
-          ? "Nederbörd saknas"
-          : v.precipitationType && (v.precipitation?.value ?? 0) > 0
-            ? `${precip} · ${PRECIP_TYPE_LABEL[v.precipitationType]}`
-            : precip}
-      </div>
-      {v.forecastSnowfall && (
-        <div className={styles.fcLine}>
-          {v.forecastSnowfall.estimated ? "Beräknad nysnö " : "Nysnö "}
-          {formatSnowfall([v.forecastSnowfall.minCm, v.forecastSnowfall.maxCm])}
-        </div>
-      )}
-      <div className={styles.fcLine}>{wind ? `Vind ${wind}` : "Vind saknas"}</div>
-      <div className={styles.fcLine}>{gust ? `Byvind ${gust}` : "Byvind saknas"}</div>
-    </div>
   );
 }
