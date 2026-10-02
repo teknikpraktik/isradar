@@ -7,7 +7,7 @@ import type { SatelliteScene } from "@/lib/satellite/api";
 import { useMemo } from "react";
 import { formatSnowfall } from "@/lib/weather/precipitation";
 import Meteogram from "./Meteogram";
-import { observationHours } from "@/lib/weather/meteogram";
+import { observationHours, sharedScales } from "@/lib/weather/meteogram";
 
 const PRECIP_HINT =
   "Anges som vattenekvivalent: 1 mm = 1 liter vatten per m². Vid snöfall kan nysnön bli flera gånger djupare. SMHI:s prognos saknar egen snöparameter – beräknad nysnö är en grov temperaturbaserad uppskattning. Skiljs från MEPS snö på is (befintligt snötäcke). Regn eller snö i diagrammen avgörs av en enkel tumregel: ≤ 0 °C räknas som snö, annars regn.";
@@ -386,12 +386,19 @@ export function WeatherSection({
   const title = recent.status === "unavailable" ? recent.reason : undefined;
   const t = w?.temperature;
   const p = w?.precipitation;
+  const wind = w?.wind;
   const run = fc?.provenance.time;
   const notHistorical = recent.status === "unavailable" && recent.code === "not_historical";
-  // Historik: samma uppbyggnad som prognosen men utan vind.
+  // Historik: samma uppbyggnad och formatering som prognosen (inklusive vind).
   const observed = useMemo(
-    () => (w && (t || p) ? observationHours(t?.series, p?.series, periodOf((t ?? p)!).to) : null),
-    [w, t, p],
+    () => (w && (t || p || wind) ? observationHours(t?.series, p?.series, periodOf((t ?? p ?? wind)!).to, 24, wind ? { speed: wind.series, direction: wind.directionSeries, gust: wind.gustSeries } : undefined) : null),
+    [w, t, p, wind],
+  );
+
+  // Samma skalsteg på y-axlarna i båda diagrammen – möjliggör direkt jämförelse.
+  const scales = useMemo(
+    () => (observed || fc ? sharedScales([...(observed ? [observed] : []), ...(fc ? [fc.hours] : [])]) : undefined),
+    [observed, fc],
   );
 
   return (
@@ -407,7 +414,7 @@ export function WeatherSection({
       </h4>
       {observed ? (
         <>
-          <Meteogram hours={observed} variant="observation" label="Observationer senaste 24 timmarna" />
+          <Meteogram hours={observed} variant="observation" label="Observationer senaste 24 timmarna" scales={scales} />
           {t && (
             <p className={styles.snowNote}>
               Nu {formatTemperature(t.values.latest.value)} · {formatTemperatureRange(t.values.min.value, t.values.max.value)}
@@ -429,7 +436,7 @@ export function WeatherSection({
       </h4>
       {fc ? (
         <>
-          <Meteogram hours={fc.hours} variant="forecast" label="Prognos 48 timmar" />
+          <Meteogram hours={fc.hours} variant="forecast" label="Prognos 48 timmar" scales={scales} />
           {fc.forecastSnowfall && (
             <p className={styles.snowNote}>
               {fc.forecastSnowfall.estimated ? "Beräknad nysnö 48 h" : "Nysnö 48 h"}{" "}

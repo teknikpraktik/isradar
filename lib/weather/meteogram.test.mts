@@ -9,6 +9,7 @@ import {
   timeTicks,
   windArrowRotation,
   observationHours,
+  sharedScales,
 } from "./meteogram.ts";
 
 const hour = (time: string, p: Partial<ForecastHour> = {}): ForecastHour => ({
@@ -102,4 +103,35 @@ test("observationHours: timgrid med närmaste värde inom ±30 min, inget interp
   assert.equal(hs[1].precipitationMm, null);
   assert.equal(hs[2].precipitationMm, 0.6);
   assert.equal(hs[2].temperature, null);
+});
+
+test("sharedScales: gemensam temperatur- och nederbördsaxel över flera serier", () => {
+  const mk = (temperature: number | null, precipitationMm: number | null) => ({
+    time: "2026-10-02T10:00:00.000Z",
+    temperature,
+    precipitationMm,
+    precipitationType: null,
+    windSpeed: null,
+    windFromDirection: null,
+    gust: null,
+  });
+  const a = [mk(2, 0.4)];
+  const b = [mk(-12, 3.2)];
+  const s = sharedScales([a, b]);
+  assert.ok(s.temp.min <= -12 && s.temp.max >= 2);
+  assert.equal(s.maxMm, 5);
+  assert.deepEqual(sharedScales([a, b]), sharedScales([b, a]));
+});
+
+test("observationHours: vind (hastighet, riktning, byvind) fylls per timme när serier ges", () => {
+  const at = (v: number) => [{ time: "2026-10-02T11:00:00.000Z", value: v }];
+  const hs = observationHours(undefined, undefined, "2026-10-02T11:20:00.000Z", 2, {
+    speed: at(3.2),
+    direction: at(270),
+    gust: at(7),
+  });
+  assert.equal(hs[1].windSpeed, 3.2);
+  assert.equal(hs[1].windFromDirection, 270);
+  assert.equal(hs[1].gust, 7);
+  assert.equal(hs[0].windSpeed, null);
 });

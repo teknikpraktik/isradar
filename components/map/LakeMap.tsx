@@ -7,6 +7,7 @@ import type { LakeFeatureCollection } from "@/lib/data/lakes";
 import { LAKE_LABEL_FONT, basemapStyle } from "@/lib/map/basemap";
 import { COLLECTION_AREA_STYLE, coldFillColor, coldLineColor, isCollectionAreaFilter } from "@/lib/map/coldScale";
 import { loadMapLibre } from "@/lib/map/maplibre";
+import { cumulativeM, formatLength } from "@/lib/measure/route";
 import { rideabilityFillColor, rideabilityLineColor } from "@/lib/rideability/mapStyle";
 import type { BBox, LakeId, LngLat } from "@/types/lake";
 import type { RegionDefinition } from "@/types/region";
@@ -30,9 +31,11 @@ interface Props {
   satellite?: { scene: SatelliteScene; opacity: number } | null;
   onSatelliteError?: () => void;
   /** Vad sjöarnas färg visar. Default köldmängd. */
-  colorMode?: "cold" | "rideability";
+  colorMode?: "cold" | "rideability" | "none";
   /** Kartans mittpunkt när en förflyttning slutat. */
   onMoveEnd?: (center: LngLat) => void;
+  /** Mätverktyg: utlagd rutt. Medan active tar klick punkter i stället för att välja sjö. */
+  measure?: { active: boolean; points: LngLat[]; onAdd: (p: LngLat) => void };
 }
 
 const SAT_SOURCE = "satellite";
@@ -64,7 +67,12 @@ export default function LakeMap({
   onSatelliteError,
   colorMode = "cold",
   onMoveEnd,
+  measure,
 }: Props) {
+  const measureRef = useRef(measure);
+  useEffect(() => {
+    measureRef.current = measure;
+  }, [measure]);
   const onMoveEndRef = useRef(onMoveEnd);
   useEffect(() => {
     onMoveEndRef.current = onMoveEnd;
@@ -113,6 +121,7 @@ export default function LakeMap({
           if (cancelled || !map) return;
           addRegionOutline(map, region);
           addLakeLayers(map);
+          addRouteLayers(map);
           mapRef.current = map;
           // Endast i utveckling: gör kartan inspekterbar från konsolen/testverktyg.
           if (process.env.NODE_ENV === "development") {
@@ -127,6 +136,11 @@ export default function LakeMap({
         });
 
         map.on("click", (e) => {
+          const m = measureRef.current;
+          if (m?.active) {
+            m.onAdd([e.lngLat.lng, e.lngLat.lat]);
+            return;
+          }
           if (!map?.getLayer("lakes-fill")) return;
           const { x, y } = e.point;
           const hits = map.queryRenderedFeatures(
@@ -149,7 +163,7 @@ export default function LakeMap({
         };
         for (const layer of CLICK_LAYERS) {
           map.on("mousemove", layer, (e) => {
-            map!.getCanvas().style.cursor = "pointer";
+            if (!measureRef.current?.active) map!.getCanvas().style.cursor = "pointer";
             setHover(e.features?.[0]?.id);
           });
           map.on("mouseleave", layer, () => {
@@ -177,17 +191,20 @@ export default function LakeMap({
     (map.getSource(SOURCE) as GeoJSONSource).setData(lakes);
   }, [ready, lakes]);
 
-  // Färgläge: köldmängd eller Modellerad åkbarhet (ömsesidigt exklusiva).
+  // Färgläge: köldmängd, Modellerad åkbarhet eller inget (bara baskartan med sjönamn).
   useEffect(() => {
     const map = mapRef.current;
     if (!ready || !map) return;
     const riding = colorMode === "rideability";
-    const fill = riding ? rideabilityFillColor() : coldFillColor();
+    const none = colorMode === "none";
+    const clear = "rgba(0,0,0,0)";
+    const fill = none ? clear : riding ? rideabilityFillColor() : coldFillColor();
     map.setPaintProperty("lakes-fill", "fill-color", fill as never);
     map.setPaintProperty("lakes-point", "circle-color", fill as never);
-    map.setPaintProperty("lakes-line", "line-color", (riding ? rideabilityLineColor() : coldLineColor()) as never);
+    map.setPaintProperty("lakes-point", "circle-stroke-opacity", (none ? 0 : 1) as never);
+    map.setPaintProperty("lakes-line", "line-color", (none ? clear : riding ? rideabilityLineColor() : coldLineColor()) as never);
     // Siffran i etiketten är historisk referens-GD – köldmängdsinfo visas bara i köldmängdsläget.
-    const text = riding ? ["get", "name"] : ["coalesce", ["get", "label"], ["get", "name"]];
+    const text = colorMode === "cold" ? ["coalesce", ["get", "label"], ["get", "name"]] : ["get", "name"];
     for (const [tier] of LABEL_TIERS) map.setLayoutProperty(`lakes-label-${tier}`, "text-field", text as never);
   }, [ready, colorMode]);
 
@@ -236,6 +253,31 @@ export default function LakeMap({
     if (!ready || !map || satOpacity === null || !map.getLayer(SAT_LAYER)) return;
     map.setPaintProperty(SAT_LAYER, "raster-opacity", satOpacity);
   }, [ready, satOpacity, sceneId]);
+
+  // Mätverktyg: rutten som linje + punkter, längd vid sista punkten.
+  const routePoints = measure?.points;
+  const measureActive = !!measure?.active;
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map) return;
+    map.getCanvas().style.cursor = measureActive ? "crosshair" : "";
+    const pts = routePoints ?? [];
+    const cum = cumulativeM(pts);
+    const fc: GeoJSON.FeatureCollection = {
+      type: "FeatureCollection",
+      features: [
+        ...(pts.length > 1
+          ? [{ type: "Feature" as const, properties: { kind: "line" }, geometry: { type: "LineString" as const, coordinates: pts } }]
+          : []),
+        ...pts.map((p, i) => ({
+          type: "Feature" as const,
+          properties: { kind: "pt", label: i === pts.length - 1 && i > 0 ? formatLength(cum[i]) : "" },
+          geometry: { type: "Point" as const, coordinates: p },
+        })),
+      ],
+    };
+    (map.getSource(ROUTE_SOURCE) as GeoJSONSource).setData(fc);
+  }, [ready, routePoints, measureActive]);
 
   // Markering
   useEffect(() => {
@@ -287,6 +329,53 @@ export default function LakeMap({
       {error && <div className={styles.error}>{error}</div>}
     </div>
   );
+}
+
+const ROUTE_SOURCE = "route";
+const ROUTE_COLOR = "#ffd23f";
+
+/** Mätverktygets rutt: mörk kant under en ljus linje, punkter och längdetikett överst. */
+function addRouteLayers(map: MlMap) {
+  map.addSource(ROUTE_SOURCE, { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+  const isLine = ["==", ["get", "kind"], "line"] as never;
+  const isPt = ["==", ["get", "kind"], "pt"] as never;
+  map.addLayer({
+    id: "route-casing",
+    type: "line",
+    source: ROUTE_SOURCE,
+    filter: isLine,
+    layout: { "line-cap": "round", "line-join": "round" },
+    paint: { "line-color": "#0c1015", "line-width": 6, "line-opacity": 0.85 },
+  });
+  map.addLayer({
+    id: "route-line",
+    type: "line",
+    source: ROUTE_SOURCE,
+    filter: isLine,
+    layout: { "line-cap": "round", "line-join": "round" },
+    paint: { "line-color": ROUTE_COLOR, "line-width": 3 },
+  });
+  map.addLayer({
+    id: "route-points",
+    type: "circle",
+    source: ROUTE_SOURCE,
+    filter: isPt,
+    paint: { "circle-radius": 4.5, "circle-color": ROUTE_COLOR, "circle-stroke-color": "#0c1015", "circle-stroke-width": 1.5 },
+  });
+  map.addLayer({
+    id: "route-label",
+    type: "symbol",
+    source: ROUTE_SOURCE,
+    filter: ["all", isPt, ["!=", ["get", "label"], ""]] as never,
+    layout: {
+      "text-field": ["get", "label"],
+      "text-font": LAKE_LABEL_FONT,
+      "text-size": 13,
+      "text-offset": [0, -1.3],
+      "text-allow-overlap": true,
+    } as never,
+    paint: { "text-color": ROUTE_COLOR, "text-halo-color": "#0c1015", "text-halo-width": 1.6 },
+  });
 }
 
 /** Diskret kontur för utvecklingsregionen (länsgräns eller bbox). */

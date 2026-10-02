@@ -143,7 +143,7 @@ export const MIN_SPARKLINE_POINTS = 6;
 
 /**
  * Observationerna senaste `count` timmarna som en timgrid (samma form som
- * prognosen, utan vind) så att båda meteogrammen ritas av samma komponent.
+ * prognosen, inklusive vind när serier finns) så att båda meteogrammen ritas av samma komponent.
  * Varje timme får närmaste stationsvärde inom ±30 min – inget interpoleras.
  */
 export function observationHours(
@@ -151,6 +151,11 @@ export function observationHours(
   precipitation: { time: string; value: number }[] | undefined,
   endIso: string,
   count = 24,
+  wind?: {
+    speed: { time: string; value: number }[];
+    direction: { time: string; value: number }[];
+    gust: { time: string; value: number }[];
+  },
 ): ForecastHour[] {
   const HOUR = 3_600_000;
   const end = Math.floor(Date.parse(endIso) / HOUR) * HOUR;
@@ -169,9 +174,29 @@ export function observationHours(
       temperature: nearest(temperature, t),
       precipitationMm: nearest(precipitation, t),
       precipitationType: null,
-      windSpeed: null,
-      windFromDirection: null,
-      gust: null,
+      windSpeed: nearest(wind?.speed, t),
+      windFromDirection: nearest(wind?.direction, t),
+      gust: nearest(wind?.gust, t),
     };
   });
+}
+
+/** Övre gräns för nederbördsaxeln (mm/h): 1, 2, 5 och därefter jämna femtal. */
+export function niceMaxMm(maxMm: number): number {
+  return maxMm <= 1 ? 1 : maxMm <= 2 ? 2 : maxMm <= 5 ? 5 : Math.ceil(maxMm / 5) * 5;
+}
+
+/**
+ * Gemensamma y-axlar för flera meteogram, så att observation och prognos kan
+ * jämföras direkt (samma skalsteg och samma gränser för temperatur och nederbörd).
+ */
+export function sharedScales(series: ForecastHour[][]): {
+  temp: { min: number; max: number; step: number };
+  maxMm: number;
+} {
+  const all = series.flat();
+  return {
+    temp: temperatureDomain(all.map((h) => h.temperature)),
+    maxMm: niceMaxMm(Math.max(0, ...all.map((h) => h.precipitationMm ?? 0))),
+  };
 }

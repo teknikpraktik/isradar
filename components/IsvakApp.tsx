@@ -40,6 +40,9 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
   const [satLoading, setSatLoading] = useState<"SAR" | "optical" | null>(null);
   const [satNotice, setSatNotice] = useState<string | null>(null);
   const mapCenterRef = useRef<LngLat | null>(null);
+  // Mätverktyg: klick på kartan lägger ut en rutt (påverkar inget annat lager).
+  const [measureOn, setMeasureOn] = useState(false);
+  const [route, setRoute] = useState<LngLat[]>([]);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
@@ -80,7 +83,7 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
 
   // Modellerad åkbarhet · BETA är standardlager och ersätter köldmängdsfärgerna
   // medan det är aktivt (ömsesidigt exklusiva). Bulkdata hämtas när lagret är på.
-  const [colorLayer, setColorLayer] = useState<"rideability" | "cold">("rideability");
+  const [colorLayer, setColorLayer] = useState<"rideability" | "cold" | "none">("rideability");
   const rideabilityOn = colorLayer === "rideability";
   const [bulk, setBulk] = useState<{ key: string; result: RideabilityBulkResult } | null>(null);
   const bulkKey = data ? `${data.regionId}|${asOf ?? ""}` : null;
@@ -131,6 +134,7 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
     async (sensor: "SAR" | "optical", on: boolean) => {
       setSatNotice(null);
       if (!on) {
+        // Av = bara baskartan (inget annat lager tänds i stället).
         setSatellite(null);
         return;
       }
@@ -150,6 +154,8 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
         setSatNotice(`Ingen ${sensor === "SAR" ? "Sentinel-1-passage" : "Sentinel-2-bild"} senaste ${v.windowDays} d för kartvyn.`);
         return;
       }
+      // Ett lager i taget: satellit ersätter sjöfärgerna.
+      setColorLayer("none");
       setSatellite((prev) => ({ scene: scenes[0], opacity: prev?.opacity ?? 0.7, scenes, position }));
     },
     [region, asOf],
@@ -171,6 +177,7 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
         userPosition={userPosition}
         onSelect={setSelectedId}
         onMoveEnd={(c) => (mapCenterRef.current = c)}
+        measure={{ active: measureOn, points: route, onAdd: (p) => setRoute((r) => [...r, p]) }}
         satellite={activeSatellite}
         onSatelliteError={() => {
           setSatellite(null);
@@ -225,9 +232,19 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
       <div className={styles.layers} data-hidden-mobile={lake !== null}>
         <LayerControl
           colorLayer={colorLayer}
-          onColorLayer={setColorLayer}
+          onColorLayer={(layer) => {
+            setColorLayer(layer);
+            if (layer !== "none") setSatellite(null);
+          }}
           rideability={{ loading: rideabilityLoading, failed: bulkReady ? bulk.result.failed : [] }}
           coldLegend={legendFlags}
+          measure={{
+            on: measureOn,
+            points: route,
+            onToggle: setMeasureOn,
+            onUndo: () => setRoute((r) => r.slice(0, -1)),
+            onClear: () => setRoute([]),
+          }}
           satellite={{
             active: activeSatellite,
             loadingSensor: satLoading,

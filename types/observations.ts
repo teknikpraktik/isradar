@@ -165,7 +165,11 @@ export interface WeatherObservation {
     latestDirection: Quantity<"deg"> | null;
     maxMean: Quantity<"m/s">;
     gustMax: Quantity<"m/s"> | null;
-  }> | null;
+  }> & {
+    /** Per timme, från samma station som vindhastigheten. */
+    directionSeries: { time: string; value: number }[];
+    gustSeries: { time: string; value: number }[];
+  } | null;
 }
 
 /** 48 h prognos vid vattnets position: en tidslinje per timme. */

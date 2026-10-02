@@ -47,7 +47,11 @@ export interface WeatherApiResponse {
   observed: {
     temperature: ObservedVariable<TemperatureSummary> | null;
     precipitation: ObservedVariable<PrecipitationSummary> | null;
-    wind: ObservedVariable<WindSummary & { gustMax: number | null }> | null;
+    wind: (ObservedVariable<WindSummary & { gustMax: number | null }> & {
+      /** Riktning (varifrån) och byvind per timme från SAMMA station som vindhastigheten. */
+      directionSeries: { time: IsoDateTime; value: number }[];
+      gustSeries: { time: IsoDateTime; value: number }[];
+    }) | null;
   };
   forecast: {
     referenceTime: IsoDateTime;

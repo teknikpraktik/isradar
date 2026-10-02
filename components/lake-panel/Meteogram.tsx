@@ -7,7 +7,7 @@
  *   avdelare   tydlig linje + tonad nederbördszon
  *   nedre zon  nederbörd (mm) som staplar, regn eller snö enligt tumregel (≤ 0 °C = snö)
  *   tidsaxel   klockslag, midnatt och dagsetiketter
- * Endast prognosen (variant="forecast") har en vindrad underst.
+ * Vindrad underst (m/s, pil = åt vilket håll) när timmarna har vindvärden.
  * Hover (mus), tap (pekskärm, ligger kvar) och piltangenter visar exakt timme.
  */
 import { useEffect, useId, useMemo, useRef, useState } from "react";
@@ -17,6 +17,7 @@ import {
   dayLabels,
   hourLabel,
   meteogramSummary,
+  niceMaxMm,
   temperatureDomain,
   temperatureSegments,
   timeTicks,
@@ -42,7 +43,6 @@ const MIN_WIDTH = 300;
 
 const nf = (v: number, d = 1) => new Intl.NumberFormat("sv-SE", { maximumFractionDigits: d }).format(v);
 const sign = (v: number, d = 1) => `${v < 0 ? "−" : ""}${nf(Math.abs(v), d)}`;
-const niceMax = (m: number) => (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : Math.ceil(m / 5) * 5);
 
 const FILL: Record<PrecipitationType, string> = {
   rain: "#6f9fc4",
@@ -65,14 +65,19 @@ export default function Meteogram({
   hours,
   variant,
   label,
+  scales,
 }: {
   hours: ForecastHour[];
   variant: "observation" | "forecast";
   /** Beskrivning för skärmläsare, t.ex. "Prognos 48 timmar". */
   label: string;
+  /** Gemensamma y-axlar (se sharedScales) så att flera meteogram går att jämföra. */
+  scales?: { temp: { min: number; max: number; step: number }; maxMm: number };
 }) {
   const forecast = variant === "forecast";
-  const height = forecast ? 214 : 178;
+  // Vindrad när timmarna har vindvärden (prognos och observation formateras likadant).
+  const hasWind = hours.some((h) => h.windSpeed !== null);
+  const height = hasWind ? 214 : 178;
   const wrapRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(360);
   const [hover, setHover] = useState<number | null>(null);
@@ -103,12 +108,13 @@ export default function Meteogram({
   const plotW = width - LEFT - RIGHT;
   const colW = plotW / Math.max(1, n);
   const xAt = (i: number) => LEFT + (i + 0.5) * colW;
-  const dom = useMemo(() => temperatureDomain(hours.map((h) => h.temperature)), [hours]);
+  const own = useMemo(() => temperatureDomain(hours.map((h) => h.temperature)), [hours]);
+  const dom = scales?.temp ?? own;
   const yT = (t: number) => TEMP_BOTTOM - ((t - dom.min) / (dom.max - dom.min)) * (TEMP_BOTTOM - TEMP_TOP);
   // Andel av temperaturytan (uppifrån) där 0 °C ligger; under den ritas kurvan blå.
   const freezeAt = Math.min(1, Math.max(0, (yT(0) - TEMP_TOP) / (TEMP_BOTTOM - TEMP_TOP)));
   const hasTemp = hours.some((h) => h.temperature !== null);
-  const maxMm = niceMax(Math.max(0, ...hours.map((h) => h.precipitationMm ?? 0)));
+  const maxMm = scales?.maxMm ?? niceMaxMm(Math.max(0, ...hours.map((h) => h.precipitationMm ?? 0)));
   const barH = (mm: number) => (mm / maxMm) * (PRECIP_BOTTOM - PRECIP_TOP);
   const barW = Math.max(2, colW - 1.5);
 
@@ -254,7 +260,7 @@ export default function Meteogram({
         ))}
 
         {/* Vind (endast prognos): var 3:e timme, pil mot den riktning vinden blåser */}
-        {forecast &&
+        {hasWind &&
           hours.map((hr, i) =>
             i % 3 === 1 && hr.windSpeed !== null ? (
               <g key={`w${i}`}>
@@ -269,7 +275,7 @@ export default function Meteogram({
               </g>
             ) : null,
           )}
-        {forecast && (
+        {hasWind && (
           <text x={LEFT - 7} y={WIND_TEXT_Y} className={styles.unit}>
             m/s
           </text>
@@ -310,12 +316,12 @@ export default function Meteogram({
                 ? `${nf(h.precipitationMm)} ${TYPE_MM[typeAt(h)]}`
                 : "Ingen nederbörd"}
           </div>
-          {forecast && h.windSpeed !== null && (
+          {hasWind && h.windSpeed !== null && (
             <div>
               Vind {nf(h.windSpeed)} m/s{h.windFromDirection !== null ? ` ${compassSv(h.windFromDirection)}` : ""}
             </div>
           )}
-          {forecast && h.gust !== null && <div>Byvind {nf(h.gust)} m/s</div>}
+          {hasWind && h.gust !== null && <div>Byvind {nf(h.gust)} m/s</div>}
         </div>
       )}
 
@@ -332,7 +338,7 @@ export default function Meteogram({
         ) : (
           <span>Ingen nederbörd</span>
         )}
-        {forecast && <span className={styles.legendNote}>vind m/s · pil = åt vilket håll</span>}
+        {hasWind && <span className={styles.legendNote}>vind m/s · pil = åt vilket håll</span>}
       </div>
     </div>
   );

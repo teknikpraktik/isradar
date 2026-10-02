@@ -106,12 +106,17 @@ export async function getRecentWeather(
           : null,
         precipitation: p ? toVariable(p, null, { sum: q(p.summary.sum, "mm") }, r) : null,
         wind: w
-          ? toVariable(w, w.summary.latestAt, {
-              latest: q(w.summary.latest, "m/s"),
-              latestDirection: qn(w.summary.latestDirection, "deg"),
-              maxMean: q(w.summary.maxMean, "m/s"),
-              gustMax: qn(w.summary.gustMax, "m/s"),
-            }, r)
+          ? {
+              ...toVariable(w, w.summary.latestAt, {
+                latest: q(w.summary.latest, "m/s"),
+                latestDirection: qn(w.summary.latestDirection, "deg"),
+                maxMean: q(w.summary.maxMean, "m/s"),
+                gustMax: qn(w.summary.gustMax, "m/s"),
+              }, r),
+              // Äldre cachade svar saknar serierna – då visas ingen vindrad.
+              directionSeries: w.directionSeries ?? [],
+              gustSeries: w.gustSeries ?? [],
+            }
           : null,
       },
     };

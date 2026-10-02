@@ -48,6 +48,13 @@ function observed<T>(best: ScoredSeries, w: Window, summary: T | null): Observed
   };
 }
 
+/** Timserie inom fönstret, äldst först. */
+const windSeries = (vals: HourlyValue[], w: Window) =>
+  vals
+    .filter((x) => x.t > w.from && x.t <= w.to)
+    .sort((a, b) => a.t - b.t)
+    .map((x) => ({ time: iso(x.t), value: x.v }));
+
 /** SMHI-resultat → gemensam serie. */
 const fromSmhi = (n: NearestSeries | null, parameter: ObservationParameter): StationSeries[] =>
   n
@@ -167,7 +174,13 @@ export async function GET(request: NextRequest) {
     observed: {
       temperature: bestTemp ? observed(bestTemp, past, summarizeTemperature(bestTemp.values, past)) : null,
       precipitation: bestPrecip ? observed(bestPrecip, past, summarizePrecipitation(bestPrecip.values, past)) : null,
-      wind: bestWind && windSummary ? observed(bestWind, past, { ...windSummary, gustMax }) : null,
+      wind:
+        bestWind && windSummary
+          ? (() => {
+              const w = observed(bestWind, past, { ...windSummary, gustMax })!;
+              return { ...w, directionSeries: windSeries(dirVals, past), gustSeries: windSeries(gustVals, past) };
+            })()
+          : null,
     },
     forecast,
     sources: { observed: SMHI_SOURCE, observedSecondary: VVIS_SOURCE, forecast: SMHI_FORECAST_SOURCE },
