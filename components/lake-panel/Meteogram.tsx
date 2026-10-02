@@ -1,10 +1,13 @@
 "use client";
 
 /**
- * 48 h-meteogram i ren SVG (inget chart-bibliotek):
- *   temperaturkurva (huvudinformation) med 0 °C-linje,
- *   nederbördsstaplar (mm vattenekvivalent) längs samma tidsaxel,
- *   vindrad var 3:e timme – pilen visar VART vinden blåser.
+ * Meteogram i ren SVG (inget chart-bibliotek). Används för både observationer
+ * (senaste 24 h) och prognos (48 h) med exakt samma uppbyggnad:
+ *   övre zon   temperatur (°C) med 0 °C-linje, blå under noll
+ *   avdelare   tydlig linje + tonad nederbördszon
+ *   nedre zon  nederbörd (mm) som staplar, regn eller snö enligt tumregel (≤ 0 °C = snö)
+ *   tidsaxel   klockslag, midnatt och dagsetiketter
+ * Endast prognosen (variant="forecast") har en vindrad underst.
  * Hover (mus), tap (pekskärm, ligger kvar) och piltangenter visar exakt timme.
  */
 import { useEffect, useId, useMemo, useRef, useState } from "react";
@@ -19,35 +22,57 @@ import {
   timeTicks,
   windArrowRotation,
 } from "@/lib/weather/meteogram";
-import { PRECIP_TYPE_LABEL, type PrecipitationType } from "@/lib/weather/precipitation";
+import { simplePrecipType, type PrecipitationType } from "@/lib/weather/precipitation";
 import styles from "./Meteogram.module.css";
 
 // Vertikal layout (px)
 const DAY_Y = 10;
-const TEMP_TOP = 18;
-const TEMP_BOTTOM = 114;
-const PRECIP_TOP = 130;
-const PRECIP_BOTTOM = 160;
-const AXIS_Y = 172;
-const WIND_ARROW_Y = 190;
-const WIND_TEXT_Y = 210;
-const HEIGHT = 218;
-const LEFT = 32;
+const TEMP_TOP = 26;
+const TEMP_BOTTOM = 100;
+const DIVIDER_Y = 112;
+const PRECIP_TOP = 124;
+const PRECIP_BOTTOM = 154;
+const AXIS_Y = 169;
+const WIND_ARROW_Y = 187;
+const WIND_TEXT_Y = 205;
+const LEFT = 34;
 const RIGHT = 6;
 /** Minsta bredd innan diagrammet blir horisontellt scrollbart. */
-const MIN_WIDTH = 320;
+const MIN_WIDTH = 300;
 
 const nf = (v: number, d = 1) => new Intl.NumberFormat("sv-SE", { maximumFractionDigits: d }).format(v);
 const sign = (v: number, d = 1) => `${v < 0 ? "−" : ""}${nf(Math.abs(v), d)}`;
+const niceMax = (m: number) => (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : Math.ceil(m / 5) * 5);
 
 const FILL: Record<PrecipitationType, string> = {
-  rain: "url(#mg-rain)",
+  rain: "#6f9fc4",
   snow: "url(#mg-snow)",
-  mixed: "url(#mg-mixed)",
-  unknown: "url(#mg-unknown)",
+  mixed: "#6f9fc4",
+  unknown: "#7d8995",
+};
+/** Legend- och tooltiptext: typen avgör vad "mm" betyder. */
+const TYPE_MM: Record<PrecipitationType, string> = {
+  rain: "mm regn",
+  snow: "mm snö",
+  mixed: "mm nederbörd",
+  unknown: "mm nederbörd",
 };
 
-export default function Meteogram({ hours }: { hours: ForecastHour[] }) {
+/** Typ per timme enligt tumregeln (temperatur samma timme). */
+const typeAt = (h: ForecastHour) => simplePrecipType(h.temperature);
+
+export default function Meteogram({
+  hours,
+  variant,
+  label,
+}: {
+  hours: ForecastHour[];
+  variant: "observation" | "forecast";
+  /** Beskrivning för skärmläsare, t.ex. "Prognos 48 timmar". */
+  label: string;
+}) {
+  const forecast = variant === "forecast";
+  const height = forecast ? 214 : 178;
   const wrapRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(360);
   const [hover, setHover] = useState<number | null>(null);
@@ -76,33 +101,28 @@ export default function Meteogram({ hours }: { hours: ForecastHour[] }) {
   const gradId = `meteo-temp-${useId().replace(/:/g, "")}`;
   const n = hours.length;
   const plotW = width - LEFT - RIGHT;
-  const xAt = (i: number) => LEFT + ((i + 0.5) / n) * plotW;
+  const colW = plotW / Math.max(1, n);
+  const xAt = (i: number) => LEFT + (i + 0.5) * colW;
   const dom = useMemo(() => temperatureDomain(hours.map((h) => h.temperature)), [hours]);
   const yT = (t: number) => TEMP_BOTTOM - ((t - dom.min) / (dom.max - dom.min)) * (TEMP_BOTTOM - TEMP_TOP);
   // Andel av temperaturytan (uppifrån) där 0 °C ligger; under den ritas kurvan blå.
   const freezeAt = Math.min(1, Math.max(0, (yT(0) - TEMP_TOP) / (TEMP_BOTTOM - TEMP_TOP)));
-  const maxMm =Math.max(1, ...hours.map((h) => h.precipitationMm ?? 0));
+  const hasTemp = hours.some((h) => h.temperature !== null);
+  const maxMm = niceMax(Math.max(0, ...hours.map((h) => h.precipitationMm ?? 0)));
   const barH = (mm: number) => (mm / maxMm) * (PRECIP_BOTTOM - PRECIP_TOP);
-  const barW = Math.max(2, plotW / n - 1.5);
+  const barW = Math.max(2, colW - 1.5);
 
   const yTicks = useMemo(() => {
     const out: number[] = [];
     for (let t = dom.min; t <= dom.max + 1e-9; t += dom.step) out.push(t);
     return out;
   }, [dom]);
-  // Mellanstreck: varje grad vid steg ≤ 5, annars halvsteg.
-  const minorTicks = useMemo(() => {
-    const minor = dom.step <= 5 ? 1 : dom.step / 2;
-    const out: number[] = [];
-    for (let t = dom.min; t <= dom.max + 1e-9; t += minor) if (Math.abs(t % dom.step) > 1e-9) out.push(t);
-    return out;
-  }, [dom]);
-  const ticks = useMemo(() => timeTicks(hours, width < 400 ? 6 : 3), [hours, width]);
+  const ticks = useMemo(() => timeTicks(hours, forecast && width < 400 ? 6 : 3), [hours, forecast, width]);
   const days = useMemo(() => dayLabels(hours), [hours]);
   const segments = useMemo(() => temperatureSegments(hours), [hours]);
-  const summary = useMemo(() => meteogramSummary(hours), [hours]);
+  const summary = useMemo(() => meteogramSummary(hours, label), [hours, label]);
   const types = useMemo(
-    () => [...new Set(hours.filter((h) => (h.precipitationMm ?? 0) > 0).map((h) => h.precipitationType ?? "unknown"))],
+    () => [...new Set(hours.filter((h) => (h.precipitationMm ?? 0) > 0).map(typeAt))],
     [hours],
   );
 
@@ -110,7 +130,7 @@ export default function Meteogram({ hours }: { hours: ForecastHour[] }) {
   const indexFromEvent = (e: React.PointerEvent<SVGRectElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
     const x = ((e.clientX - r.left) / r.width) * plotW;
-    return Math.min(n - 1, Math.max(0, Math.floor((x / plotW) * n)));
+    return Math.min(n - 1, Math.max(0, Math.floor(x / colW)));
   };
 
   if (n === 0) return null;
@@ -132,78 +152,87 @@ export default function Meteogram({ hours }: { hours: ForecastHour[] }) {
         e.preventDefault();
       }}
     >
-      <svg width={width} height={HEIGHT} viewBox={`0 0 ${width} ${HEIGHT}`} className={styles.svg} aria-hidden>
+      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className={styles.svg} aria-hidden>
         <defs>
-          <pattern id="mg-rain" width="4" height="4" patternUnits="userSpaceOnUse">
-            <rect width="4" height="4" fill="#6f9fc4" />
-          </pattern>
-          {/* Snö: ljus kontur + svag fyllning – skiljer sig i form, inte bara färg */}
+          {/* Snö: ljus prick-fyllning – skiljer sig i form, inte bara färg */}
           <pattern id="mg-snow" width="4" height="4" patternUnits="userSpaceOnUse">
             <rect width="4" height="4" fill="rgb(219 233 240 / 0.35)" />
             <circle cx="2" cy="2" r="0.9" fill="#dbe9f0" />
           </pattern>
-          <pattern id="mg-mixed" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-            <rect width="5" height="5" fill="rgb(111 159 196 / 0.35)" />
-            <rect width="2" height="5" fill="#dbe9f0" />
-          </pattern>
-          <pattern id="mg-unknown" width="4" height="4" patternUnits="userSpaceOnUse">
-            <rect width="4" height="4" fill="#7d8995" />
-          </pattern>
-        </defs>
-
-        {/* Midnatt och dagsetiketter */}
-        {ticks.filter((t) => t.midnight).map((t) => (
-          <line key={`m${t.index}`} x1={xAt(t.index) - plotW / n / 2} x2={xAt(t.index) - plotW / n / 2} y1={TEMP_TOP - 6} y2={PRECIP_BOTTOM} className={styles.midnight} />
-        ))}
-        {days.map((d) => (
-          <text key={`d${d.index}`} x={(d.index === 0 ? LEFT : xAt(d.index) - plotW / n / 2) + 3} y={DAY_Y} className={styles.day}>
-            {d.label}
-          </text>
-        ))}
-
-        {/* Temperaturaxel: axellinje, huvudstreck med etikett, mellanstreck */}
-        <line x1={LEFT} x2={LEFT} y1={TEMP_TOP} y2={TEMP_BOTTOM} className={styles.yAxis} />
-        {minorTicks.map((t) => (
-          <line key={`n${t}`} x1={LEFT - 2.5} x2={LEFT} y1={yT(t)} y2={yT(t)} className={styles.yAxis} />
-        ))}
-        {yTicks.map((t) => (
-          <g key={`y${t}`}>
-            <line x1={LEFT} x2={width - RIGHT} y1={yT(t)} y2={yT(t)} className={t === 0 ? styles.zero : styles.grid} />
-            <line x1={LEFT - 5} x2={LEFT} y1={yT(t)} y2={yT(t)} className={styles.yAxis} />
-            <text x={LEFT - 7} y={yT(t) + 3.5} className={t === 0 ? `${styles.tempTick} ${styles.zeroLabel}` : styles.tempTick}>
-              {sign(t, 0)}°
-            </text>
-          </g>
-        ))}
-
-        {/* Temperaturkurva – segment bryts vid saknade timmar */}
-        <defs>
           <linearGradient id={gradId} gradientUnits="userSpaceOnUse" x1={0} x2={0} y1={TEMP_TOP} y2={TEMP_BOTTOM}>
             <stop offset={freezeAt} className={styles.stopWarm} />
             <stop offset={freezeAt} className={styles.stopCold} />
           </linearGradient>
         </defs>
-        {segments.map((seg, k) =>
-          seg.length === 1 ? (
-            <circle
-              key={k}
-              cx={xAt(seg[0].index)}
-              cy={yT(seg[0].t)}
-              r={1.8}
-              className={seg[0].t < 0 ? `${styles.tempDot} ${styles.tempDotCold}` : styles.tempDot}
-            />
-          ) : (
-            <polyline
-              key={k}
-              points={seg.map((p) => `${xAt(p.index)},${yT(p.t)}`).join(" ")}
-              className={styles.temp}
-              style={{ stroke: `url(#${gradId})` }}
-            />
-          ),
+
+        {/* Nederbördszonen tonas så att avdelaren syns även utan data */}
+        <rect x={LEFT} y={DIVIDER_Y} width={plotW} height={PRECIP_BOTTOM - DIVIDER_Y + 1} className={styles.band} />
+
+        {/* Midnatt och dagsetiketter */}
+        {ticks.filter((t) => t.midnight).map((t) => (
+          <line key={`m${t.index}`} x1={xAt(t.index) - colW / 2} x2={xAt(t.index) - colW / 2} y1={TEMP_TOP - 6} y2={PRECIP_BOTTOM} className={styles.midnight} />
+        ))}
+        {days.map((d) => (
+          <text key={`d${d.index}`} x={(d.index === 0 ? LEFT : xAt(d.index) - colW / 2) + 3} y={DAY_Y} className={styles.day}>
+            {d.label}
+          </text>
+        ))}
+
+        {/* Temperaturzon: enhet, axel, streck med etikett, 0 °C-linje */}
+        <text x={LEFT - 7} y={TEMP_TOP - 9} className={styles.unit}>
+          °C
+        </text>
+        <line x1={LEFT} x2={LEFT} y1={TEMP_TOP} y2={TEMP_BOTTOM} className={styles.yAxis} />
+        {yTicks.map((t) => (
+          <g key={`y${t}`}>
+            <line x1={LEFT} x2={width - RIGHT} y1={yT(t)} y2={yT(t)} className={t === 0 ? styles.zero : styles.grid} />
+            <line x1={LEFT - 4} x2={LEFT} y1={yT(t)} y2={yT(t)} className={styles.yAxis} />
+            <text x={LEFT - 7} y={yT(t) + 3.5} className={t === 0 ? `${styles.tempTick} ${styles.zeroLabel}` : styles.tempTick}>
+              {sign(t, 0)}
+            </text>
+          </g>
+        ))}
+        {hasTemp ? (
+          segments.map((seg, k) =>
+            seg.length === 1 ? (
+              <circle
+                key={k}
+                cx={xAt(seg[0].index)}
+                cy={yT(seg[0].t)}
+                r={1.8}
+                className={seg[0].t < 0 ? `${styles.tempDot} ${styles.tempDotCold}` : styles.tempDot}
+              />
+            ) : (
+              <polyline
+                key={k}
+                points={seg.map((p) => `${xAt(p.index)},${yT(p.t)}`).join(" ")}
+                className={styles.temp}
+                style={{ stroke: `url(#${gradId})` }}
+              />
+            ),
+          )
+        ) : (
+          <text x={LEFT + plotW / 2} y={(TEMP_TOP + TEMP_BOTTOM) / 2} className={styles.empty}>
+            Temperatur saknas
+          </text>
         )}
 
-        {/* Nederbörd */}
-        <line x1={LEFT} x2={width - RIGHT} y1={PRECIP_BOTTOM} y2={PRECIP_BOTTOM} className={styles.grid} />
+        {/* Avdelare mellan temperatur och nederbörd */}
+        <line x1={0} x2={width} y1={DIVIDER_Y} y2={DIVIDER_Y} className={styles.divider} />
+
+        {/* Nederbördszon: enhet, axel (0 och max), staplar */}
+        <text x={LEFT - 7} y={PRECIP_TOP - 8} className={styles.unit}>
+          mm
+        </text>
+        <line x1={LEFT} x2={LEFT} y1={PRECIP_TOP} y2={PRECIP_BOTTOM} className={styles.yAxis} />
+        <line x1={LEFT} x2={width - RIGHT} y1={PRECIP_TOP} y2={PRECIP_TOP} className={styles.grid} />
+        <line x1={LEFT} x2={width - RIGHT} y1={PRECIP_BOTTOM} y2={PRECIP_BOTTOM} className={styles.baseline} />
+        <text x={LEFT - 7} y={PRECIP_TOP + 3.5} className={styles.tempTick}>
+          {nf(maxMm)}
+        </text>
+        <text x={LEFT - 7} y={PRECIP_BOTTOM + 3.5} className={styles.tempTick}>
+          0
+        </text>
         {hours.map((hr, i) =>
           (hr.precipitationMm ?? 0) > 0 ? (
             <rect
@@ -212,42 +241,39 @@ export default function Meteogram({ hours }: { hours: ForecastHour[] }) {
               y={PRECIP_BOTTOM - Math.max(1.5, barH(hr.precipitationMm!))}
               width={barW}
               height={Math.max(1.5, barH(hr.precipitationMm!))}
-              fill={FILL[hr.precipitationType ?? "unknown"]}
+              fill={FILL[typeAt(hr)]}
             />
           ) : null,
         )}
-        <text x={LEFT - 4} y={PRECIP_TOP + 7} className={styles.axis}>
-          {nf(maxMm)}
-        </text>
-        <text x={LEFT - 4} y={PRECIP_BOTTOM} className={styles.axis}>
-          mm
-        </text>
 
-        {/* Tidsaxel */}
+        {/* Tidsaxel (lokala klockslag) */}
         {ticks.map((t) => (
           <text key={`t${t.index}`} x={xAt(t.index)} y={AXIS_Y} className={styles.time}>
             {t.label}
           </text>
         ))}
 
-        {/* Vind var 3:e timme – pil mot den riktning vinden blåser */}
-        {hours.map((hr, i) =>
-          i % 3 === 1 && hr.windSpeed !== null ? (
-            <g key={`w${i}`}>
-              {hr.windFromDirection !== null && (
-                <g transform={`translate(${xAt(i)} ${WIND_ARROW_Y}) rotate(${windArrowRotation(hr.windFromDirection)})`}>
-                  <path d="M0,-6 L3.5,2 L0,0.5 L-3.5,2 Z" className={styles.arrow} />
-                </g>
-              )}
-              <text x={xAt(i)} y={WIND_TEXT_Y} className={styles.wind}>
-                {Math.round(hr.windSpeed)}
-              </text>
-            </g>
-          ) : null,
+        {/* Vind (endast prognos): var 3:e timme, pil mot den riktning vinden blåser */}
+        {forecast &&
+          hours.map((hr, i) =>
+            i % 3 === 1 && hr.windSpeed !== null ? (
+              <g key={`w${i}`}>
+                {hr.windFromDirection !== null && (
+                  <g transform={`translate(${xAt(i)} ${WIND_ARROW_Y}) rotate(${windArrowRotation(hr.windFromDirection)})`}>
+                    <path d="M0,-6 L3.5,2 L0,0.5 L-3.5,2 Z" className={styles.arrow} />
+                  </g>
+                )}
+                <text x={xAt(i)} y={WIND_TEXT_Y} className={styles.wind}>
+                  {Math.round(hr.windSpeed)}
+                </text>
+              </g>
+            ) : null,
+          )}
+        {forecast && (
+          <text x={LEFT - 7} y={WIND_TEXT_Y} className={styles.unit}>
+            m/s
+          </text>
         )}
-        <text x={LEFT - 4} y={WIND_TEXT_Y} className={styles.axis}>
-          m/s
-        </text>
 
         {/* Markör för vald timme */}
         {active !== null && (
@@ -262,7 +288,7 @@ export default function Meteogram({ hours }: { hours: ForecastHour[] }) {
           x={LEFT}
           y={0}
           width={plotW}
-          height={HEIGHT}
+          height={height}
           fill="transparent"
           onPointerMove={(e) => e.pointerType === "mouse" && setHover(indexFromEvent(e))}
           onPointerLeave={() => setHover(null)}
@@ -281,31 +307,33 @@ export default function Meteogram({ hours }: { hours: ForecastHour[] }) {
             {h.precipitationMm === null
               ? "Nederbörd saknas"
               : h.precipitationMm > 0
-                ? `${PRECIP_TYPE_LABEL[h.precipitationType ?? "unknown"]} ${nf(h.precipitationMm)} mm`
+                ? `${nf(h.precipitationMm)} ${TYPE_MM[typeAt(h)]}`
                 : "Ingen nederbörd"}
           </div>
-          {h.windSpeed !== null && (
+          {forecast && h.windSpeed !== null && (
             <div>
               Vind {nf(h.windSpeed)} m/s{h.windFromDirection !== null ? ` ${compassSv(h.windFromDirection)}` : ""}
             </div>
           )}
-          {h.gust !== null && <div>Byvind {nf(h.gust)} m/s</div>}
+          {forecast && h.gust !== null && <div>Byvind {nf(h.gust)} m/s</div>}
         </div>
       )}
 
-      {types.length > 0 && (
-        <div className={styles.legend} aria-hidden>
-          {types.map((t) => (
+      <div className={styles.legend} aria-hidden>
+        {types.length > 0 ? (
+          types.map((t) => (
             <span key={t}>
               <svg width="10" height="10">
                 <rect width="10" height="10" fill={FILL[t]} />
               </svg>
-              {PRECIP_TYPE_LABEL[t]}
+              {TYPE_MM[t]}
             </span>
-          ))}
-          <span className={styles.legendNote}>mm vattenekvivalent</span>
-        </div>
-      )}
+          ))
+        ) : (
+          <span>Ingen nederbörd</span>
+        )}
+        {forecast && <span className={styles.legendNote}>vind m/s · pil = åt vilket håll</span>}
+      </div>
     </div>
   );
 }

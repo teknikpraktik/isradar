@@ -1,0 +1,61 @@
+/* Inbäddade legender i lagerkontrollen (ingen egen ruta). */
+.legend {
+  margin: 4px 0 6px;
+  padding: 6px 0 2px 8px;
+  border-left: 2px solid var(--border-strong);
+}
+
+.explain {
+  margin: 0 0 4px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.list {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 3px;
+  font-size: 11.5px;
+}
+
+.list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+}
+
+.swatch {
+  flex: none;
+  width: 14px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.ramp {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  height: 10px;
+  margin-top: 6px;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.rampEnds {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 3px;
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+
+.note {
+  margin: 6px 0 0;
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: var(--text-faint);
+}

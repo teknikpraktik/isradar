@@ -1,5 +1,5 @@
 /**
- * Beräkningslogik för Förmodad åkbarhet · BETA. Ren logik utan I/O.
+ * Beräkningslogik för Modellerad åkbarhet · BETA. Ren logik utan I/O.
  * Parametrar ligger i config.ts.
  *
  * Score 0–100 används internt: summan av tillgängliga faktorers poäng,

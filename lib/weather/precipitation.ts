@@ -118,3 +118,12 @@ export function formatSnowfall([lo, hi]: [number, number]): string {
   if (hi < 1) return "< 1 cm";
   return lo === hi ? `ca ${lo} cm` : `ca ${lo}–${hi} cm`;
 }
+
+/**
+ * Enkel tumregel för meteogrammen: ≤ 0 °C → snö, annars regn. Okänd temperatur
+ * ger "unknown" (ingen gissning). Avser sannolik typ, inte meteorologisk klassning.
+ */
+export function simplePrecipType(tempC: number | null | undefined): PrecipitationType {
+  if (tempC === null || tempC === undefined || !Number.isFinite(tempC)) return "unknown";
+  return tempC <= 0 ? "snow" : "rain";
+}

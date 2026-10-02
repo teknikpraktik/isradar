@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { formatSnowfall, hourType, snowToLiquidRatio, summarizePrecipitationTyped, type PrecipHour } from "./precipitation.ts";
+import { formatSnowfall, hourType, simplePrecipType, snowToLiquidRatio, summarizePrecipitationTyped, type PrecipHour } from "./precipitation.ts";
 
 const h = (mm: number, extra: Partial<PrecipHour> = {}): PrecipHour => ({ t: 0, mm, ...extra });
 
@@ -72,4 +72,11 @@ test("ingen falsk precision i texten", () => {
   assert.equal(formatSnowfall([0, 0]), "< 1 cm");
   assert.equal(formatSnowfall([0, 1]), "ca 0–1 cm");
   assert.equal(formatSnowfall([2, 2]), "ca 2 cm");
+});
+
+test("enkel typregel: ≤ 0 °C snö, > 0 °C regn, okänd temperatur okänd typ", () => {
+  assert.equal(simplePrecipType(0), "snow");
+  assert.equal(simplePrecipType(-3.2), "snow");
+  assert.equal(simplePrecipType(0.1), "rain");
+  assert.equal(simplePrecipType(null), "unknown");
 });

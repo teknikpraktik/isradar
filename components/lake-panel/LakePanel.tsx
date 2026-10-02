@@ -16,7 +16,7 @@ interface Props {
   onShowInfo: () => void;
   /** Visa läget ett tidigare datum (YYYY-MM-DD). */
   asOf?: string;
-  /** Förmodad åkbarhet · BETA – detaljer för sjön när kartlagret är aktivt. */
+  /** Modellerad åkbarhet · BETA – detaljer för sjön när kartlagret är aktivt. */
   rideability?: { active: boolean; loading: boolean; result: RideabilityResult | undefined };
 }
 

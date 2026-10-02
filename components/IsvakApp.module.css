@@ -107,18 +107,6 @@
   }
 }
 
-.legend {
-  position: absolute;
-  left: 10px;
-  bottom: 40px;
-  z-index: 10;
-}
-
-@media (max-width: 767px) {
-  .legend[data-hidden-mobile="true"] {
-    display: none;
-  }
-}
 
 @media (min-width: 768px) {
   .sideControls {
@@ -189,6 +177,8 @@
 
 /* Diskret men alltid synlig tidpunkt för aktivt satellitlager */
 .satLabel {
+  flex-wrap: wrap;
+  max-width: calc(100% - 20px);
   position: absolute;
   left: 50%;
   top: calc(env(safe-area-inset-top) + 58px);
@@ -211,7 +201,7 @@
   max-width: calc(100vw - 120px);
 }
 
-.satLabel span:first-child {
+.satLabel > span:first-child {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text-muted);

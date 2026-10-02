@@ -165,3 +165,32 @@
 .legendNote {
   color: var(--text-faint);
 }
+
+/* Tydlig avdelare mellan temperatur och nederbörd */
+.divider {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+}
+
+.band {
+  fill: rgb(255 255 255 / 0.025);
+}
+
+.baseline {
+  stroke: var(--text-faint);
+  stroke-width: 1;
+}
+
+/* Enhetsetikett vid axeln */
+.unit {
+  fill: var(--text-muted);
+  font-size: 9.5px;
+  text-anchor: end;
+  letter-spacing: 0.04em;
+}
+
+.empty {
+  fill: var(--text-faint);
+  font-size: 11px;
+  text-anchor: middle;
+}

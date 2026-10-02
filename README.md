@@ -163,7 +163,7 @@ Beräknas av Isvak per temperaturstation och visas för alla vatten som använde
 app/                 Next.js App Router (page, layout, manifest)
 components/
   IsvakApp.tsx     klientskal: state för vald sjö, sök, position
-  map/               LakeMap (MapLibre), ColdMapInfo, LocateButton
+  map/               LakeMap (MapLibre), ColdLegend, LayerControl, LocateButton
   search/            LakeSearch
   lake-panel/        LakePanel + sektioner (Översikt, Modell, Satellit, Väder)
   ui/                InfoDialog, GdUnit

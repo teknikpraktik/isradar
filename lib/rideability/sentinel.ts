@@ -1,5 +1,5 @@
 /**
- * Sentinel-1-adapter för Förmodad åkbarhet.
+ * Sentinel-1-adapter för Modellerad åkbarhet.
  *
  * TODO (datakälla oklar): idag visas Sentinel-1 bara som rasterlager (titiler,
  * turbo-färgskala) och det finns INGET numeriskt värde per sjö i koden. För att

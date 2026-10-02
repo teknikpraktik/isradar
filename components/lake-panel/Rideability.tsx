@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Förmodad åkbarhet · BETA i sjöpanelen: detaljvy för vald sjö (visas överst när
+ * Modellerad åkbarhet · BETA i sjöpanelen: detaljvy för vald sjö (visas överst när
  * lagret är aktivt; reglaget sitter i kartans lagerkontroll). All beräkning ligger i lib/rideability.
  * Score 0–100 visas aldrig; bara kategori och ingående indikatorer.
  */

@@ -177,7 +177,7 @@ export default function LakeMap({
     (map.getSource(SOURCE) as GeoJSONSource).setData(lakes);
   }, [ready, lakes]);
 
-  // Färgläge: köldmängd eller Förmodad åkbarhet (ömsesidigt exklusiva).
+  // Färgläge: köldmängd eller Modellerad åkbarhet (ömsesidigt exklusiva).
   useEffect(() => {
     const map = mapRef.current;
     if (!ready || !map) return;
@@ -186,6 +186,9 @@ export default function LakeMap({
     map.setPaintProperty("lakes-fill", "fill-color", fill as never);
     map.setPaintProperty("lakes-point", "circle-color", fill as never);
     map.setPaintProperty("lakes-line", "line-color", (riding ? rideabilityLineColor() : coldLineColor()) as never);
+    // Siffran i etiketten är historisk referens-GD – köldmängdsinfo visas bara i köldmängdsläget.
+    const text = riding ? ["get", "name"] : ["coalesce", ["get", "label"], ["get", "name"]];
+    for (const [tier] of LABEL_TIERS) map.setLayoutProperty(`lakes-label-${tier}`, "text-field", text as never);
   }, [ready, colorMode]);
 
   // Satellitlager: rasterkälla under ortnamn och sjölager (baskarta → satellit

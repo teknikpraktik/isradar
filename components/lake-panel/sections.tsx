@@ -4,14 +4,13 @@ import type { LakeConditions } from "@/lib/data/conditions";
 import { distanceKm, formatDate, formatShortDateTime } from "@/lib/format";
 import { COLLECTION_AREA_NOTE, formatProgressPercent, getColdProgress } from "@/lib/map/coldScale";
 import type { SatelliteScene } from "@/lib/satellite/api";
-import { compassSv } from "@/lib/weather/compute";
+import { useMemo } from "react";
 import { formatSnowfall } from "@/lib/weather/precipitation";
 import Meteogram from "./Meteogram";
-import Sparkline from "./Sparkline";
-import { MIN_SPARKLINE_POINTS } from "@/lib/weather/meteogram";
+import { observationHours } from "@/lib/weather/meteogram";
 
 const PRECIP_HINT =
-  "Anges som vattenekvivalent: 1 mm = 1 liter vatten per m². Vid snöfall kan nysnön bli flera gånger djupare. SMHI:s prognos saknar egen snöparameter – beräknad nysnö är en grov temperaturbaserad uppskattning. Skiljs från MEPS snö på is (befintligt snötäcke).";
+  "Anges som vattenekvivalent: 1 mm = 1 liter vatten per m². Vid snöfall kan nysnön bli flera gånger djupare. SMHI:s prognos saknar egen snöparameter – beräknad nysnö är en grov temperaturbaserad uppskattning. Skiljs från MEPS snö på is (befintligt snötäcke). Regn eller snö i diagrammen avgörs av en enkel tumregel: ≤ 0 °C räknas som snö, annars regn.";
 import type { ColdAmountObservation } from "@/types/observations";
 import type { Lake } from "@/types/lake";
 import styles from "./LakePanel.module.css";
@@ -20,7 +19,6 @@ import {
   formatPrecipitation,
   formatTemperature,
   formatTemperatureRange,
-  formatWind,
 } from "@/lib/weather/format";
 
 /*
@@ -369,34 +367,6 @@ function periodOf(v: { provenance: { time: { kind: string; period?: { from: stri
   return { from: p?.from ?? new Date(Date.parse(to) - 24 * 3_600_000).toISOString(), to };
 }
 
-/**
- * Observationsblock: etikett, valfri sparkline, huvudvärde, sekundärt värde
- * och station. Ingen kortram – sektionens luft räcker.
- */
-function ObsBlock({
-  label,
-  hint,
-  sparkline,
-  value,
-  secondary,
-  meta,
-}: {
-  label: string;
-  hint?: string;
-  sparkline: React.ReactNode;
-  value: string | null;
-  secondary?: string | null;
-  meta?: string;
-}) {
-  return (
-    <div className={styles.obsBlock}>
-      <Row label={label} hint={hint} value={value ?? undefined} />
-      {sparkline}
-      <p className={styles.obsMeta}>{join(secondary, meta)}</p>
-    </div>
-  );
-}
-
 function weatherPlaceholder(r: L<"weatherRecent"> | L<"weatherForecast">): string | undefined {
   if (r.status !== "unavailable") return undefined;
   if (r.code === "not_historical") return "Endast nuläge";
@@ -414,78 +384,52 @@ export function WeatherSection({
   const w = recent.status === "ok" ? recent.value : null;
   const fc = forecast.status === "ok" ? forecast.value : null;
   const title = recent.status === "unavailable" ? recent.reason : undefined;
-  // En enskild variabel kan saknas även när källan svarar.
-  const missing = w ? "Ingen station" : weatherPlaceholder(recent);
-  const missingTitle = w ? "Ingen SMHI-station inom 50 km" : title;
   const t = w?.temperature;
   const p = w?.precipitation;
-  const wind = w?.wind;
   const run = fc?.provenance.time;
   const notHistorical = recent.status === "unavailable" && recent.code === "not_historical";
+  // Historik: samma uppbyggnad som prognosen men utan vind.
+  const observed = useMemo(
+    () => (w && (t || p) ? observationHours(t?.series, p?.series, periodOf((t ?? p)!).to) : null),
+    [w, t, p],
+  );
 
   return (
     <Section
       title="Väder"
       kinds={[]}
+      hint={PRECIP_HINT}
+      hintLabel="Om nederbörd i diagrammen"
       status={recent.status === "ok" || forecast.status === "ok" || notHistorical ? "ok" : recent.status}
     >
       <h4 className={styles.subhead}>
         Senaste 24 h <KindBadge kind="observation" />
       </h4>
-      {t ? (
-        <ObsBlock
-          label="Temperatur"
-          sparkline={
-            t.series.length >= MIN_SPARKLINE_POINTS ? (
-              <Sparkline kind="temperature" series={t.series} from={periodOf(t).from} to={periodOf(t).to} />
-            ) : null
-          }
-          value={`Nu ${formatTemperature(t.values.latest.value)}`}
-          secondary={formatTemperatureRange(t.values.min.value, t.values.max.value)}
-        />
+      {observed ? (
+        <>
+          <Meteogram hours={observed} variant="observation" label="Observationer senaste 24 timmarna" />
+          {t && (
+            <p className={styles.snowNote}>
+              Nu {formatTemperature(t.values.latest.value)} · {formatTemperatureRange(t.values.min.value, t.values.max.value)}
+              {p && ` · ${formatPrecipitation(p.values.sum.value)} totalt`}
+            </p>
+          )}
+        </>
       ) : (
-        <Row label="Temperatur" status={recent.status} placeholder={missing} placeholderTitle={missingTitle} />
-      )}
-      {p ? (
-        <ObsBlock
-          label="Nederbörd"
-          hint={PRECIP_HINT}
-          sparkline={
-            // Vid 0 mm finns ingen timing att visa – bara texten.
-            p.series.length >= MIN_SPARKLINE_POINTS && p.values.sum.value > 0 ? (
-              <Sparkline kind="precipitation" series={p.series} from={periodOf(p).from} to={periodOf(p).to} />
-            ) : null
-          }
-          value={
-            p.values.sum.value > 0
-              ? `${formatPrecipitation(p.values.sum.value)} totalt`
-              : formatPrecipitation(p.values.sum.value)
-          }
+        <Row
+          label="Observationer"
+          status={recent.status}
+          placeholder={weatherPlaceholder(recent) ?? "Ingen station"}
+          placeholderTitle={title}
         />
-      ) : (
-        <Row label="Nederbörd" hint={PRECIP_HINT} status={recent.status} placeholder={missing} placeholderTitle={missingTitle} />
       )}
-      <Row
-        label="Vind"
-        status={recent.status}
-        placeholder={wind ? undefined : missing}
-        placeholderTitle={missingTitle}
-        value={
-          wind
-            ? formatWind(
-                wind.values.latest.value,
-                wind.values.latestDirection ? compassSv(wind.values.latestDirection.value) : null,
-              )
-            : undefined
-        }
-      />
 
       <h4 className={styles.subhead}>
         Prognos · 48 h <KindBadge kind="forecast" />
       </h4>
       {fc ? (
         <>
-          <Meteogram hours={fc.hours} />
+          <Meteogram hours={fc.hours} variant="forecast" label="Prognos 48 timmar" />
           {fc.forecastSnowfall && (
             <p className={styles.snowNote}>
               {fc.forecastSnowfall.estimated ? "Beräknad nysnö 48 h" : "Nysnö 48 h"}{" "}

@@ -103,11 +103,11 @@ export function temperatureSegments(hours: ForecastHour[]): { index: number; t: 
 }
 
 /** Textsammanfattning för skärmläsare. */
-export function meteogramSummary(hours: ForecastHour[]): string {
+export function meteogramSummary(hours: ForecastHour[], label = "48-timmars prognos"): string {
   const temps = hours.map((h) => h.temperature).filter((t): t is number => t !== null);
-  if (temps.length === 0) return "48-timmars prognos saknar temperaturdata.";
+  if (temps.length === 0) return `${label} saknar temperaturdata.`;
   const r = (v: number) => Math.round(v);
-  const parts = [`48-timmars prognos. Temperaturen varierar mellan ${r(Math.min(...temps))} och ${r(Math.max(...temps))} grader.`];
+  const parts = [`${label}. Temperaturen varierar mellan ${r(Math.min(...temps))} och ${r(Math.max(...temps))} grader.`];
   const below = hours.filter((h) => h.temperature !== null && h.temperature < 0).length;
   if (below > 0) parts.push(`${below} timmar under noll.`);
   const wet = hours.filter((h) => (h.precipitationMm ?? 0) > 0);
@@ -140,3 +140,38 @@ export function splitAtGaps<T extends { t: number }>(points: T[], maxGapMs = 1.5
 
 /** Minsta antal värden för att en 24 h-sparkline ska vara meningsfull. */
 export const MIN_SPARKLINE_POINTS = 6;
+
+/**
+ * Observationerna senaste `count` timmarna som en timgrid (samma form som
+ * prognosen, utan vind) så att båda meteogrammen ritas av samma komponent.
+ * Varje timme får närmaste stationsvärde inom ±30 min – inget interpoleras.
+ */
+export function observationHours(
+  temperature: { time: string; value: number }[] | undefined,
+  precipitation: { time: string; value: number }[] | undefined,
+  endIso: string,
+  count = 24,
+): ForecastHour[] {
+  const HOUR = 3_600_000;
+  const end = Math.floor(Date.parse(endIso) / HOUR) * HOUR;
+  const nearest = (series: { time: string; value: number }[] | undefined, t: number): number | null => {
+    let best: { d: number; v: number } | null = null;
+    for (const p of series ?? []) {
+      const d = Math.abs(Date.parse(p.time) - t);
+      if (d <= HOUR / 2 && (!best || d < best.d)) best = { d, v: p.value };
+    }
+    return best ? best.v : null;
+  };
+  return Array.from({ length: count }, (_, k) => {
+    const t = end - (count - 1 - k) * HOUR;
+    return {
+      time: new Date(t).toISOString(),
+      temperature: nearest(temperature, t),
+      precipitationMm: nearest(precipitation, t),
+      precipitationType: null,
+      windSpeed: null,
+      windFromDirection: null,
+      gust: null,
+    };
+  });
+}

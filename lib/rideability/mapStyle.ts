@@ -1,4 +1,4 @@
-/** Kartfärgsättning för Förmodad åkbarhet. Läser kategorier/färger från config. */
+/** Kartfärgsättning för Modellerad åkbarhet. Läser kategorier/färger från config. */
 import type { ExpressionSpecification } from "maplibre-gl";
 import type { LakeFeatureCollection } from "@/lib/data/lakes";
 import { COLLECTION_AREA_STYLE, isCollectionAreaFilter } from "@/lib/map/coldScale";

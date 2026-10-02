@@ -1,5 +1,5 @@
 /**
- * Förmodad åkbarhet · BETA – alla parametrar på ett ställe.
+ * Modellerad åkbarhet · BETA – alla parametrar på ett ställe.
  *
  * Detta är en sammanvägd MODELLINDIKERING av nuläget, inte ett säkerhetsmått.
  * Vikter, kurvor, gränser, gating och färger kommer sannolikt justeras – ändra
@@ -123,7 +123,7 @@ export const MISSING_ICE_CAP: RideabilityCategoryId = "favourable";
 /** Färre tillgängliga datakällor än så → Otillräckliga data. */
 export const MIN_SOURCES = 3;
 
-export const RIDEABILITY_TITLE = "Förmodad åkbarhet";
+export const RIDEABILITY_TITLE = "Modellerad åkbarhet";
 export const RIDEABILITY_HELP =
-  "Sammanvägd modellindikering baserad på köldmängd, modellerad is och snö, satellitdata och senaste nederbörd. Ska alltid verifieras på plats.";
+  "Sammanvägd indikator baserad på köldmängd, modellerad is och snö, satellitdata och senaste nederbörd. Ska alltid verifieras på plats.";
 export const RIDEABILITY_FOOTNOTE = "Modellbaserad indikering. Isförhållanden måste alltid verifieras på plats.";

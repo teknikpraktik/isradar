@@ -8,7 +8,7 @@ const round1 = (v: number) => Math.round(v * 10) / 10;
 
 /**
  * MEPS analys (+0 h): istjocklek och snö på is per gitterruta, för kartlagret
- * Förmodad åkbarhet. Body: { cells: [[y, x], …] }.
+ * Modellerad åkbarhet. Body: { cells: [[y, x], …] }.
  */
 export async function POST(request: NextRequest) {
   let cells: MepsCell[] = [];

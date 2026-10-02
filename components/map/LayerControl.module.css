@@ -4,7 +4,7 @@
   top: calc(env(safe-area-inset-top) + 58px);
   z-index: 15;
   width: 214px;
-  max-height: calc(100% - 58px - 250px); /* lämnar plats åt legenden nedtill */
+  max-height: calc(100% - 58px - 60px); /* lämnar plats åt kartans skala nedtill */
   overflow-y: auto;
   background: var(--surface);
   border: 1px solid var(--border);

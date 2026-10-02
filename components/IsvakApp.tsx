@@ -5,9 +5,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import LakePanel from "@/components/lake-panel/LakePanel";
 import LakeMap, { type FocusRequest } from "@/components/map/LakeMap";
 import LocateButton from "@/components/map/LocateButton";
-import ColdMapInfo from "@/components/map/ColdMapInfo";
 import LayerControl, { type ActiveSatellite } from "@/components/map/LayerControl";
-import RideabilityLegend from "@/components/map/RideabilityLegend";
+import PassWind from "@/components/map/PassWind";
 import LakeSearch from "@/components/search/LakeSearch";
 import InfoDialog from "@/components/ui/InfoDialog";
 import { isIsoDate } from "@/lib/cold/api";
@@ -79,9 +78,10 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
     [data, currentCold, coldKey],
   );
 
-  // Förmodad åkbarhet · BETA: ersätter köldmängdslagret medan det är aktivt
-  // (ömsesidigt exklusiva). Bulkdata hämtas först när lagret slås på.
-  const [rideabilityOn, setRideabilityOn] = useState(false);
+  // Modellerad åkbarhet · BETA är standardlager och ersätter köldmängdsfärgerna
+  // medan det är aktivt (ömsesidigt exklusiva). Bulkdata hämtas när lagret är på.
+  const [colorLayer, setColorLayer] = useState<"rideability" | "cold">("rideability");
+  const rideabilityOn = colorLayer === "rideability";
   const [bulk, setBulk] = useState<{ key: string; result: RideabilityBulkResult } | null>(null);
   const bulkKey = data ? `${data.regionId}|${asOf ?? ""}` : null;
   useEffect(() => {
@@ -150,7 +150,7 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
         setSatNotice(`Ingen ${sensor === "SAR" ? "Sentinel-1-passage" : "Sentinel-2-bild"} senaste ${v.windowDays} d för kartvyn.`);
         return;
       }
-      setSatellite((prev) => ({ scene: scenes[0], opacity: prev?.opacity ?? 0.7, scenes }));
+      setSatellite((prev) => ({ scene: scenes[0], opacity: prev?.opacity ?? 0.7, scenes, position }));
     },
     [region, asOf],
   );
@@ -165,7 +165,7 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
       <LakeMap
         region={region}
         lakes={colorLakes}
-        colorMode={rideabilityOn ? "rideability" : "cold"}
+        colorMode={colorLayer}
         selectedId={selectedId}
         focus={focus}
         userPosition={userPosition}
@@ -183,6 +183,12 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
           <span>{activeSatellite.scene.sensor === "SAR" ? "Sentinel-1 SAR" : "Sentinel-2 optisk"}</span>
           <span className="num">{formatShortDateTime(activeSatellite.scene.acquiredAt)}</span>
           <span>{activeSatellite.scene.platform}</span>
+          {activeSatellite.scene.sensor === "SAR" && (
+            <PassWind
+              position={activeSatellite.position ?? region.view.center}
+              time={activeSatellite.scene.acquiredAt}
+            />
+          )}
         </div>
       )}
 
@@ -218,19 +224,17 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
 
       <div className={styles.layers} data-hidden-mobile={lake !== null}>
         <LayerControl
-          rideability={{
-            on: rideabilityOn,
-            loading: rideabilityLoading,
-            failed: bulkReady ? bulk.result.failed : [],
-            onToggle: setRideabilityOn,
-          }}
+          colorLayer={colorLayer}
+          onColorLayer={setColorLayer}
+          rideability={{ loading: rideabilityLoading, failed: bulkReady ? bulk.result.failed : [] }}
+          coldLegend={legendFlags}
           satellite={{
             active: activeSatellite,
             loadingSensor: satLoading,
             notice: satNotice,
             onToggle: toggleSatellite,
             onShow: (scene) =>
-              setSatellite((prev) => (scene ? { scene, opacity: prev?.opacity ?? 0.7, scenes: prev?.scenes } : null)),
+              setSatellite((prev) => (scene ? { scene, opacity: prev?.opacity ?? 0.7, scenes: prev?.scenes, position: prev?.position } : null)),
             onOpacity: (opacity) => setSatellite((s) => (s ? { ...s, opacity } : s)),
           }}
         />
@@ -238,14 +242,6 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
 
       <div className={styles.sideControls}>
         <LocateButton onPosition={setUserPosition} onMessage={showMessage} />
-      </div>
-
-      <div className={styles.legend} data-hidden-mobile={lake !== null}>
-        {rideabilityOn ? (
-          <RideabilityLegend loading={rideabilityLoading} onClose={() => setRideabilityOn(false)} />
-        ) : (
-          <ColdMapInfo {...legendFlags} />
-        )}
       </div>
 
       {lake && (

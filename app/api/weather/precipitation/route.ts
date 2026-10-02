@@ -15,7 +15,7 @@ const inSweden = (lat: number, lon: number) => lat > 54.5 && lat < 69.5 && lon >
 
 /**
  * Observerad nederbörd senaste 24 h (SMHI, närmaste station inom 50 km) för
- * många punkter, till kartlagret Förmodad åkbarhet. Body: { points: [{id, lat, lon}] }.
+ * många punkter, till kartlagret Modellerad åkbarhet. Body: { points: [{id, lat, lon}] }.
  * Samma stationsval och summering som /api/weather, men utan VViS.
  */
 export async function POST(request: NextRequest) {

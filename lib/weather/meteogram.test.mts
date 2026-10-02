@@ -8,6 +8,7 @@ import {
   temperatureSegments,
   timeTicks,
   windArrowRotation,
+  observationHours,
 } from "./meteogram.ts";
 
 const hour = (time: string, p: Partial<ForecastHour> = {}): ForecastHour => ({
@@ -86,4 +87,19 @@ test("tidsserie bryts vid luckor > 1,5 h", async () => {
   const segs = splitAtGaps([{ t: 0 }, { t: H }, { t: 2 * H }, { t: 5 * H }, { t: 6 * H }]);
   assert.deepEqual(segs.map((s) => s.length), [3, 2]);
   assert.deepEqual(splitAtGaps([]), []);
+});
+
+test("observationHours: timgrid med närmaste värde inom ±30 min, inget interpoleras", () => {
+  const hs = observationHours(
+    [{ time: "2026-10-02T10:00:00.000Z", value: 4 }],
+    [{ time: "2026-10-02T11:10:00.000Z", value: 0.6 }],
+    "2026-10-02T11:20:00.000Z",
+    3,
+  );
+  assert.equal(hs.length, 3);
+  assert.equal(hs[0].time, "2026-10-02T09:00:00.000Z");
+  assert.equal(hs[1].temperature, 4);
+  assert.equal(hs[1].precipitationMm, null);
+  assert.equal(hs[2].precipitationMm, 0.6);
+  assert.equal(hs[2].temperature, null);
 });

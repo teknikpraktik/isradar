@@ -1,5 +1,5 @@
 /**
- * Hämtar bulkdata för kartlagret Förmodad åkbarhet (MEPS-analys, nederbörd 24 h,
+ * Hämtar bulkdata för kartlagret Modellerad åkbarhet (MEPS-analys, nederbörd 24 h,
  * Sentinel-adapter). Varje källa fallerar för sig – en källa som saknas gör
  * bara att den räknas som "data saknas" i bedömningen.
  */

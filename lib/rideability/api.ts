@@ -1,5 +1,5 @@
 /**
- * Kontrakt för bulk-endpoints som kartlagret Förmodad åkbarhet använder.
+ * Kontrakt för bulk-endpoints som kartlagret Modellerad åkbarhet använder.
  *   POST /api/meps/cells            – MEPS analys (+0 h) för gitterrutor
  *   POST /api/weather/precipitation – observerad nederbörd 24 h för punkter
  */
