@@ -135,7 +135,7 @@ export default function LayerControl({ colorLayer, onColorLayer, rideability, co
         {riding && <RideabilityLegend />}
 
         <h3 className={styles.group}>Analyslager</h3>
-        <p className={`${styles.help} ${styles.desktopOnly}`}>Underliggande beslutsunderlag.</p>
+        <p className={`${styles.help} ${styles.desktopOnly}`}>Underliggande datalager.</p>
         <div className={styles.switchWithHint}>
           <Switch
             checked={cold}
