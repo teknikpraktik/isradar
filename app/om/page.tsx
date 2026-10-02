@@ -25,7 +25,7 @@ import styles from "./om.module.css";
 
 export const metadata: Metadata = {
   title: "Om Isvak",
-  description: "Hur Isvak fungerar, vilka data och modeller som används – och varför de inte kan användas för att bedöma is.",
+  description: "Hur Isvak fungerar, vilka data och modeller som används, och varför de inte kan användas för att bedöma is.",
 };
 
 const FACTOR: Record<RideabilityFactorId, string> = {
@@ -65,12 +65,12 @@ export default function OmIsvak() {
         <h1>Om Isvak</h1>
         <p className={styles.lead}>
           Isvak samlar köldmängd, väder, modeller och satellitdata på en karta för att visa var det kan vara värt att
-          göra isspaning på plats. Den här sidan beskriver i detalj hur allt fungerar – och vad det inte går att
+          göra isspaning på plats. Den här sidan beskriver i detalj hur allt fungerar, och vad det inte går att
           använda det till.
         </p>
 
         <section className={styles.danger} aria-labelledby="varning">
-          <h2 id="varning">Livsfara – läs detta först</h2>
+          <h2 id="varning">Livsfara: läs detta först</h2>
           <p>
             <strong>Det är förenat med livsfara att vistas på isar utan rätt utrustning, sällskap och kunskap.</strong>{" "}
             Människor drunknar och dör varje vinter efter att ha gått, åkt eller kört genom isen.
@@ -79,20 +79,20 @@ export default function OmIsvak() {
             <strong>Isvaks modeller kan inte användas som ett verktyg för att bedöma is.</strong> Allt som visas är
             beräkningar och mätningar av andra saker än isen själv: temperaturer, modellerade värden, väder och
             radarbilder. Ingen har kontrollerat isen på platsen. En färg, en kategori eller en siffra säger{" "}
-            <strong>ingenting</strong> om huruvida isen bär – inte ens när den visar &quot;Mycket gynnsamma
+            <strong>ingenting</strong> om huruvida isen bär, inte ens när den visar &quot;Mycket gynnsamma
             indikationer&quot;. Isen kan vara farlig trots gynnsamma indikationer, och kartan kan visa fel.
           </p>
           <ul>
             <li>Gå aldrig ut på is ensam, och gå aldrig ut på is som du inte själv har kontrollerat på plats.</li>
             <li>
-              Ha rätt utrustning – isdubbar, ispik, räddningslina, flytväst med grenrem, komplett ombyte packat i
-              vattentäta påsar och mobiltelefon i vattenskyddat fodral – och kunna använda den.
+              Ha rätt utrustning (isdubbar, ispik, räddningslina, flytväst med grenrem, komplett ombyte packat i
+              vattentäta påsar och mobiltelefon i vattenskyddat fodral) och kunna använda den.
             </li>
             <li>
-              Ha kunskap om hur is bildas och varierar – tjockleken och kvaliteten kan skifta kraftigt på några meter,
+              Ha kunskap om hur is bildas och varierar. Tjockleken och kvaliteten kan skifta kraftigt på några meter,
               särskilt vid strömmar, utlopp, bryggor, vass och under snö.
             </li>
-            <li>Lita inte på spår efter andra – ingen kan veta att isen bär bara för att någon annan gått där.</li>
+            <li>Lita inte på spår efter andra. Ingen kan veta att isen bär bara för att någon annan gått där.</li>
             <li>Vid olycka: ring 112.</li>
           </ul>
           <p>
@@ -103,7 +103,7 @@ export default function OmIsvak() {
           </p>
         </section>
 
-        <h2>Vad Isvak är – och inte är</h2>
+        <h2>Vad Isvak är och inte är</h2>
         <ul>
           <li>
             <strong>Är:</strong> ett hjälpmedel för att hitta vatten och områden som kan vara intressanta att
@@ -131,7 +131,7 @@ export default function OmIsvak() {
             Isvaks egen sammanvägning Modellerad åkbarhet.
           </li>
           <li>
-            <strong>Prognos (PROGNOS):</strong> modellerad framtid, till exempel SMHI:s 48-timmarsprognos.
+            <strong>Prognos (PROGNOS):</strong> modellerad framtid, till exempel SMHI:s prognos på 48 timmar.
           </li>
           <li>
             <strong>Historisk referens (HIST):</strong> värden från tidigare säsonger, till exempel Skridskonätets
@@ -148,7 +148,7 @@ export default function OmIsvak() {
         <h3>Modellerad åkbarhet (BETA)</h3>
         <p>
           Huvudlagret. Varje vatten färgas efter en sammanvägd modellindikering av nuläget. Färgen är ett uttryck för
-          hur många av de underliggande indikatorerna som pekar åt ett håll – <strong>inte</strong> för hur isen är.
+          hur många av de underliggande indikatorerna som pekar åt ett håll, <strong>inte</strong> för hur isen är.
           Ingen framtida prognos vägs in.
         </p>
         <ul className={styles.legend}>
@@ -160,9 +160,9 @@ export default function OmIsvak() {
         </ul>
         <p>
           <strong>Samma färger, två modeller.</strong> Kartan väljer modell automatiskt efter vattnet: sjömodellen där
-          MEPS-data finns och Vänernmodellen på Vänern. Båda ger en poäng 0–100 (används internt och visas inte som
-          primärvärde) som översätts till samma kategorier. Poängen delas in så här: 85 och uppåt Mycket gynnsamma, 70–84
-          Gynnsamma, 45–69 Blandade, under 45 Inga indikationer. Otillräckliga data (grå) visas när för lite underlag
+          data från MEPS finns och Vänernmodellen på Vänern. Båda ger en poäng från 0 till 100 (används internt och visas inte som
+          primärvärde) som översätts till samma kategorier. Poängen delas in så här: 85 och uppåt Mycket gynnsamma, 70 till 84
+          Gynnsamma, 45 till 69 Blandade, under 45 Inga indikationer. Otillräckliga data (grå) visas när för lite underlag
           finns.
         </p>
 
@@ -171,7 +171,7 @@ export default function OmIsvak() {
         <ul>
           {RIDEABILITY_FACTORS.map((id) => (
             <li key={id}>
-              {FACTOR[id]} – {WEIGHTS[id]} %
+              {FACTOR[id]}: {WEIGHTS[id]} %
             </li>
           ))}
         </ul>
@@ -183,7 +183,7 @@ export default function OmIsvak() {
         <ul>
           {ICE_GATES.map((g) => (
             <li key={g.reason}>
-              {g.reason === "ice_below_2" ? "Under 2 cm" : "2–5 cm"} modellerad is: högst &quot;
+              {g.reason === "ice_below_2" ? "Under 2 cm" : "2 till 5 cm"} modellerad is: högst &quot;
               {CATEGORIES.find((c) => c.id === g.cap)?.label}&quot;
             </li>
           ))}
@@ -193,7 +193,7 @@ export default function OmIsvak() {
           <li>Färre än {MIN_SOURCES} av 5 källor har data: &quot;Otillräckliga data&quot;</li>
         </ul>
         <p>
-          Saknad data räknas aldrig som noll – den är &quot;data saknas&quot; och påverkar bara tillgängligt underlag.
+          Saknad data räknas aldrig som noll. Den är &quot;data saknas&quot; och påverkar bara tillgängligt underlag.
           Sentinel-1 är ännu inte kopplat till sjömodellen för enskilda sjöar, så den indikatorn saknas där.
         </p>
 
@@ -206,7 +206,7 @@ export default function OmIsvak() {
         <ul>
           {VANERN_COMPONENTS.map((id) => (
             <li key={id}>
-              {VANERN[id]} – {pct(VANERN_WEIGHTS[id])}
+              {VANERN[id]}: {pct(VANERN_WEIGHTS[id])}
             </li>
           ))}
         </ul>
@@ -238,19 +238,19 @@ export default function OmIsvak() {
             <strong>Spärrar:</strong> ett viktat medelvärde får inte ge gul eller grön färg när förutsättningarna för
             isbildning saknas. Har aktuell köldmängd inte nått {VANERN_GATES.minColdPercent} % av historisk referens
             blir poängen högst {VANERN_GATES.lowColdCap}, och är medeltemperaturen de senaste 72 timmarna{" "}
-            {VANERN_GATES.warmMeanC} °C eller varmare blir den högst {VANERN_GATES.warmCap} – oavsett hur jämn
+            {VANERN_GATES.warmMeanC} °C eller varmare blir den högst {VANERN_GATES.warmCap}, oavsett hur jämn
             radarytan är, eftersom lugnt öppet vatten också kan se jämnt ut.
           </li>
           <li>
-            <strong>Tak och saknad data:</strong> utan Sentinel-data begränsas poängen till högst{" "}
+            <strong>Tak och saknad data:</strong> utan data från Sentinel begränsas poängen till högst{" "}
             {SENTINEL_MISSING_CAP} av 100 (konservativt). Saknas komponenter normaliseras vikterna om. Under{" "}
             {pct(MIN_AVAILABLE_WEIGHT)} tillgängliga vikter visas &quot;Otillräckliga data&quot;. Internt beräknas
             även en datatillit (hög, medel, låg), som inte visas.
           </li>
         </ul>
         <p>
-          Sentinel-datat hämtas för passen inom de senaste {SENTINEL.maxAgeHours / 24} dygnen och uppdateras inte i
-          realtid – det är beroende av när satelliten passerat och av cachelagring. Delar av Vänern ligger utanför
+          Satellitdatat från Sentinel hämtas för passen inom de senaste {SENTINEL.maxAgeHours / 24} dygnen och uppdateras inte i
+          realtid. Det är beroende av när satelliten passerat och av cachelagring. Delar av Vänern ligger utanför
           Värmland och ingår inte ännu.
         </p>
 
@@ -265,7 +265,7 @@ export default function OmIsvak() {
         <ul>
           {COLD_PROGRESS_CLASSES.map((c) => (
             <li key={c.id}>
-              <span className={styles.swatch} style={{ background: c.color }} aria-hidden /> {c.range} – {c.status}
+              <span className={styles.swatch} style={{ background: c.color }} aria-hidden /> {c.range.replace("–", " till ")}: {c.status}
             </li>
           ))}
         </ul>
@@ -278,7 +278,7 @@ export default function OmIsvak() {
         <p>
           Rena satellitbilder från Copernicus, utan tolkning av is eller vatten. Sentinel-1 är radar och fungerar
           genom moln och i mörker; bilden visar radarrespons (VV, dB) på en fast färgskala. Släta ytor ger ofta låg
-          respons, grövre ytor högre – men blankt vatten och blank is kan se likadana ut, och vågor, snö, grov is och
+          respons, grövre ytor högre. Men blankt vatten och blank is kan se likadana ut, och vågor, snö, grov is och
           vind påverkar bilden. Sentinel-2 är optisk (sann eller falsk färg) och påverkas av moln och dagsljus;
           molnighet gäller hela bildrutan. Vind och byvind vid passagen visas intill passagens tid. Bilderna visar
           varken istjocklek eller bärighet.
@@ -298,13 +298,13 @@ export default function OmIsvak() {
           </li>
           <li>
             <strong>Modell (MEPS):</strong> modellerad istjocklek, snö på is och yttemperatur från MET Norways
-            sjöismodell, i 2,5 km-rutor. Värdet är medianen över rutor med sjöyta och gäller modellens sjöyta, inte
-            nödvändigtvis just detta vatten – särskilt för små vatten. Modellen finns bara för senaste körning, och
+            sjöismodell, i rutor på 2,5 km. Värdet är medianen över rutor med sjöyta och gäller modellens sjöyta, inte
+            nödvändigtvis just detta vatten, särskilt för små vatten. Modellen finns bara för senaste körning, och
             saknas på Vänern.
           </li>
           <li>
-            <strong>Väder:</strong> två meteogram med samma uppbyggnad – observationer senaste 24 timmarna och SMHI:s
-            prognos 48 timmar – med temperatur överst och nederbörd nederst, samt vind. Nederbörden märks som snö vid
+            <strong>Väder:</strong> två meteogram med samma uppbyggnad: observationer senaste 24 timmarna och SMHI:s
+            prognos 48 timmar, med temperatur överst och nederbörd nederst, samt vind. Nederbörden märks som snö vid
             0 °C eller kallare och annars som regn (en enkel tumregel, inte en meteorologisk klassning). Observationerna
             kommer från närmaste station per variabel (SMHI och Trafikverket VViS, högst 50 km), och stationens avstånd
             kan göra att värdena skiljer sig från sjön.
@@ -327,7 +327,7 @@ export default function OmIsvak() {
             Sjöismodell: <a href="https://thredds.met.no">MET Norway MEPS</a> (FLake, CC BY 4.0)
           </li>
           <li>
-            Satellit: Copernicus Sentinel-data via{" "}
+            Satellit: Copernicus Sentinel data via{" "}
             <a href="https://planetarycomputer.microsoft.com">Microsoft Planetary Computer</a>
           </li>
           <li>Länsgränser: SCB (CC0). Karta: © OpenStreetMap, OpenMapTiles, OpenFreeMap</li>
@@ -350,7 +350,7 @@ export default function OmIsvak() {
           Kontrollera alltid isen själv, på plats, med rätt utrustning och i sällskap. Isvak kan aldrig göra det åt dig.
         </p>
         <p className={styles.contact}>
-          Kontakt – förbättringsförslag, buggar med mera:{" "}
+          Kontakt för förbättringsförslag, buggar med mera:{" "}
           <a href="mailto:per.a.bjorkman@gmail.com">per.a.bjorkman@gmail.com</a>
         </p>
         <Link href="/" className={styles.back}>

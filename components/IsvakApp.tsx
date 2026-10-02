@@ -33,7 +33,7 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
   const [selectedId, setSelectedId] = useState<LakeId | null>(null);
   const [focus, setFocus] = useState<FocusRequest | null>(null);
   const [userPosition, setUserPosition] = useState<LngLat | null>(null);
-  // Friskrivningen kan stängas på mobil (visas alltid på bred skärm och igen vid omladdning).
+  // Friskrivningen kan stängas (visas igen vid omladdning).
   const [disclaimerClosed, setDisclaimerClosed] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   // Satellitlager: ett åt gången, hör till kartan (inte till en sjö) och ligger kvar när man byter vatten.
@@ -42,6 +42,7 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
   const [satLoading, setSatLoading] = useState<"SAR" | "optical" | null>(null);
   const [satNotice, setSatNotice] = useState<string | null>(null);
   const mapCenterRef = useRef<LngLat | null>(null);
+  const mapApi = useRef<{ zoomIn: () => void; zoomOut: () => void } | null>(null);
   // Mätverktyg: klick på kartan lägger ut en rutt (påverkar inget annat lager).
   const [measureOn, setMeasureOn] = useState(false);
   const [route, setRoute] = useState<LngLat[]>([]);
@@ -183,6 +184,7 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
         lakes={colorLakes}
         colorMode={colorLayer}
         cells={vanern.features}
+        apiRef={mapApi}
         selectedId={selectedId}
         focus={focus}
         userPosition={userPosition}
@@ -231,7 +233,8 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
         )}
       </div>
 
-      <div className={styles.layers} data-hidden-mobile={lake !== null}>
+      <div className={styles.layers}>
+        <div className={styles.boxes} data-hidden-mobile={lake !== null}>
         <LayerControl
           colorLayer={colorLayer}
           onColorLayer={(layer) => {
@@ -260,6 +263,17 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
           onUndo={() => setRoute((r) => r.slice(0, -1))}
           onClear={() => setRoute([])}
         />
+        </div>
+        {/* Position och zoom under mätverktyget, i vänsterkolumnen */}
+        <div className={styles.mapButtons}>
+          <LocateButton onPosition={setUserPosition} onMessage={showMessage} />
+          <button type="button" className={styles.iconBtn} onClick={() => mapApi.current?.zoomIn()} aria-label="Zooma in" title="Zooma in">
+            +
+          </button>
+          <button type="button" className={styles.iconBtn} onClick={() => mapApi.current?.zoomOut()} aria-label="Zooma ut" title="Zooma ut">
+            −
+          </button>
+        </div>
       </div>
 
       <div className={styles.disclaimer} data-hidden-mobile={lake !== null} data-closed={disclaimerClosed}>
@@ -272,17 +286,13 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
           ×
         </button>
         <p>
-          Isvak är en datormodell – isen är inte kontrollerad på plats och modellerna kan inte användas för att
+          Isvak är en datormodell. Isen är inte kontrollerad på plats och modellerna kan inte användas för att
           bedöma is.{" "}
-          <strong>Det är förenat med livsfara att beträda naturis utan rätt kunskap, sällskap och utrustning.</strong>
+          Det är förenat med livsfara att beträda naturis utan rätt kunskap, sällskap och utrustning.
         </p>
         <a href="/om" target="_blank" rel="noopener noreferrer">
           Om Isvak
         </a>
-      </div>
-
-      <div className={styles.sideControls}>
-        <LocateButton onPosition={setUserPosition} onMessage={showMessage} />
       </div>
 
       {lake && (

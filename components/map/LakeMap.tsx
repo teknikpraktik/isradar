@@ -36,6 +36,8 @@ interface Props {
   onMoveEnd?: (center: LngLat) => void;
   /** Analysceller för Vänernmodellen (visas bara i läget Modellerad åkbarhet). */
   cells?: GeoJSON.FeatureCollection | null;
+  /** Gör zoomfunktionerna tillgängliga för kontroller utanför kartan (zoomknapparna ligger i vänsterkolumnen). */
+  apiRef?: { current: { zoomIn: () => void; zoomOut: () => void } | null };
   /** Mätverktyg: utlagd rutt. Medan active tar klick punkter i stället för att välja sjö. */
   measure?: { active: boolean; points: LngLat[]; onAdd: (p: LngLat) => void };
 }
@@ -73,6 +75,7 @@ export default function LakeMap({
   onMoveEnd,
   measure,
   cells = null,
+  apiRef,
 }: Props) {
   const measureRef = useRef(measure);
   useEffect(() => {
@@ -116,7 +119,6 @@ export default function LakeMap({
           touchPitch: false,
         });
         map.touchZoomRotate.disableRotation();
-        map.addControl(new ml.NavigationControl({ showCompass: false }), "bottom-right");
         map.addControl(new ml.ScaleControl({ unit: "metric", maxWidth: 90 }), "bottom-left");
         map.getCanvas().setAttribute("aria-label", `Karta över ${region.name}`);
 
@@ -202,6 +204,16 @@ export default function LakeMap({
     if (!ready || !map || !lakes) return;
     (map.getSource(SOURCE) as GeoJSONSource).setData(lakes);
   }, [ready, lakes]);
+
+  // Zoom via knappar utanför kartan.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map || !apiRef) return;
+    apiRef.current = { zoomIn: () => map.zoomIn(), zoomOut: () => map.zoomOut() };
+    return () => {
+      apiRef.current = null;
+    };
+  }, [ready, apiRef]);
 
   // Vänernmodellens analysceller.
   useEffect(() => {

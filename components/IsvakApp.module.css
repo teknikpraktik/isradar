@@ -88,16 +88,6 @@
 
 /* --- kontroller och legend --------------------------------------- */
 
-.sideControls {
-  position: absolute;
-  right: 10px;
-  top: calc(env(safe-area-inset-top) + 58px);
-  z-index: 15;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
 /* Vänsterkolumn: lagerväljare med mätverktyget under. */
 .layers {
   position: absolute;
@@ -115,6 +105,26 @@
   pointer-events: auto;
 }
 
+/* Lagerväljare och mätverktyg (döljs på mobil när sjöpanelen är öppen). */
+.boxes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+/* Position och zoom under mätverktyget */
+.mapButtons {
+  display: flex;
+  gap: 8px;
+  flex: none;
+}
+
+.mapButtons .iconBtn {
+  font-size: 20px;
+  font-weight: 500;
+}
+
 @media (max-width: 767px) {
   /* Mobil: smal kolumn; lagerväljaren och mätverktyget är alltid lika breda (100 % av kolumnen). */
   .layers {
@@ -124,19 +134,17 @@
   .layers:has([data-open="true"]) {
     width: 208px;
   }
-  .layers[data-hidden-mobile="true"] {
+  .boxes[data-hidden-mobile="true"] {
     display: none;
   }
-}
-
-
-@media (min-width: 768px) {
-  .sideControls {
-    top: auto;
-    right: 10px;
-    bottom: 126px;
+  .layers:has(.boxes[data-hidden-mobile="true"]) {
+    width: auto;
+  }
+  .mapButtons {
+    gap: 6px;
   }
 }
+
 
 .toast {
   position: absolute;
@@ -229,11 +237,13 @@
 /* Friskrivning fast nere till höger, till vänster om zoomknapparna */
 .disclaimer {
   position: fixed;
-  right: 56px;
+  right: 12px; /* linjerad med sjöpanelens högerkant */
   bottom: 30px; /* ovanför kartans källhänvisning (©), som måste synas */
   z-index: 30;
-  max-width: min(380px, calc(100vw - 56px - 120px));
-  padding: 5px 10px 6px;
+  /* Lika bred som sjövyns panel (400 px) på bred skärm */
+  width: min(400px, calc(100vw - 24px));
+  box-sizing: border-box;
+  padding: 6px 32px 7px 10px;
   background: rgb(12 16 21 / 0.86);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);
@@ -242,13 +252,12 @@
   color: var(--text-muted);
 }
 
-.disclaimer p {
-  margin: 0;
+.disclaimer[data-closed="true"] {
+  display: none;
 }
 
-.disclaimer strong {
-  color: var(--text);
-  font-weight: 600;
+.disclaimer p {
+  margin: 0;
 }
 
 /* "Om Isvak" på egen rad */
@@ -259,40 +268,36 @@
   width: fit-content;
 }
 
-/* Stängknapp: bara på mobil */
+/* Stängknapp (dator och mobil) */
 .disclaimerClose {
-  display: none;
+  all: unset;
+  cursor: pointer;
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--text-muted);
+  border-radius: var(--radius);
+}
+
+.disclaimerClose:hover,
+.disclaimerClose:focus-visible {
+  background: var(--surface-hover);
+  color: var(--text);
 }
 
 @media (max-width: 767px) {
   .disclaimer {
     right: 10px;
-    bottom: 54px;
-    max-width: calc(100vw - 20px - 100px);
-    padding-right: 30px;
+    bottom: 34px;
+    width: calc(100vw - 20px);
   }
-  .disclaimer[data-hidden-mobile="true"],
-  .disclaimer[data-closed="true"] {
+  .disclaimer[data-hidden-mobile="true"] {
     display: none;
-  }
-  .disclaimerClose {
-    all: unset;
-    cursor: pointer;
-    position: absolute;
-    top: 2px;
-    right: 2px;
-    width: 26px;
-    height: 26px;
-    display: grid;
-    place-items: center;
-    font-size: 18px;
-    line-height: 1;
-    color: var(--text-muted);
-    border-radius: var(--radius);
-  }
-  .disclaimerClose:hover,
-  .disclaimerClose:focus-visible {
-    background: var(--surface-hover);
-    color: var(--text);
   }
 }

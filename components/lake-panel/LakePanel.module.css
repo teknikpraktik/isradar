@@ -40,9 +40,9 @@
     left: auto;
     top: 64px;
     right: 12px;
-    /* Stannar ovanför position, zoom, källhänvisning och friskrivning i nedre högra hörnet
+    /* Stannar ovanför friskrivningen och källhänvisningen i nedre högra hörnet
        och scrollar internt (se .body) i stället för att knuffa undan dem. */
-    bottom: 180px;
+    bottom: 150px;
     width: 400px;
     max-height: none;
     border: 1px solid var(--border);
