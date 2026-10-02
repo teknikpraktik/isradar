@@ -5,7 +5,7 @@
  * på lägger klick på kartan ut en rutt; aktivt kartlager påverkas inte. Rutten ligger
  * kvar när verktyget stängs av och tas bort med "Ta bort rutt".
  */
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { formatLength, routeLengthM } from "@/lib/measure/route";
 import type { LngLat } from "@/types/lake";
 import styles from "./MeasureControl.module.css";
@@ -39,6 +39,7 @@ function RulerIcon() {
 
 export default function MeasureControl({ on, points, onToggle, onUndo, onClear }: Props) {
   const hasRoute = points.length > 0;
+  const [info, setInfo] = useState(false);
   // Esc avslutar mätläget (rutten ligger kvar).
   useEffect(() => {
     if (!on) return;
@@ -60,7 +61,18 @@ export default function MeasureControl({ on, points, onToggle, onUndo, onClear }
       {(on || hasRoute) && (
         <div className={styles.body}>
           {on && (
-            <p className={styles.help}>
+            <button
+              type="button"
+              className={styles.hintBtn}
+              onClick={() => setInfo((v) => !v)}
+              aria-expanded={info}
+              aria-label="Så använder du mätverktyget"
+            >
+              ?
+            </button>
+          )}
+          {on && (
+            <p className={info ? `${styles.help} ${styles.helpOpen}` : styles.help}>
               {hasRoute ? "Klicka för att lägga till fler punkter." : "Klicka på kartan för att lägga ut hur du tänker åka."}{" "}
               Avsluta med knappen ovan eller Esc.
             </p>

@@ -53,17 +53,80 @@
   margin-top: 2px;
 }
 
-/* Mobil: infälld bakom knappen, och bortgömd när sjöpanelen täcker kartan. */
+.toggleIcon {
+  display: none;
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.switchWithHint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.switchWithHint > label {
+  flex: 1;
+}
+
+.mobileOnly {
+  display: none;
+}
+
+/*
+ * Mobil: diskret och lika bred som mätverktyget (bredden sätts av kolumnen i IsvakApp).
+ * Infälld bakom en knapp; förklaringar ligger bakom frågetecken.
+ */
 @media (max-width: 767px) {
   .control {
-    width: auto;
-    max-width: 230px;
+    width: 100%;
+    padding: 2px 8px;
+    font-size: 11.5px;
+    background: rgb(18 24 31 / 0.82);
   }
   .toggle {
     display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 7px 0;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: none;
+    color: var(--text);
+  }
+  .toggleIcon {
+    display: block;
   }
   .body[data-open="false"] {
     display: none;
+  }
+  .body {
+    padding-bottom: 6px;
+  }
+  .desktopOnly {
+    display: none;
+  }
+  .mobileOnly {
+    display: inline-grid;
+  }
+  .help {
+    font-size: 11px;
+    line-height: 1.45;
+    margin: 0 0 3px;
+  }
+  .switchRow {
+    padding: 3px 0;
+    font-size: 12px;
+    gap: 8px;
+  }
+  .group {
+    margin: 6px 0 1px;
+    font-size: 10.5px;
+  }
+  .beta {
+    font-size: 8.5px;
   }
 }
 
@@ -172,4 +235,20 @@
   background: var(--surface-solid);
   border-left: 2px solid var(--kind-model);
   border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+.modelInfo a {
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+/* "?"-knappen för mobil syns inte på bred skärm (högre specificitet än .hintBtn) */
+.hintBtn.mobileOnly {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .hintBtn.mobileOnly {
+    display: inline-grid;
+  }
 }

@@ -33,6 +33,8 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
   const [selectedId, setSelectedId] = useState<LakeId | null>(null);
   const [focus, setFocus] = useState<FocusRequest | null>(null);
   const [userPosition, setUserPosition] = useState<LngLat | null>(null);
+  // Friskrivningen kan stängas på mobil (visas alltid på bred skärm och igen vid omladdning).
+  const [disclaimerClosed, setDisclaimerClosed] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   // Satellitlager: ett åt gången, hör till kartan (inte till en sjö) och ligger kvar när man byter vatten.
   const [satellite, setSatellite] = useState<ActiveSatellite | null>(null);
@@ -260,14 +262,24 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
         />
       </div>
 
-      <p className={styles.disclaimer} data-hidden-mobile={lake !== null}>
-        Isvak är en datormodell – isen är inte kontrollerad på plats och modellerna kan inte användas för att bedöma
-        is.{" "}
-        <strong>Det är förenat med livsfara att beträda naturis utan rätt kunskap, sällskap och utrustning.</strong>{" "}
+      <div className={styles.disclaimer} data-hidden-mobile={lake !== null} data-closed={disclaimerClosed}>
+        <button
+          type="button"
+          className={styles.disclaimerClose}
+          onClick={() => setDisclaimerClosed(true)}
+          aria-label="Stäng friskrivningen"
+        >
+          ×
+        </button>
+        <p>
+          Isvak är en datormodell – isen är inte kontrollerad på plats och modellerna kan inte användas för att
+          bedöma is.{" "}
+          <strong>Det är förenat med livsfara att beträda naturis utan rätt kunskap, sällskap och utrustning.</strong>
+        </p>
         <a href="/om" target="_blank" rel="noopener noreferrer">
           Om Isvak
         </a>
-      </p>
+      </div>
 
       <div className={styles.sideControls}>
         <LocateButton onPosition={setUserPosition} onMessage={showMessage} />

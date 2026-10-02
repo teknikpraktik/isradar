@@ -46,12 +46,21 @@ const VANERN: Record<(typeof VANERN_COMPONENTS)[number], string> = {
 
 const pct = (v: number) => `${Math.round(v * 100)} %`;
 
+/** Fet pil som ikon (i stället för tecknet ←). */
+function ArrowLeft() {
+  return (
+    <svg className={styles.arrow} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M20 12H5M11 5l-7 7 7 7" />
+    </svg>
+  );
+}
+
 export default function OmIsvak() {
   return (
     <div className={styles.page}>
       <main className={styles.main}>
         <Link href="/" className={styles.back}>
-          ← Till kartan
+          <ArrowLeft /> Till kartan
         </Link>
         <h1>Om Isvak</h1>
         <p className={styles.lead}>
@@ -162,7 +171,7 @@ export default function OmIsvak() {
         <ul>
           {RIDEABILITY_FACTORS.map((id) => (
             <li key={id}>
-              {FACTOR[id]} – {WEIGHTS[id]} p
+              {FACTOR[id]} – {WEIGHTS[id]} %
             </li>
           ))}
         </ul>
@@ -345,7 +354,7 @@ export default function OmIsvak() {
           <a href="mailto:per.a.bjorkman@gmail.com">per.a.bjorkman@gmail.com</a>
         </p>
         <Link href="/" className={styles.back}>
-          ← Till kartan
+          <ArrowLeft /> Till kartan
         </Link>
       </main>
     </div>

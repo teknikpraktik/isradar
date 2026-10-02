@@ -78,10 +78,21 @@ function Switch({
   );
 }
 
+/** Lagersymbol (staplade lager). */
+function LayersIcon() {
+  return (
+    <svg className={styles.toggleIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="m12 3 9 5-9 5-9-5z" />
+      <path d="m3 13 9 5 9-5" />
+    </svg>
+  );
+}
+
 export default function LayerControl({ colorLayer, onColorLayer, rideability, coldLegend, satellite }: Props) {
   // Utfälld som standard på bred skärm; på mobil styr knappen (se CSS).
   const [open, setOpen] = useState(false);
   const [modelInfo, setModelInfo] = useState(false);
+  const [coldInfo, setColdInfo] = useState(false);
   const sat = satellite.active;
   const riding = colorLayer === "rideability";
   const cold = colorLayer === "cold";
@@ -89,17 +100,30 @@ export default function LayerControl({ colorLayer, onColorLayer, rideability, co
   return (
     <section className={styles.control} aria-label="Kartlager">
       <button type="button" className={styles.toggle} onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+        <LayersIcon />
         <span>Lager</span>
       </button>
       <div className={styles.body} data-open={open}>
-        <Switch
-          checked={riding}
-          onChange={(on) => onColorLayer(on ? "rideability" : "none")}
-          label={RIDEABILITY_TITLE}
-          badge="BETA"
-          busy={riding && rideability.loading}
-        />
-        <p className={styles.help}>
+        <div className={styles.switchWithHint}>
+          <Switch
+            checked={riding}
+            onChange={(on) => onColorLayer(on ? "rideability" : "none")}
+            label={RIDEABILITY_TITLE}
+            badge="BETA"
+            busy={riding && rideability.loading}
+          />
+          {/* På mobil ligger förklaringen infälld bakom frågetecknet */}
+          <button
+            type="button"
+            className={`${styles.hintBtn} ${styles.mobileOnly}`}
+            onClick={() => setModelInfo((v) => !v)}
+            aria-expanded={modelInfo}
+            aria-label="Om modellerna bakom Modellerad åkbarhet"
+          >
+            ?
+          </button>
+        </div>
+        <p className={`${styles.help} ${styles.desktopOnly}`}>
           {RIDEABILITY_HELP}{" "}
           <button
             type="button"
@@ -111,20 +135,40 @@ export default function LayerControl({ colorLayer, onColorLayer, rideability, co
             ?
           </button>
         </p>
-        {modelInfo && <p className={`${styles.help} ${styles.modelInfo}`}>{VANERN_HINT}</p>}
+        {modelInfo && (
+          <p className={`${styles.help} ${styles.modelInfo}`}>
+            <span className={styles.mobileOnly}>{RIDEABILITY_HELP} </span>
+            {VANERN_HINT}{" "}
+            <a href="/om" target="_blank" rel="noopener noreferrer">
+              Läs mer här
+            </a>
+          </p>
+        )}
         {riding && rideability.failed.length > 0 && (
           <p className={styles.help}>Kunde inte hämta: {rideability.failed.join(", ")}. Räknas som data saknas.</p>
         )}
         {riding && <RideabilityLegend loading={rideability.loading} />}
 
         <h3 className={styles.group}>Analyslager</h3>
-        <p className={styles.help}>Underliggande beslutsunderlag.</p>
-        <Switch
-          checked={cold}
-          onChange={(on) => onColorLayer(on ? "cold" : "none")}
-          label="Köldmängd"
-        />
-        {cold && <ColdLegend {...coldLegend} />}
+        <p className={`${styles.help} ${styles.desktopOnly}`}>Underliggande beslutsunderlag.</p>
+        <div className={styles.switchWithHint}>
+          <Switch
+            checked={cold}
+            onChange={(on) => onColorLayer(on ? "cold" : "none")}
+            label="Köldmängd"
+          />
+          {/* På mobil ligger förklaringen infälld bakom frågetecknet */}
+          <button
+            type="button"
+            className={`${styles.hintBtn} ${styles.mobileOnly}`}
+            onClick={() => setColdInfo((v) => !v)}
+            aria-expanded={coldInfo}
+            aria-label="Om köldmängdslagret"
+          >
+            ?
+          </button>
+        </div>
+        {cold && <ColdLegend {...coldLegend} collapsedOnMobile={!coldInfo} />}
         <Switch
           checked={sat?.scene.sensor === "SAR"}
           onChange={(on) => satellite.onToggle("SAR", on)}

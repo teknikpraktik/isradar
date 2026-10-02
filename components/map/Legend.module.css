@@ -72,3 +72,18 @@
   color: var(--text-muted);
   font-size: 11.5px;
 }
+
+/* Mobil: förklaringstexten döljs tills den öppnas bakom frågetecknet */
+@media (max-width: 767px) {
+  .mobileCollapsed {
+    display: none;
+  }
+  .list {
+    font-size: 11.5px;
+    gap: 2px;
+  }
+  .legend {
+    margin: 2px 0 4px;
+    padding-top: 2px;
+  }
+}

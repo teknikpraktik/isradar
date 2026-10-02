@@ -112,9 +112,11 @@ export default function Meteogram({
   const gradId = `meteo-temp-${useId().replace(/:/g, "")}`;
   const n = hours.length;
   const n0 = hours.length;
-  const plotW = (width - LEFT - RIGHT) * (refHours && n0 > 0 ? Math.min(1, n0 / refHours) : 1);
+  // Extra högermarginal när "nu"-etiketten ska centreras över linjen vid kanten.
+  const rightPad = markNow ? 14 : RIGHT;
+  const plotW = (width - LEFT - rightPad) * (refHours && n0 > 0 ? Math.min(1, n0 / refHours) : 1);
   /** Ritytans bredd – smalare än containern när refHours ger kortare tidsspann. */
-  const svgW = LEFT + plotW + RIGHT;
+  const svgW = LEFT + plotW + rightPad;
   const colW = plotW / Math.max(1, n);
   const xAt = (i: number) => LEFT + (i + 0.5) * colW;
   const own = useMemo(() => temperatureDomain(hours.map((h) => h.temperature)), [hours]);
@@ -202,7 +204,7 @@ export default function Meteogram({
         <line x1={LEFT} x2={LEFT} y1={TEMP_TOP} y2={TEMP_BOTTOM} className={styles.yAxis} />
         {yTicks.map((t) => (
           <g key={`y${t}`}>
-            <line x1={LEFT} x2={svgW - RIGHT} y1={yT(t)} y2={yT(t)} className={t === 0 ? styles.zero : styles.grid} />
+            <line x1={LEFT} x2={svgW - rightPad} y1={yT(t)} y2={yT(t)} className={t === 0 ? styles.zero : styles.grid} />
             <line x1={LEFT - 4} x2={LEFT} y1={yT(t)} y2={yT(t)} className={styles.yAxis} />
             <text x={LEFT - 7} y={yT(t) + 3.5} className={t === 0 ? `${styles.tempTick} ${styles.zeroLabel}` : styles.tempTick}>
               {sign(t, 0)}
@@ -238,7 +240,7 @@ export default function Meteogram({
         {markNow && (
           <>
             <line x1={LEFT + plotW} x2={LEFT + plotW} y1={TEMP_TOP - 6} y2={PRECIP_BOTTOM} className={styles.nowLine} />
-            <text x={LEFT + plotW - 3} y={DAY_Y} className={styles.nowLabel}>
+            <text x={LEFT + plotW} y={DAY_Y} className={styles.nowLabel}>
               nu
             </text>
           </>
@@ -252,8 +254,8 @@ export default function Meteogram({
           mm
         </text>
         <line x1={LEFT} x2={LEFT} y1={PRECIP_TOP} y2={PRECIP_BOTTOM} className={styles.yAxis} />
-        <line x1={LEFT} x2={svgW - RIGHT} y1={PRECIP_TOP} y2={PRECIP_TOP} className={styles.grid} />
-        <line x1={LEFT} x2={svgW - RIGHT} y1={PRECIP_BOTTOM} y2={PRECIP_BOTTOM} className={styles.baseline} />
+        <line x1={LEFT} x2={svgW - rightPad} y1={PRECIP_TOP} y2={PRECIP_TOP} className={styles.grid} />
+        <line x1={LEFT} x2={svgW - rightPad} y1={PRECIP_BOTTOM} y2={PRECIP_BOTTOM} className={styles.baseline} />
         <text x={LEFT - 7} y={PRECIP_TOP + 3.5} className={styles.tempTick}>
           {nf(maxMm)}
         </text>

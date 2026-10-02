@@ -116,6 +116,14 @@
 }
 
 @media (max-width: 767px) {
+  /* Mobil: smal kolumn; lagerväljaren och mätverktyget är alltid lika breda (100 % av kolumnen). */
+  .layers {
+    width: 128px;
+    gap: 6px;
+  }
+  .layers:has([data-open="true"]) {
+    width: 208px;
+  }
   .layers[data-hidden-mobile="true"] {
     display: none;
   }
@@ -126,7 +134,7 @@
   .sideControls {
     top: auto;
     right: 10px;
-    bottom: 110px;
+    bottom: 126px;
   }
 }
 
@@ -224,9 +232,8 @@
   right: 56px;
   bottom: 30px; /* ovanför kartans källhänvisning (©), som måste synas */
   z-index: 30;
-  margin: 0;
   max-width: min(380px, calc(100vw - 56px - 120px));
-  padding: 4px 9px;
+  padding: 5px 10px 6px;
   background: rgb(12 16 21 / 0.86);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);
@@ -235,14 +242,26 @@
   color: var(--text-muted);
 }
 
+.disclaimer p {
+  margin: 0;
+}
+
 .disclaimer strong {
   color: var(--text);
   font-weight: 600;
 }
 
+/* "Om Isvak" på egen rad */
 .disclaimer a {
+  display: block;
+  margin-top: 4px;
   color: var(--accent);
-  white-space: nowrap;
+  width: fit-content;
+}
+
+/* Stängknapp: bara på mobil */
+.disclaimerClose {
+  display: none;
 }
 
 @media (max-width: 767px) {
@@ -250,8 +269,30 @@
     right: 10px;
     bottom: 54px;
     max-width: calc(100vw - 20px - 100px);
+    padding-right: 30px;
   }
-  .disclaimer[data-hidden-mobile="true"] {
+  .disclaimer[data-hidden-mobile="true"],
+  .disclaimer[data-closed="true"] {
     display: none;
+  }
+  .disclaimerClose {
+    all: unset;
+    cursor: pointer;
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 26px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+    line-height: 1;
+    color: var(--text-muted);
+    border-radius: var(--radius);
+  }
+  .disclaimerClose:hover,
+  .disclaimerClose:focus-visible {
+    background: var(--surface-hover);
+    color: var(--text);
   }
 }

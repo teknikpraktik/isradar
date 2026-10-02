@@ -206,6 +206,6 @@
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.06em;
-  text-anchor: end;
+  text-anchor: middle; /* centrerad över linjen */
   text-transform: uppercase;
 }

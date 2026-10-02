@@ -16,12 +16,14 @@ import styles from "./Legend.module.css";
 interface Props {
   showCollection?: boolean;
   showMissing?: boolean;
+  /** Mobil: dölj förklaringstexten tills användaren öppnar den bakom frågetecknet. */
+  collapsedOnMobile?: boolean;
 }
 
-export default function ColdLegend({ showCollection = false, showMissing = false }: Props) {
+export default function ColdLegend({ showCollection = false, showMissing = false, collapsedOnMobile = false }: Props) {
   return (
     <div className={styles.legend} role="group" aria-label="Köldmängd: aktuell jämfört med historisk">
-      <p className={styles.explain}>
+      <p className={collapsedOnMobile ? `${styles.explain} ${styles.mobileCollapsed}` : styles.explain}>
         <strong>Färg</strong> = aktuell köldmängd i procent av historisk referens. <strong>Siffran</strong> efter
         sjönamnet = historisk referens-GD, alltså köldmängden när vattnet tidigare blivit åkbart.
       </p>

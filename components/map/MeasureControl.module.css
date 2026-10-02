@@ -101,3 +101,57 @@
   border-color: var(--text-muted);
 }
 
+
+/* "?"-knapp som fäller ut instruktionen – bara på mobil */
+.hintBtn {
+  all: unset;
+  display: none;
+  cursor: pointer;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  margin: 0 0 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+@media (max-width: 767px) {
+  .measure {
+    width: 100%;
+    background: rgb(18 24 31 / 0.82);
+  }
+  .btn {
+    padding: 7px 10px;
+    font-size: 12px;
+    gap: 8px;
+  }
+  .icon {
+    width: 16px;
+    height: 16px;
+  }
+  .body {
+    padding: 6px 10px 8px;
+  }
+  .hintBtn {
+    display: inline-grid;
+  }
+  /* Instruktionen ligger infälld tills man trycker på frågetecknet */
+  .help {
+    display: none;
+  }
+  .help.helpOpen {
+    display: block;
+    font-size: 11px;
+    margin: 0 0 8px;
+  }
+  .routeLen {
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+  .routeBtns button {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+}
