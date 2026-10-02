@@ -46,10 +46,15 @@ export function buildRideabilityInputs(entry: LakeIndexEntry, bulk: RideabilityB
 }
 
 /** Samlingsområden bedöms aldrig (samma regel som köldmängdslagret). */
-export function computeRideability(index: LakeIndexEntry[], bulk: RideabilityBulkData): Map<LakeId, RideabilityResult> {
+export function computeRideability(
+  index: LakeIndexEntry[],
+  bulk: RideabilityBulkData,
+  /** Vatten som har en egen modell (t.ex. Vänern) och inte ska få sjömodellen. */
+  skipIds: ReadonlySet<number> = new Set(),
+): Map<LakeId, RideabilityResult> {
   const out = new Map<LakeId, RideabilityResult>();
   for (const entry of index) {
-    if (!canRenderColdDays(entry.areaType)) continue;
+    if (!canRenderColdDays(entry.areaType) || skipIds.has(entry.id)) continue;
     out.set(entry.id, calculateRideabilityScore(buildRideabilityInputs(entry, bulk)));
   }
   return out;

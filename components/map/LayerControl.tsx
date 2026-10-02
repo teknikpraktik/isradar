@@ -13,6 +13,7 @@
 import { useState } from "react";
 import { SatelliteControls } from "@/components/lake-panel/sections";
 import { RIDEABILITY_HELP, RIDEABILITY_TITLE } from "@/lib/rideability/config";
+import { VANERN_HINT } from "@/lib/vanern/config";
 import type { LngLat } from "@/types/lake";
 import { formatLength, routeLengthM } from "@/lib/measure/route";
 import type { SatelliteScene } from "@/lib/satellite/api";
@@ -83,6 +84,7 @@ function Switch({
 export default function LayerControl({ colorLayer, onColorLayer, rideability, coldLegend, measure, satellite }: Props) {
   // Utfälld som standard på bred skärm; på mobil styr knappen (se CSS).
   const [open, setOpen] = useState(false);
+  const [modelInfo, setModelInfo] = useState(false);
   const sat = satellite.active;
   const riding = colorLayer === "rideability";
   const cold = colorLayer === "cold";
@@ -100,7 +102,19 @@ export default function LayerControl({ colorLayer, onColorLayer, rideability, co
           badge="BETA"
           busy={riding && rideability.loading}
         />
-        <p className={styles.help}>{RIDEABILITY_HELP}</p>
+        <p className={styles.help}>
+          {RIDEABILITY_HELP}{" "}
+          <button
+            type="button"
+            className={styles.hintBtn}
+            onClick={() => setModelInfo((v) => !v)}
+            aria-expanded={modelInfo}
+            aria-label="Om modellerna bakom Modellerad åkbarhet"
+          >
+            ?
+          </button>
+        </p>
+        {modelInfo && <p className={`${styles.help} ${styles.modelInfo}`}>{VANERN_HINT}</p>}
         {riding && rideability.failed.length > 0 && (
           <p className={styles.help}>Kunde inte hämta: {rideability.failed.join(", ")}. Räknas som data saknas.</p>
         )}

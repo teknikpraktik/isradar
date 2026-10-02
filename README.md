@@ -151,6 +151,16 @@ Beräknas av Isvak per temperaturstation och visas för alla vatten som använde
 - **Värde:** median över rutor med sjöyta (fyllnadsvärde 9.97e36 = ingen sjö i rutan), för +0 h (MODEL) och +24/+48/+66 h (FORECAST). Antal rutor med sjöyta visas.
 - **Begränsning:** värdet gäller modellens sjöyta i rutan, inte nödvändigtvis just det vattnet – särskilt för små vatten. Endast senaste körning (`?asOf=` ger "Endast nuläge").
 
+### Modellerad åkbarhet · Vänernmodellen (BETA)
+
+Samma kartlager och färgskala som sjömodellen, men en separat modell för vatten där MEPS-istjocklek saknas (`data/regions/*.json` → `waterModels`; för Värmland Vänerns tre samlingsområden och deras delområden). Allt i `lib/vanern/`; parametrar i `config.ts`.
+
+- **Analysgrid:** `generateVanernGrid` lägger ett rutnät (standard 2 × 2 km, `cellKm`) över vattenytan och klipper cellerna mot polygonerna (`lib/geo/clip.ts`). Ca 450 celler i Värmland. Cellerna visas i lagret Modellerad åkbarhet; klick väljer det underliggande vattenobjektet.
+- **Komponenter (0–100, vikter):** köldmängd 30 % (aktuell/historisk ur befintlig logik), temperaturhistorik 20 % (72 h + 7 dygn, observerat), Sentinel-1 20 %, vind 15 % (72 h), nederbörd 15 % (48 h, regn/blandat/snö efter temperatur). Saknad komponent = `null` (aldrig 0); vikterna normaliseras. Sentinel saknas → tak 55 och låg datatillit.
+- **Väder:** hämtas en gång per 0,25°-ruta (`/api/weather/history`), närmaste SMHI-station med tillräcklig täckning, och delas av cellerna i rutan.
+- **Sentinel-1:** `/api/vanern/passes` hittar senaste pass och föregående pass från samma bana; `/api/vanern/sentinel` hämtar median/std av VV (dB) per cell via Planetary Computers statistik-endpoint (ett anrop per cell och pass, 6 samtidiga, hämtas i delar om 60 celler). Cachas i Nexts datacache (7 dygn) och i minnet. **Tolkningen (`lib/vanern/sentinel.ts`) är experimentell och inte kalibrerad:** den väger jämnhet inom cellen och förändring mellan pass tyngre än absolut nivå.
+- **Internt resultat per cell:** `{ score, category, confidence, components, cap }` (`VanernCellResult`); i utveckling tillgängligt som `window.__isvakVanern`. Ingen detaljvy per cell.
+
 ### Kända egenheter i källdatan
 
 - 152 sjönamn förekommer flera gånger (33 × "Långsjön") – `objektid` är alltid nyckel.

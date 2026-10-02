@@ -16,6 +16,11 @@ const matchBy = (key: "fill" | "line") =>
     CATEGORY_BY_ID.insufficient[key],
   ] as unknown as ExpressionSpecification;
 
+/** Bara kategorifärgen (för analysceller som alltid är vatten). */
+export function categoryFillColor(): ExpressionSpecification {
+  return matchBy("fill");
+}
+
 /** Samlingsområden behåller sin egen stil – de bedöms aldrig. */
 export function rideabilityFillColor(): ExpressionSpecification {
   return ["case", isCollectionAreaFilter, COLLECTION_AREA_STYLE.fill, matchBy("fill")] as unknown as ExpressionSpecification;

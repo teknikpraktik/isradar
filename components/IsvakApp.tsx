@@ -16,6 +16,7 @@ import { getSatelliteScenesAt } from "@/lib/data/satellite";
 import { loadRideabilityBulk, type RideabilityBulkResult } from "@/lib/data/rideability";
 import { enrichLakeFeatures } from "@/lib/map/lakeFeatures";
 import { computeRideability } from "@/lib/rideability/inputs";
+import { useVanernCells } from "@/components/useVanernCells";
 import { withRideabilityCategory } from "@/lib/rideability/mapStyle";
 import { formatDate, formatShortDateTime } from "@/lib/format";
 import { getRegion } from "@/lib/regions";
@@ -101,11 +102,13 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
   }, [rideabilityOn, data, asOf, bulkKey]);
   const bulkReady = bulk !== null && bulk.key === bulkKey;
   const rideabilityLoading = rideabilityOn && !bulkReady;
+  // Vatten med egen modell (Vänern): analysceller med Vänernmodellen i stället för sjömodellen.
+  const vanern = useVanernCells({ region, data, mapLakes, enabled: rideabilityOn, asOf });
   const rideability = useMemo(() => {
     if (!rideabilityOn || !data || !mapLakes || !bulkReady) return null;
     const gdPercent = new Map(mapLakes.features.map((f) => [f.properties.id, f.properties.pct ?? null]));
-    return computeRideability(data.index, { ...bulk.result.data, gdPercent });
-  }, [rideabilityOn, data, mapLakes, bulk, bulkReady]);
+    return computeRideability(data.index, { ...bulk.result.data, gdPercent }, vanern.memberIds);
+  }, [rideabilityOn, data, mapLakes, bulk, bulkReady, vanern.memberIds]);
   const colorLakes = useMemo(
     () => (rideabilityOn && mapLakes ? withRideabilityCategory(mapLakes, rideability ?? new Map()) : mapLakes),
     [rideabilityOn, mapLakes, rideability],
@@ -172,6 +175,7 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
         region={region}
         lakes={colorLakes}
         colorMode={colorLayer}
+        cells={vanern.features}
         selectedId={selectedId}
         focus={focus}
         userPosition={userPosition}
@@ -236,7 +240,10 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
             setColorLayer(layer);
             if (layer !== "none") setSatellite(null);
           }}
-          rideability={{ loading: rideabilityLoading, failed: bulkReady ? bulk.result.failed : [] }}
+          rideability={{
+            loading: rideabilityLoading || vanern.loading,
+            failed: [...(bulkReady ? bulk.result.failed : []), ...vanern.failed],
+          }}
           coldLegend={legendFlags}
           measure={{
             on: measureOn,

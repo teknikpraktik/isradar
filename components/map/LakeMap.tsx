@@ -8,7 +8,7 @@ import { LAKE_LABEL_FONT, basemapStyle } from "@/lib/map/basemap";
 import { COLLECTION_AREA_STYLE, coldFillColor, coldLineColor, isCollectionAreaFilter } from "@/lib/map/coldScale";
 import { loadMapLibre } from "@/lib/map/maplibre";
 import { cumulativeM, formatLength } from "@/lib/measure/route";
-import { rideabilityFillColor, rideabilityLineColor } from "@/lib/rideability/mapStyle";
+import { categoryFillColor, rideabilityFillColor, rideabilityLineColor } from "@/lib/rideability/mapStyle";
 import type { BBox, LakeId, LngLat } from "@/types/lake";
 import type { RegionDefinition } from "@/types/region";
 import type { SatelliteScene } from "@/lib/satellite/api";
@@ -34,6 +34,8 @@ interface Props {
   colorMode?: "cold" | "rideability" | "none";
   /** Kartans mittpunkt när en förflyttning slutat. */
   onMoveEnd?: (center: LngLat) => void;
+  /** Analysceller för Vänernmodellen (visas bara i läget Modellerad åkbarhet). */
+  cells?: GeoJSON.FeatureCollection | null;
   /** Mätverktyg: utlagd rutt. Medan active tar klick punkter i stället för att välja sjö. */
   measure?: { active: boolean; points: LngLat[]; onAdd: (p: LngLat) => void };
 }
@@ -45,7 +47,9 @@ const DIMMED_FILL = { lakes: 0.08, collection: 0.04 };
 
 const SOURCE = "lakes";
 // Ordning spelar ingen roll för träffar: queryRenderedFeatures ger översta först.
-const CLICK_LAYERS = ["lakes-fill", "lakes-point", "collection-fill"];
+const CLICK_LAYERS = ["vanern-cells", "lakes-fill", "lakes-point", "collection-fill"];
+/** Lager med feature-state för hover (källan "lakes"). */
+const HOVER_LAYERS = ["lakes-fill", "lakes-point", "collection-fill"];
 const SELECTED_COLOR = "#f2f5f7";
 
 /** Kartans synliga yta när sjöpanelen är öppen (bottom sheet resp. sidopanel). */
@@ -68,6 +72,7 @@ export default function LakeMap({
   colorMode = "cold",
   onMoveEnd,
   measure,
+  cells = null,
 }: Props) {
   const measureRef = useRef(measure);
   useEffect(() => {
@@ -121,6 +126,7 @@ export default function LakeMap({
           if (cancelled || !map) return;
           addRegionOutline(map, region);
           addLakeLayers(map);
+          addCellLayers(map);
           addRouteLayers(map);
           mapRef.current = map;
           // Endast i utveckling: gör kartan inspekterbar från konsolen/testverktyg.
@@ -161,7 +167,13 @@ export default function LakeMap({
           hoverId = id;
           if (id !== undefined) map.setFeatureState({ source: SOURCE, id }, { hover: true });
         };
-        for (const layer of CLICK_LAYERS) {
+        map.on("mousemove", "vanern-cells", () => {
+          if (!measureRef.current?.active) map!.getCanvas().style.cursor = "pointer";
+        });
+        map.on("mouseleave", "vanern-cells", () => {
+          map!.getCanvas().style.cursor = "";
+        });
+        for (const layer of HOVER_LAYERS) {
           map.on("mousemove", layer, (e) => {
             if (!measureRef.current?.active) map!.getCanvas().style.cursor = "pointer";
             setHover(e.features?.[0]?.id);
@@ -191,12 +203,21 @@ export default function LakeMap({
     (map.getSource(SOURCE) as GeoJSONSource).setData(lakes);
   }, [ready, lakes]);
 
+  // Vänernmodellens analysceller.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map) return;
+    (map.getSource(CELLS_SOURCE) as GeoJSONSource).setData(cells ?? { type: "FeatureCollection", features: [] });
+  }, [ready, cells]);
+
   // Färgläge: köldmängd, Modellerad åkbarhet eller inget (bara baskartan med sjönamn).
   useEffect(() => {
     const map = mapRef.current;
     if (!ready || !map) return;
     const riding = colorMode === "rideability";
     const none = colorMode === "none";
+    map.setLayoutProperty("vanern-cells", "visibility", riding ? "visible" : "none");
+    map.setLayoutProperty("vanern-cells-line", "visibility", riding ? "visible" : "none");
     const clear = "rgba(0,0,0,0)";
     const fill = none ? clear : riding ? rideabilityFillColor() : coldFillColor();
     map.setPaintProperty("lakes-fill", "fill-color", fill as never);
@@ -328,6 +349,33 @@ export default function LakeMap({
       <div ref={containerRef} className={styles.map} />
       {error && <div className={styles.error}>{error}</div>}
     </div>
+  );
+}
+
+const CELLS_SOURCE = "vanern-cells";
+
+/** Vänernmodellens analysceller: samma kategorifärger som sjömodellen. Läggs under markeringen. */
+function addCellLayers(map: MlMap) {
+  map.addSource(CELLS_SOURCE, { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+  map.addLayer(
+    {
+      id: "vanern-cells",
+      type: "fill",
+      source: CELLS_SOURCE,
+      layout: { visibility: "none" },
+      paint: { "fill-color": categoryFillColor(), "fill-opacity": 0.85, "fill-antialias": false },
+    },
+    "lakes-selected-fill",
+  );
+  map.addLayer(
+    {
+      id: "vanern-cells-line",
+      type: "line",
+      source: CELLS_SOURCE,
+      layout: { visibility: "none" },
+      paint: { "line-color": "#0c1015", "line-opacity": 0.18, "line-width": 0.6 },
+    },
+    "lakes-selected-fill",
   );
 }
 

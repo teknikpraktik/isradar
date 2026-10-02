@@ -21,6 +21,22 @@ export interface RegionDefinition {
     zoom: number;
     bounds: [LngLat, LngLat];
   };
+  /** Vatten med särskild modell, t.ex. Vänern. */
+  waterModels?: WaterModelDefinition[];
+}
+
+/**
+ * Vatten som får en egen beräkningsmodell för Modellerad åkbarhet (där
+ * MEPS-istjocklek saknas). Medlemmar = angivna objekt samt delområden vars
+ * förälder (rekursivt) är en medlem. Modellen delar vattnet i analysceller.
+ */
+export interface WaterModelDefinition {
+  model: "vanern";
+  name: string;
+  /** Vattenobjektens objektid. */
+  areaIds: number[];
+  /** Cellstorlek i km (standard enligt lib/vanern/config). */
+  cellKm?: number;
 }
 
 /** Skrivs av scripts/build-region-data.ts till manifest.json. */
