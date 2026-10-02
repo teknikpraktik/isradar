@@ -187,10 +187,11 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
       )}
 
       <div className={styles.topBar}>
-        <div className={styles.brand}>
-          <span className={styles.logo} title="Datadriven bevakning av isbildning">ISVAK</span>
+        {/* Full omladdning: inga valda sjöar, lager eller datum (originalinladdningen). */}
+        <a href="?" className={styles.brand} title="Ladda om Isvak" aria-label={`Isvak ${region.name} – ladda om`}>
+          <span className={styles.logo}>ISVAK</span>
           <span className={styles.region}>{region.name}</span>
-        </div>
+        </a>
         <LakeSearch
           index={data?.index ?? []}
           stations={data?.stations ?? new Map()}

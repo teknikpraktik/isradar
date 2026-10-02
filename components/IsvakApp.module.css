@@ -34,6 +34,14 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   line-height: 1.05;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.brand:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .logo {
