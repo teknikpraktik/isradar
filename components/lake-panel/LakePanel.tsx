@@ -4,11 +4,10 @@ import { useEffect, useState } from "react";
 import { loadLakeConditions, type LakeConditions } from "@/lib/data/conditions";
 import { formatCoord } from "@/lib/format";
 import type { Lake } from "@/types/lake";
-import type { SatelliteScene } from "@/lib/satellite/api";
 import styles from "./LakePanel.module.css";
 import { LOADING } from "./parts";
 import { RideabilityDetail } from "./Rideability";
-import { ModelSection, OverviewSection, SatelliteSection, WeatherSection } from "./sections";
+import { ModelSection, OverviewSection, WeatherSection } from "./sections";
 import type { RideabilityResult } from "@/lib/rideability/types";
 
 interface Props {
@@ -17,14 +16,11 @@ interface Props {
   onShowInfo: () => void;
   /** Visa läget ett tidigare datum (YYYY-MM-DD). */
   asOf?: string;
-  satellite?: { scene: SatelliteScene; opacity: number } | null;
-  onSatellite?: (scene: SatelliteScene | null) => void;
-  onSatelliteOpacity?: (opacity: number) => void;
   /** Förmodad åkbarhet · BETA – detaljer för sjön när kartlagret är aktivt. */
   rideability?: { active: boolean; loading: boolean; result: RideabilityResult | undefined };
 }
 
-export default function LakePanel({ lake, onClose, onShowInfo, asOf, satellite = null, onSatellite, onSatelliteOpacity, rideability }: Props) {
+export default function LakePanel({ lake, onClose, onShowInfo, asOf, rideability }: Props) {
   const [loaded, setLoaded] = useState<{ key: string; data: Partial<LakeConditions> }>({ key: "", data: {} });
   const [expanded, setExpanded] = useState(false);
 
@@ -76,13 +72,6 @@ export default function LakePanel({ lake, onClose, onShowInfo, asOf, satellite =
         {rideability?.active && <RideabilityDetail result={rideability.result} loading={rideability.loading} />}
         <OverviewSection lake={lake} cold={c.currentCold ?? LOADING} asOf={asOf} />
         <ModelSection meps={c.meps ?? LOADING} />
-        <SatelliteSection
-          sat={c.satellite ?? LOADING}
-          active={satellite}
-          onShow={onSatellite ?? (() => {})}
-          onOpacity={onSatelliteOpacity ?? (() => {})}
-          centroid={lake.centroid}
-        />
         <WeatherSection recent={c.weatherRecent ?? LOADING} forecast={c.weatherForecast ?? LOADING} />
 
         <p className={styles.disclaimer}>

@@ -255,9 +255,6 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
           onShowInfo={() => setInfoOpen(true)}
           asOf={asOf}
           rideability={{ active: rideabilityOn, loading: rideabilityLoading, result: rideability?.get(lake.id) }}
-          satellite={activeSatellite}
-          onSatellite={(scene) => setSatellite(scene ? { scene, opacity: satellite?.opacity ?? 0.7 } : null)}
-          onSatelliteOpacity={(opacity) => setSatellite((s) => (s ? { ...s, opacity } : s))}
         />
       )}
 

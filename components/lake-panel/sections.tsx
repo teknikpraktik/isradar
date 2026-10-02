@@ -1,11 +1,9 @@
 "use client";
 
 import type { LakeConditions } from "@/lib/data/conditions";
-import { distanceKm, formatDate,formatShortDateTime } from "@/lib/format";
+import { distanceKm, formatDate, formatShortDateTime } from "@/lib/format";
 import { COLLECTION_AREA_NOTE, formatProgressPercent, getColdProgress } from "@/lib/map/coldScale";
-import { useEffect, useState } from "react";
-import { getPassWind } from "@/lib/data/satellite";
-import type { PassWindResponse, SatelliteScene } from "@/lib/satellite/api";
+import type { SatelliteScene } from "@/lib/satellite/api";
 import { compassSv } from "@/lib/weather/compute";
 import { formatSnowfall } from "@/lib/weather/precipitation";
 import Meteogram from "./Meteogram";
@@ -249,8 +247,6 @@ export function ModelSection({ meps }: { meps: L<"meps"> }) {
 /* SATELLIT – Sentinel                                                 */
 /* ------------------------------------------------------------------ */
 
-type ActiveSat = { scene: SatelliteScene; opacity: number } | null;
-
 /** "1 okt" – datumdel av kort tid. */
 const shortDay = (iso: string) => formatShortDateTime(iso).split(" ").slice(0, 2).join(" ");
 
@@ -281,35 +277,6 @@ function SarLegend() {
           Grov yta
         </span>
       </div>
-    </div>
-  );
-}
-
-/** Observerad vind vid passagens tidpunkt (SMHI/VViS, ±1 h). */
-function PassWindRows({ centroid, time }: { centroid: [number, number]; time: string }) {
-  const [state, setState] = useState<{ key: string; res: PassWindResponse | null | "error" } | null>(null);
-  const key = `${centroid.join(",")}|${time}`;
-  useEffect(() => {
-    let live = true;
-    getPassWind(centroid, time).then(
-      (res) => live && setState({ key, res }),
-      () => live && setState({ key, res: "error" }),
-    );
-    return () => {
-      live = false;
-    };
-  }, [centroid, time, key]);
-  const res = state?.key === key ? state.res : undefined;
-  if (res === undefined) return <Row label="Vind vid passage" status="loading" />;
-  const w = res === "error" || res === null ? null : res.wind;
-  if (!w) return <p className={styles.satMeta}>Vind vid passage: ingen observation tillgänglig</p>;
-  return (
-    <div className={styles.passWind}>
-      <Row
-        label="Vind vid passage"
-        value={formatWind(w.speed, w.fromDirection !== null ? compassSv(w.fromDirection) : null)}
-      />
-      {w.gust !== null && <Row label="Byvind" value={formatWind(w.gust)} />}
     </div>
   );
 }
@@ -388,130 +355,6 @@ export function SatelliteControls({
         </div>
       )}
     </div>
-  );
-}
-
-/** Ett sensorblock: senaste scen, knapp, och när aktivt: opacitet + scenbyte. */
-function SensorBlock({
-  title,
-  showLabel,
-  activeLabel,
-  scenes,
-  emptyText,
-  active,
-  onShow,
-  onOpacity,
-  centroid,
-}: {
-  title: string;
-  showLabel: string;
-  activeLabel: string;
-  scenes: SatelliteScene[];
-  emptyText: string;
-  active: ActiveSat;
-  onShow: (s: SatelliteScene | null) => void;
-  onOpacity: (o: number) => void;
-  centroid: [number, number];
-}) {
-  const idx = active ? scenes.findIndex((s) => s.id === active.scene.id) : -1;
-  const isActive = idx >= 0;
-  const scene = isActive ? scenes[idx] : scenes[0];
-  const isSar = scene?.sensor === "SAR";
-  return (
-    <div className={styles.satBlock}>
-      <h4 className={styles.subhead}>{title}</h4>
-      {scene ? (
-        <>
-          <div className={styles.satTime}>{formatShortDateTime(scene.acquiredAt)}</div>
-          {isSar && <PassWindRows centroid={centroid} time={scene.acquiredAt} />}
-          <button
-            type="button"
-            className={isActive ? `${styles.satBtn} ${styles.satBtnOn}` : styles.satBtn}
-            aria-pressed={isActive}
-            onClick={() => onShow(isActive ? null : scene)}
-          >
-            {isActive ? `✓ ${activeLabel}` : showLabel}
-          </button>
-          {isActive && active && (
-            <SatelliteControls active={active} scenes={scenes} onShow={onShow} onOpacity={onOpacity} />
-          )}
-        </>
-      ) : (
-        <p className={styles.satMeta}>{emptyText}</p>
-      )}
-    </div>
-  );
-}
-
-export function SatelliteSection({
-  sat,
-  active,
-  onShow,
-  onOpacity,
-  centroid,
-}: {
-  sat: L<"satellite">;
-  active: ActiveSat;
-  onShow: (s: SatelliteScene | null) => void;
-  onOpacity: (o: number) => void;
-  centroid: [number, number];
-}) {
-  const v = sat.status === "ok" ? sat.value : null;
-  const optical = v ? (v.optical.length ? v.optical : v.opticalAny ? [v.opticalAny] : []) : [];
-  return (
-    <Section
-      title="Satellit · Sentinel"
-      kinds={["observation"]}
-      status={sat.status === "unavailable" ? "ok" : sat.status}
-      hintLabel="Information om Sentinel-1 SAR"
-      hint={
-        <>
-          <p className={styles.hintTitle}>Sentinel-1 SAR</p>
-          <p>Mäter radarrespons från ytan. Släta ytor ger ofta låg respons, grövre ytor högre.</p>
-          <p>
-            Blankt vatten och blank is kan därför se likadana ut. Vågor, snö, grov is, råkar och andra strukturer kan
-            ge högre respons. Vind vid passagen påverkar öppet vatten starkt.
-          </p>
-          <p>Visar inte istjocklek eller bärighet. Tolka tillsammans med andra indikatorer.</p>
-          <p>Sentinel-2 optisk påverkas av moln och dagsljus. Molnighet gäller hela bildrutan.</p>
-          <p>Copernicus Sentinel-data · Microsoft Planetary Computer</p>
-        </>
-      }
-    >
-      {v ? (
-        <>
-          <SensorBlock
-            title="Sentinel-1 SAR-radar"
-            showLabel="Visa Sentinel-1 SAR"
-            activeLabel="Sentinel-1 SAR visas"
-            scenes={v.sar}
-            emptyText={`Ingen Sentinel-1-passage senaste ${v.windowDays} d`}
-            active={active?.scene.sensor === "SAR" ? active : null}
-            onShow={onShow}
-            onOpacity={onOpacity}
-            centroid={centroid}
-          />
-          <SensorBlock
-            title={v.optical.length ? `Sentinel-2 optisk · ≤ ${v.clearMaxCloudPct} % moln` : "Sentinel-2 optisk"}
-            showLabel="Visa Sentinel-2 optisk"
-            activeLabel="Sentinel-2 visas"
-            scenes={optical}
-            emptyText={`Ingen Sentinel-2-bild senaste ${v.windowDays} d`}
-            active={active?.scene.sensor === "optical" ? active : null}
-            onShow={onShow}
-            onOpacity={onOpacity}
-            centroid={centroid}
-          />
-        </>
-      ) : (
-        <Row
-          label="Satellitbilder"
-          status={sat.status}
-          placeholder={sat.status === "unavailable" ? "Kunde inte hämtas" : undefined}
-          placeholderTitle={sat.status === "unavailable" ? sat.reason : undefined}
-        />
-      )}
-    </Section>
   );
 }
 
