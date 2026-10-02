@@ -116,11 +116,7 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
         <div className={styles.satLabel} role="status">
           <span>{activeSatellite.scene.sensor === "SAR" ? "Sentinel-1 SAR" : "Sentinel-2 optisk"}</span>
           <span className="num">{formatShortDateTime(activeSatellite.scene.acquiredAt)}</span>
-          <span>
-            {[activeSatellite.scene.platform, activeSatellite.scene.orbitState === "ascending" ? "stigande" : activeSatellite.scene.orbitState === "descending" ? "fallande" : null]
-              .filter(Boolean)
-              .join(" · ")}
-          </span>
+          <span>{activeSatellite.scene.platform}</span>
         </div>
       )}
 
