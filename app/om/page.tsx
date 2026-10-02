@@ -383,7 +383,7 @@ export default function OmIsvak() {
           Kontrollera alltid isen själv, på plats, med rätt utrustning och i sällskap. Isvak kan aldrig göra det åt dig.
         </p>
         <p className={styles.contact}>
-          Kontakt för förbättringsförslag, buggar med mera:{" "}
+          Synpunkter, förbättringsförslag och felrapporter är välkomna:{" "}
           <a href="mailto:per.a.bjorkman@gmail.com">per.a.bjorkman@gmail.com</a>
         </p>
         <Link href="/" className={styles.back}>
