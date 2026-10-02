@@ -76,8 +76,8 @@ export default function OmIsvak() {
           <ul>
             <li>Gå aldrig ut på is ensam, och gå aldrig ut på is som du inte själv har kontrollerat på plats.</li>
             <li>
-              Ha rätt utrustning (till exempel isdubbar, isborr eller isstav, flytplagg, rep och torra reservkläder)
-              och kunna använda den.
+              Ha rätt utrustning – isdubbar, ispik, räddningslina, flytväst med grenrem, komplett ombyte packat i
+              vattentäta påsar och mobiltelefon i vattenskyddat fodral – och kunna använda den.
             </li>
             <li>
               Ha kunskap om hur is bildas och varierar – tjockleken och kvaliteten kan skifta kraftigt på några meter,
