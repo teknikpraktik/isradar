@@ -7,6 +7,7 @@ import type { Lake } from "@/types/lake";
 import styles from "./LakePanel.module.css";
 import { LOADING } from "./parts";
 import { ModelSection, OverviewSection, WeatherSection } from "./sections";
+import { SourcesSection } from "./SourcesSection";
 
 interface Props {
   lake: Lake;
@@ -67,6 +68,7 @@ export default function LakePanel({ lake, onClose, asOf }: Props) {
         <OverviewSection lake={lake} cold={c.currentCold ?? LOADING} asOf={asOf} />
         <ModelSection meps={c.meps ?? LOADING} />
         <WeatherSection recent={c.weatherRecent ?? LOADING} forecast={c.weatherForecast ?? LOADING} />
+        <SourcesSection lake={lake} asOf={asOf} conditions={c} />
       </div>
     </aside>
   );

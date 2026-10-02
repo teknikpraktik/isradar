@@ -16,6 +16,7 @@ import {
   SENTINEL,
   SENTINEL_MISSING_CAP,
   VANERN_COMPONENTS,
+  VANERN_GATES,
   VANERN_GRID,
   VANERN_WEIGHTS,
   WEATHER_WINDOWS,
@@ -223,6 +224,13 @@ export default function OmIsvak() {
             passen tyngre än absolut nivå, eftersom låg radarrespons även kan finnas över öppet lugnt vatten. Hög
             variation vid vind tolkas som vindpåverkat öppet vatten och sänker poängen kraftigt (tak 30).{" "}
             <strong>Tolkningen är experimentell och inte kalibrerad.</strong>
+          </li>
+          <li>
+            <strong>Spärrar:</strong> ett viktat medelvärde får inte ge gul eller grön färg när förutsättningarna för
+            isbildning saknas. Har aktuell köldmängd inte nått {VANERN_GATES.minColdPercent} % av historisk referens
+            blir poängen högst {VANERN_GATES.lowColdCap}, och är medeltemperaturen de senaste 72 timmarna{" "}
+            {VANERN_GATES.warmMeanC} °C eller varmare blir den högst {VANERN_GATES.warmCap} – oavsett hur jämn
+            radarytan är, eftersom lugnt öppet vatten också kan se jämnt ut.
           </li>
           <li>
             <strong>Tak och saknad data:</strong> utan Sentinel-data begränsas poängen till högst{" "}

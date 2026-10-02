@@ -104,7 +104,13 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
   const bulkReady = bulk !== null && bulk.key === bulkKey;
   const rideabilityLoading = rideabilityOn && !bulkReady;
   // Vatten med egen modell (Vänern): analysceller med Vänernmodellen i stället för sjömodellen.
-  const vanern = useVanernCells({ region, data, mapLakes, enabled: rideabilityOn, asOf });
+  const vanern = useVanernCells({
+    region,
+    data,
+    currentColdByStation: currentCold?.key === coldKey ? currentCold.values : null,
+    enabled: rideabilityOn,
+    asOf,
+  });
   const rideability = useMemo(() => {
     if (!rideabilityOn || !data || !mapLakes || !bulkReady) return null;
     const gdPercent = new Map(mapLakes.features.map((f) => [f.properties.id, f.properties.pct ?? null]));
@@ -265,9 +271,10 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
         />
       </div>
 
-      <p className={styles.disclaimer}>
-        Datormodell – isen är inte kontrollerad på plats och modellerna kan inte användas för att bedöma is. Livsfara
-        på is utan rätt utrustning, sällskap och kunskap.{" "}
+      <p className={styles.disclaimer} data-hidden-mobile={lake !== null}>
+        <strong>Det är förenat med livsfara att beträda naturis utan rätt kunskap, sällskap och utrustning.</strong>{" "}
+        Isvak är en datormodell – isen är inte kontrollerad på plats och modellerna kan inte användas för att bedöma
+        is.{" "}
         <a href="/om" target="_blank" rel="noopener noreferrer">
           Om Isvak
         </a>

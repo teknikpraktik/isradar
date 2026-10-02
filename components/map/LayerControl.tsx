@@ -118,7 +118,7 @@ export default function LayerControl({ colorLayer, onColorLayer, rideability, co
         {riding && <RideabilityLegend loading={rideability.loading} />}
 
         <h3 className={styles.group}>Analyslager</h3>
-        <p className={styles.help}>Underliggande beslutsunderlag. Lagren visas ett i taget.</p>
+        <p className={styles.help}>Underliggande beslutsunderlag.</p>
         <Switch
           checked={cold}
           onChange={(on) => onColorLayer(on ? "cold" : "none")}

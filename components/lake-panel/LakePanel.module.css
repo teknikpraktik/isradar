@@ -587,3 +587,51 @@
   color: var(--text-strong);
   font-weight: 600;
 }
+
+/* --- Källor och underlag ------------------------------------------ */
+
+.srcGroup {
+  margin: 0 0 12px;
+}
+
+.srcTitle {
+  margin: 0 0 4px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.srcList {
+  margin: 0;
+  display: grid;
+  gap: 3px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.srcList > div {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.srcList dt {
+  color: var(--text-faint);
+}
+
+.srcList dd {
+  margin: 0;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.srcList a {
+  color: var(--text-muted);
+}
+
+/* Tydligt avstånd och avdelare mellan observation (24 h) och prognos (48 h) */
+.subheadNext {
+  margin-top: 30px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}

@@ -63,18 +63,21 @@ const typeAt = (h: ForecastHour) => simplePrecipType(h.temperature);
 
 export default function Meteogram({
   hours,
-  variant,
   label,
   scales,
+  refHours,
 }: {
   hours: ForecastHour[];
-  variant: "observation" | "forecast";
   /** Beskrivning för skärmläsare, t.ex. "Prognos 48 timmar". */
   label: string;
   /** Gemensamma y-axlar (se sharedScales) så att flera meteogram går att jämföra. */
   scales?: { temp: { min: number; max: number; step: number }; maxMm: number };
+  /**
+   * Referenstidsspann (timmar) som bestämmer pixlar per timme: diagrammets bredd skalas med
+   * timmar / refHours, så att t.ex. 24 h-observationen får samma tidsupplösning som 48 h-prognosen.
+   */
+  refHours?: number;
 }) {
-  const forecast = variant === "forecast";
   // Vindrad när timmarna har vindvärden (prognos och observation formateras likadant).
   const hasWind = hours.some((h) => h.windSpeed !== null);
   const height = hasWind ? 214 : 178;
@@ -105,7 +108,10 @@ export default function Meteogram({
 
   const gradId = `meteo-temp-${useId().replace(/:/g, "")}`;
   const n = hours.length;
-  const plotW = width - LEFT - RIGHT;
+  const n0 = hours.length;
+  const plotW = (width - LEFT - RIGHT) * (refHours && n0 > 0 ? Math.min(1, n0 / refHours) : 1);
+  /** Ritytans bredd – smalare än containern när refHours ger kortare tidsspann. */
+  const svgW = LEFT + plotW + RIGHT;
   const colW = plotW / Math.max(1, n);
   const xAt = (i: number) => LEFT + (i + 0.5) * colW;
   const own = useMemo(() => temperatureDomain(hours.map((h) => h.temperature)), [hours]);
@@ -123,7 +129,9 @@ export default function Meteogram({
     for (let t = dom.min; t <= dom.max + 1e-9; t += dom.step) out.push(t);
     return out;
   }, [dom]);
-  const ticks = useMemo(() => timeTicks(hours, forecast && width < 400 ? 6 : 3), [hours, forecast, width]);
+    // Tre timmar per etikett om det finns plats (≥ 22 px), annars sex – samma regel för båda diagrammen.
+  const tickEvery = (3 * plotW) / Math.max(1, hours.length) >= 22 ? 3 : 6;
+  const ticks = useMemo(() => timeTicks(hours, tickEvery), [hours, tickEvery]);
   const days = useMemo(() => dayLabels(hours), [hours]);
   const segments = useMemo(() => temperatureSegments(hours), [hours]);
   const summary = useMemo(() => meteogramSummary(hours, label), [hours, label]);
@@ -141,7 +149,7 @@ export default function Meteogram({
 
   if (n === 0) return null;
   const h = active !== null ? hours[active] : null;
-  const tipLeft = active !== null ? Math.min(Math.max(xAt(active) - 70, 0), width - 140) : 0;
+  const tipLeft = active !== null ? Math.min(Math.max(xAt(active) - 70, 0), Math.max(0, svgW - 140)) : 0;
 
   return (
     <div
@@ -158,7 +166,7 @@ export default function Meteogram({
         e.preventDefault();
       }}
     >
-      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className={styles.svg} aria-hidden>
+      <svg width={svgW} height={height} viewBox={`0 0 ${svgW} ${height}`} className={styles.svg} aria-hidden>
         <defs>
           {/* Snö: ljus prick-fyllning – skiljer sig i form, inte bara färg */}
           <pattern id="mg-snow" width="4" height="4" patternUnits="userSpaceOnUse">
@@ -191,7 +199,7 @@ export default function Meteogram({
         <line x1={LEFT} x2={LEFT} y1={TEMP_TOP} y2={TEMP_BOTTOM} className={styles.yAxis} />
         {yTicks.map((t) => (
           <g key={`y${t}`}>
-            <line x1={LEFT} x2={width - RIGHT} y1={yT(t)} y2={yT(t)} className={t === 0 ? styles.zero : styles.grid} />
+            <line x1={LEFT} x2={svgW - RIGHT} y1={yT(t)} y2={yT(t)} className={t === 0 ? styles.zero : styles.grid} />
             <line x1={LEFT - 4} x2={LEFT} y1={yT(t)} y2={yT(t)} className={styles.yAxis} />
             <text x={LEFT - 7} y={yT(t) + 3.5} className={t === 0 ? `${styles.tempTick} ${styles.zeroLabel}` : styles.tempTick}>
               {sign(t, 0)}
@@ -224,15 +232,15 @@ export default function Meteogram({
         )}
 
         {/* Avdelare mellan temperatur och nederbörd */}
-        <line x1={0} x2={width} y1={DIVIDER_Y} y2={DIVIDER_Y} className={styles.divider} />
+        <line x1={0} x2={svgW} y1={DIVIDER_Y} y2={DIVIDER_Y} className={styles.divider} />
 
         {/* Nederbördszon: enhet, axel (0 och max), staplar */}
         <text x={LEFT - 7} y={PRECIP_TOP - 8} className={styles.unit}>
           mm
         </text>
         <line x1={LEFT} x2={LEFT} y1={PRECIP_TOP} y2={PRECIP_BOTTOM} className={styles.yAxis} />
-        <line x1={LEFT} x2={width - RIGHT} y1={PRECIP_TOP} y2={PRECIP_TOP} className={styles.grid} />
-        <line x1={LEFT} x2={width - RIGHT} y1={PRECIP_BOTTOM} y2={PRECIP_BOTTOM} className={styles.baseline} />
+        <line x1={LEFT} x2={svgW - RIGHT} y1={PRECIP_TOP} y2={PRECIP_TOP} className={styles.grid} />
+        <line x1={LEFT} x2={svgW - RIGHT} y1={PRECIP_BOTTOM} y2={PRECIP_BOTTOM} className={styles.baseline} />
         <text x={LEFT - 7} y={PRECIP_TOP + 3.5} className={styles.tempTick}>
           {nf(maxMm)}
         </text>

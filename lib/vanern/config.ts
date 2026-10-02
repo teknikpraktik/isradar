@@ -153,6 +153,20 @@ export const SENTINEL = {
 
 /** Utan Sentinel-1 (kritisk källa) begränsas totalpoängen konservativt. */
 export const SENTINEL_MISSING_CAP = 55;
+/**
+ * Fysiska förutsättningar för isbildning (spärrar). Ett viktat medelvärde får inte
+ * ge gul/grön färg när det varken har kommit tillräcklig köld eller är kallt nu –
+ * särskilt eftersom jämn radaryta (Sentinel-1) även kan vara lugnt öppet vatten.
+ */
+export const VANERN_GATES = {
+  /** Aktuell köldmängd under så här många % av historisk referens → tak lowColdCap. */
+  minColdPercent: 30,
+  lowColdCap: 35,
+  /** 72 h-medeltemperatur (°C) från och med detta räknas som varmt väder → tak. */
+  warmMeanC: 2,
+  warmCap: 20,
+} as const;
+
 /** Under denna summa tillgängliga vikter blir cellen "Otillräckliga data". */
 export const MIN_AVAILABLE_WEIGHT = 0.5;
 
@@ -171,4 +185,4 @@ export const SENTINEL_SERVER = {
 } as const;
 
 export const VANERN_HINT =
-  "Sjömodellen väger köldmängd, modellerad istjocklek och snö (MEPS), Sentinel-1 och nederbörd. På Vänern saknas MEPS-istjocklek, så en separat Vänernmodell (beta) används: köldmängd, temperaturhistorik, Sentinel-1, vind och nederbörd, beräknad per 2 × 2 km-cell. Sentinel-1-tolkningen är experimentell och inte kalibrerad. Båda ger samma skala och färger. Visar modellerad indikering, inte isens skick – ska alltid verifieras på plats.";
+  "Sjömodellen väger köldmängd, modellerad istjocklek och snö (MEPS), Sentinel-1 och nederbörd. På Vänern saknas MEPS-istjocklek, så en separat Vänernmodell (beta) används: köldmängd, temperaturhistorik, Sentinel-1, vind och nederbörd, beräknad per 2 × 2 km-cell. Sentinel-1-tolkningen är experimentell och inte kalibrerad. Båda ger samma skala och färger. Visar modellerad indikering, inte isens skick.";

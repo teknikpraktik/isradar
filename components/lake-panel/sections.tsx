@@ -21,8 +21,6 @@ import { KindBadge, Row, Section, fmtQ, fmtSignedQ, type Loadable } from "./part
  * står på en kort metarad. Förklaringar ligger bakom "?" och är en rad.
  */
 
-const join = (...parts: (string | false | null | undefined)[]) => parts.filter(Boolean).join(" · ");
-
 /** Datakälla som kan vara under hämtning. */
 type L<K extends keyof LakeConditions> = LakeConditions[K] | { status: "loading" };
 
@@ -382,7 +380,6 @@ export function WeatherSection({
   const t = w?.temperature;
   const p = w?.precipitation;
   const wind = w?.wind;
-  const run = fc?.provenance.time;
   const notHistorical = recent.status === "unavailable" && recent.code === "not_historical";
   // Historik: samma uppbyggnad och formatering som prognosen (inklusive vind).
   const observed = useMemo(
@@ -409,7 +406,7 @@ export function WeatherSection({
       </h4>
       {observed ? (
         <>
-          <Meteogram hours={observed} variant="observation" label="Observationer senaste 24 timmarna" scales={scales} />
+          <Meteogram hours={observed} label="Observationer senaste 24 timmarna" scales={scales} refHours={48} />
         </>
       ) : (
         <Row
@@ -420,12 +417,12 @@ export function WeatherSection({
         />
       )}
 
-      <h4 className={styles.subhead}>
+      <h4 className={`${styles.subhead} ${styles.subheadNext}`}>
         Prognos · 48 h <KindBadge kind="forecast" />
       </h4>
       {fc ? (
         <>
-          <Meteogram hours={fc.hours} variant="forecast" label="Prognos 48 timmar" scales={scales} />
+          <Meteogram hours={fc.hours} label="Prognos 48 timmar" scales={scales} refHours={48} />
           {fc.forecastSnowfall && (
             <p className={styles.snowNote}>
               {fc.forecastSnowfall.estimated ? "Beräknad nysnö 48 h" : "Nysnö 48 h"}{" "}
@@ -442,15 +439,6 @@ export function WeatherSection({
         />
       )}
 
-      {(w || fc) && (
-        <p className={styles.weatherSource}>
-          Observationer: SMHI + Trafikverket VViS
-          <br />
-          {join("Prognos: SMHI", run?.kind === "forecast" && `uppdaterad ${formatShortDateTime(run.modelRun)}`)}
-          <br />
-          SMHI CC BY 4.0 · Källa: Trafikverket
-        </p>
-      )}
     </Section>
   );
 }

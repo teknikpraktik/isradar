@@ -227,16 +227,16 @@
   }
 }
 
-/* Friskrivning längst ned till vänster, intill skalstocken */
+/* Friskrivning fast nere till höger, till vänster om zoomknapparna */
 .disclaimer {
-  position: absolute;
-  left: 112px;
-  bottom: 10px;
-  z-index: 12;
+  position: fixed;
+  right: 56px;
+  bottom: 30px; /* ovanför kartans källhänvisning (©), som måste synas */
+  z-index: 30;
   margin: 0;
-  max-width: min(380px, calc(100% - 112px - 150px));
-  padding: 3px 8px;
-  background: rgb(12 16 21 / 0.78);
+  max-width: min(340px, calc(100vw - 56px - 120px));
+  padding: 4px 9px;
+  background: rgb(12 16 21 / 0.86);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);
   font-size: 10px;
@@ -244,13 +244,30 @@
   color: var(--text-muted);
 }
 
+.disclaimer strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
 .disclaimer a {
   color: var(--accent);
   white-space: nowrap;
 }
 
+/* Sidopanelen täcker högerkanten på bred skärm – flytta friskrivningen till vänster om den */
+@media (min-width: 768px) {
+  .app:has(aside) .disclaimer {
+    right: 434px;
+  }
+}
+
 @media (max-width: 767px) {
   .disclaimer {
-    max-width: calc(100% - 112px - 100px);
+    right: 10px;
+    bottom: 54px;
+    max-width: calc(100vw - 20px - 100px);
+  }
+  .disclaimer[data-hidden-mobile="true"] {
+    display: none;
   }
 }

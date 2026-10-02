@@ -8,7 +8,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FeatureCollection, MultiPolygon, Polygon } from "geojson";
 import { loadPasses, loadSentinelStats, loadWeatherContext, type SentinelResults } from "@/lib/data/vanern";
-import type { LakeFeatureCollection, RegionLakeData } from "@/lib/data/lakes";
+import type { RegionLakeData } from "@/lib/data/lakes";
 import type { SentinelPassRef } from "@/lib/vanern/api";
 import { geometryBox } from "@/lib/geo/clip";
 import { generateVanernGrid, groupWeatherTiles, type VanernCell } from "@/lib/vanern/grid";
@@ -36,14 +36,14 @@ const EMPTY_CELLS: VanernCell[] = [];
 export function useVanernCells({
   region,
   data,
-  mapLakes,
+  currentColdByStation,
   enabled,
   asOf,
 }: {
   region: RegionDefinition;
   data: RegionLakeData | null;
-  /** Berikade sjö-features (för aktuell köldmängd i %). */
-  mapLakes: LakeFeatureCollection | null;
+  /** Aktuell köldmängd (GD) per temperaturstation. */
+  currentColdByStation: Map<number, number | null> | null;
   enabled: boolean;
   asOf?: string;
 }): VanernCells {
@@ -96,11 +96,16 @@ export function useVanernCells({
     // gridKey identifierar gridet; enabled/asOf styr om något hämtas.
   }, [enabled, asOf, gridKey, grid]);
 
+  // Aktuell GD i % av objektets egen historiska referens. Samlingsområden (Vänerns delar) saknar
+  // kartfärgens progress, men har referens och station i indexet – därför räknas det här direkt.
   const coldPercentByArea = useMemo(() => {
     const m = new Map<number, number | null>();
-    for (const f of mapLakes?.features ?? []) m.set(f.properties.id, f.properties.pct ?? null);
+    for (const l of data?.index ?? []) {
+      const cur = l.stationId !== null ? currentColdByStation?.get(l.stationId) : null;
+      m.set(l.id, l.hca !== null && l.hca > 0 && typeof cur === "number" ? (Math.max(0, cur) / l.hca) * 100 : null);
+    }
     return m;
-  }, [mapLakes]);
+  }, [data, currentColdByStation]);
 
   const cells: VanernCell[] = grid?.cells ?? EMPTY_CELLS;
   const results = useMemo(

@@ -26,8 +26,17 @@
   outline: none;
 }
 
-.btn[aria-pressed="true"] {
-  color: #ffd23f;
+/* Aktivt läge: tydlig stängknapp i verktygets färg */
+.btnOn {
+  color: #0c1015;
+  background: #ffd23f;
+  font-weight: 600;
+  border-radius: calc(var(--radius) - 1px);
+}
+
+.btnOn:hover,
+.btnOn:focus-visible {
+  background: #ffe07a;
 }
 
 .icon {

@@ -148,3 +148,27 @@ test("Vänern: vindpåverkat öppet vatten tar score (trots mycket köld)", () =
   assert.equal(r.cap, "rough_open_water");
   assert.ok(r.score! <= 30);
 });
+
+test("Vänern: ingen ackumulerad köld → aldrig gul/grön, trots jämn radaryta och lugnt väder", () => {
+  const inputs = { ...completeInputs(), coldPercent: 0 };
+  const r = calculateVanernRideability(inputs, new Date(NOW));
+  assert.ok(r.rawScore! > 45, "utan spärr hade råpoängen kunnat ge gul färg: " + r.rawScore);
+  assert.equal(r.cap, "no_cold");
+  assert.ok(r.score! <= 35);
+  assert.equal(r.category, "none");
+});
+
+test("Vänern: varmt väder (72 h-medel ≥ 2 °C) ger tak även med köld i historiken", () => {
+  const inputs = completeInputs();
+  inputs.weather = { ...inputs.weather!, temperature: summarizeTemperature(series(7 * 24, () => 4), NOW) };
+  const r = calculateVanernRideability(inputs, new Date(NOW));
+  assert.equal(r.cap, "warm");
+  assert.ok(r.score! <= 20);
+  assert.equal(r.category, "none");
+});
+
+test("Vänern: saknad köldmängd utlöser inte köldspärren (data saknas ≠ 0)", () => {
+  const r = calculateVanernRideability({ ...completeInputs(), coldPercent: null }, new Date(NOW));
+  assert.equal(r.components.cold, null);
+  assert.notEqual(r.cap, "no_cold");
+});

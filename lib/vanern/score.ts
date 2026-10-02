@@ -15,6 +15,7 @@ import {
   MIN_AVAILABLE_WEIGHT,
   SENTINEL,
   SENTINEL_MISSING_CAP,
+  VANERN_GATES,
   VANERN_COMPONENTS,
   VANERN_WEIGHTS,
   WIND_DAMPING,
@@ -29,7 +30,7 @@ import {
 } from "./weatherContext.ts";
 
 export type Confidence = "high" | "medium" | "low";
-export type VanernCap = "sentinel_missing" | "rough_open_water";
+export type VanernCap = "sentinel_missing" | "rough_open_water" | "no_cold" | "warm";
 
 export interface VanernCellInputs {
   /** Aktuell köldmängd i % av historisk referens (t.ex. 96). null = saknas. */
@@ -94,16 +95,26 @@ export function calculateVanernRideability(inputs: VanernCellInputs, now: Date =
   }
 
   const rawScore = available.reduce((s, id) => s + VANERN_WEIGHTS[id] * (components[id] as number), 0) / availableWeight;
+  // Tak: det lägsta gäller. Spärrarna (för lite köld, varmt väder) hindrar att jämn radaryta
+  // eller milt väder ger gul/grön färg när förutsättningarna för isbildning saknas.
+  const caps: { reason: VanernCap; value: number }[] = [];
+  if (!sentinel) caps.push({ reason: "sentinel_missing", value: SENTINEL_MISSING_CAP });
+  else if (sentinel.roughOpenWater && SENTINEL.roughOpenWaterCap !== null) {
+    caps.push({ reason: "rough_open_water", value: SENTINEL.roughOpenWaterCap });
+  }
+  if (inputs.coldPercent !== null && inputs.coldPercent < VANERN_GATES.minColdPercent) {
+    caps.push({ reason: "no_cold", value: VANERN_GATES.lowColdCap });
+  }
+  if (weather?.temperature && weather.temperature.mean72C >= VANERN_GATES.warmMeanC) {
+    caps.push({ reason: "warm", value: VANERN_GATES.warmCap });
+  }
+  const lowest = caps.reduce<(typeof caps)[number] | null>((m, c) => (!m || c.value < m.value ? c : m), null);
   let score = rawScore;
   let cap: VanernCap | null = null;
-  if (!sentinel) {
-    cap = "sentinel_missing";
-    score = Math.min(score, SENTINEL_MISSING_CAP);
-  } else if (sentinel.roughOpenWater && SENTINEL.roughOpenWaterCap !== null) {
-    cap = "rough_open_water";
-    score = Math.min(score, SENTINEL.roughOpenWaterCap);
+  if (lowest && lowest.value < rawScore) {
+    score = lowest.value;
+    cap = lowest.reason;
   }
-  if (cap && score >= rawScore) cap = null; // taket verkade inte
 
   return {
     model: "vanern",

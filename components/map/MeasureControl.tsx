@@ -5,6 +5,7 @@
  * på lägger klick på kartan ut en rutt; aktivt kartlager påverkas inte. Rutten ligger
  * kvar när verktyget stängs av och tas bort med "Ta bort rutt".
  */
+import { useEffect } from "react";
 import { formatLength, routeLengthM } from "@/lib/measure/route";
 import type { LngLat } from "@/types/lake";
 import styles from "./MeasureControl.module.css";
@@ -15,6 +16,15 @@ interface Props {
   onToggle: (on: boolean) => void;
   onUndo: () => void;
   onClear: () => void;
+}
+
+/** Kryss (stänger mätläget). */
+function CloseIcon() {
+  return (
+    <svg className={styles.icon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+      <path d="M6 6l12 12M18 6 6 18" />
+    </svg>
+  );
 }
 
 /** Linjal. */
@@ -29,15 +39,32 @@ function RulerIcon() {
 
 export default function MeasureControl({ on, points, onToggle, onUndo, onClear }: Props) {
   const hasRoute = points.length > 0;
+  // Esc avslutar mätläget (rutten ligger kvar).
+  useEffect(() => {
+    if (!on) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onToggle(false);
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [on, onToggle]);
   return (
     <section className={styles.measure} aria-label="Mätverktyg">
-      <button type="button" className={styles.btn} aria-pressed={on} onClick={() => onToggle(!on)}>
-        <RulerIcon />
-        <span>{on ? "Mät – klicka på kartan" : "Mät rutt"}</span>
+      <button
+        type="button"
+        className={on ? `${styles.btn} ${styles.btnOn}` : styles.btn}
+        aria-pressed={on}
+        onClick={() => onToggle(!on)}
+      >
+        {on ? <CloseIcon /> : <RulerIcon />}
+        <span>{on ? "Avsluta mätning" : "Mät rutt"}</span>
       </button>
       {(on || hasRoute) && (
         <div className={styles.body}>
-          {on && !hasRoute && <p className={styles.help}>Klicka på kartan för att lägga ut hur du tänker åka.</p>}
+          {on && (
+            <p className={styles.help}>
+              {hasRoute ? "Klicka för att lägga till fler punkter." : "Klicka på kartan för att lägga ut hur du tänker åka."}{" "}
+              Avsluta med knappen ovan eller Esc.
+            </p>
+          )}
           {hasRoute && (
             <div className={styles.route}>
               <p className={styles.routeLen}>
