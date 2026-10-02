@@ -97,8 +97,10 @@ abbr[title] {
 
 .maplibregl-ctrl-attrib {
   background: rgb(12 16 21 / 0.75) !important;
-  color: var(--text-faint) !important;
-  font-size: 10px;
+  color: var(--text-muted) !important;
+  font-size: 11.5px; /* samma storlek som övrig liten text (fotraden, friskrivningen) */
+  line-height: 1.5;
+  padding: 1px 8px !important;
 }
 
 .maplibregl-ctrl-attrib a {

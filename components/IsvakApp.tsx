@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import LakePanel from "@/components/lake-panel/LakePanel";
 import LakeMap, { type FocusRequest } from "@/components/map/LakeMap";
 import LocateButton from "@/components/map/LocateButton";
@@ -185,7 +185,11 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
   };
 
   return (
-    <main className={styles.app}>
+    // På bred skärm ligger friskrivningen uppe till höger och sjöpanelen startar under den.
+    <main
+      className={styles.app}
+      style={{ "--lake-panel-top": disclaimerClosed ? "56px" : "108px" } as CSSProperties}
+    >
       <LakeMap
         region={region}
         lakes={colorLakes}

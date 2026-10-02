@@ -38,11 +38,11 @@
 @media (min-width: 768px) {
   .panel {
     left: auto;
-    top: 64px;
+    top: var(--lake-panel-top, 64px); /* under friskrivningen uppe till höger */
     right: 12px;
-    /* Stannar ovanför friskrivningen och källhänvisningen i nedre högra hörnet
+    /* Stannar ovanför källhänvisningen och copyrightraden i nedre högra hörnet
        och scrollar internt (se .body) i stället för att knuffa undan dem. */
-    bottom: 192px;
+    bottom: 68px;
     width: 400px;
     max-height: none;
     border: 1px solid var(--border);

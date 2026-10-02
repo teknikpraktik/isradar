@@ -113,7 +113,8 @@ export default function LakeMap({
           style: basemapStyle(),
           bounds: region.view.bounds,
           fitBoundsOptions: { padding: 24 },
-          attributionControl: { compact: true },
+          // Källhänvisningen (OpenFreeMap © OpenMapTiles, OpenStreetMap) ligger alltid synlig, inte bakom en i-knapp.
+          attributionControl: { compact: false },
           dragRotate: false,
           pitchWithRotate: false,
           touchPitch: false,

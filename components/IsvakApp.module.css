@@ -236,11 +236,11 @@
   }
 }
 
-/* Friskrivning fast nere till höger, till vänster om zoomknapparna */
+/* Friskrivning: fast uppe till höger på bred skärm, nere till höger på mobil */
 .disclaimer {
   position: fixed;
   right: 12px; /* linjerad med sjöpanelens högerkant */
-  bottom: 70px; /* ovanför kartans källhänvisning (©) med luft emellan; källhänvisningen måste synas */
+  bottom: 64px; /* ovanför kartans källhänvisning (©) med luft emellan; källhänvisningen måste synas */
   z-index: 30;
   /* Lika bred som sjövyns panel (400 px) på bred skärm */
   width: min(400px, calc(100vw - 24px));
@@ -294,7 +294,7 @@
 @media (max-width: 767px) {
   .disclaimer {
     right: 10px;
-    bottom: 74px;
+    bottom: 68px;
     width: calc(100vw - 20px);
   }
   .disclaimer[data-hidden-mobile="true"] {
@@ -308,7 +308,7 @@
   box-sizing: border-box;
   position: fixed;
   right: 12px;
-  bottom: 70px;
+  bottom: 64px;
   z-index: 30;
   display: inline-flex;
   align-items: center;
@@ -331,7 +331,7 @@
 
 @media (max-width: 767px) {
   .disclaimerReopen {
-    bottom: 74px;
+    bottom: 68px;
   }
   .disclaimerReopen[data-hidden-mobile="true"] {
     display: none;
@@ -364,7 +364,7 @@
 }
 
 :global(.maplibregl-ctrl-bottom-right) {
-  bottom: 26px !important;
+  bottom: 34px !important;
 }
 
 @media (max-width: 767px) {
@@ -377,5 +377,18 @@
   }
   .footerBar[data-hidden-mobile="true"] {
     display: none;
+  }
+}
+
+/* Bred skärm: friskrivningen och knappen för att öppna den igen ligger uppe i högra hörnet. */
+@media (min-width: 768px) {
+  .disclaimer {
+    top: 10px;
+    bottom: auto;
+    width: min(400px, max(220px, calc(100vw - 520px)));
+  }
+  .disclaimerReopen {
+    top: 10px;
+    bottom: auto;
   }
 }
