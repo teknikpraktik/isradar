@@ -105,7 +105,7 @@ export function SourcesSection({
     : null;
 
   return (
-    <Section title="Källor" kinds={[]} status="ok">
+    <Section title="Källor" status="ok">
       <Group
         title="Historisk köldmängd"
         rows={[

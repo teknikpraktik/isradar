@@ -124,21 +124,21 @@ export default function OmIsvak() {
         </p>
 
         <h2>Datatyper</h2>
-        <p>Allt som visas hör till någon av fyra typer, som hålls isär och märks i gränssnittet:</p>
+        <p>Allt som visas hör till någon av fyra typer, som hålls isär i beräkningar och texter:</p>
         <ul>
           <li>
-            <strong>Observation (OBS):</strong> uppmätt, till exempel temperatur, nederbörd och vind från SMHI och
+            <strong>Observation:</strong> uppmätt, till exempel temperatur, nederbörd och vind från SMHI och
             Trafikverket, samt satellitbilder.
           </li>
           <li>
-            <strong>Modell (MODELL):</strong> modellerat nuläge, till exempel istjocklek och snö på is från MEPS, och
+            <strong>Modell:</strong> modellerat nuläge, till exempel istjocklek och snö på is från MEPS, och
             Isvaks egen sammanvägning Modellerad åkbarhet.
           </li>
           <li>
-            <strong>Prognos (PROGNOS):</strong> modellerad framtid, till exempel SMHI:s prognos på 48 timmar.
+            <strong>Prognos:</strong> modellerad framtid, till exempel SMHI:s prognos på 48 timmar.
           </li>
           <li>
-            <strong>Historisk referens (HIST):</strong> värden från tidigare säsonger, till exempel Skridskonätets
+            <strong>Historisk referens:</strong> värden från tidigare säsonger, till exempel Skridskonätets
             historiska köldmängd.
           </li>
         </ul>

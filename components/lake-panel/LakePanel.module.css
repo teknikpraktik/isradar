@@ -155,7 +155,6 @@
   justify-content: flex-end;
 }
 
-.kind,
 .status {
   font-family: var(--font-mono);
   font-size: calc(9.5px * var(--ui-scale, 1));
@@ -165,23 +164,6 @@
   border: 1px solid var(--border-strong);
   color: var(--text-muted);
   cursor: default;
-}
-
-.kind[data-kind="observation"] {
-  color: var(--kind-obs);
-  border-color: currentColor;
-}
-.kind[data-kind="model"] {
-  color: var(--kind-model);
-  border-color: currentColor;
-}
-.kind[data-kind="forecast"] {
-  color: var(--kind-forecast);
-  border-color: currentColor;
-}
-.kind[data-kind="historical_reference"] {
-  color: var(--kind-hist);
-  border-color: currentColor;
 }
 
 .status {
@@ -213,7 +195,12 @@
 .row .value,
 .row .placeholder {
   text-align: right;
-  font-size: calc(15px * var(--ui-scale, 1));
+  /* Värden ligger nära etikettens storlek (13 px); mono-siffror ser större ut och tas ned lite till. */
+  font-size: calc(13.5px * var(--ui-scale, 1));
+}
+
+.row .value :global(.num) {
+  font-size: 0.94em;
 }
 
 .value {
@@ -345,6 +332,7 @@
   color: var(--text-strong);
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+  font-size: 0.94em; /* mono-siffror ser större ut än omgivande text */
 }
 
 .dim {

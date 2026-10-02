@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
-import { KIND_DESCRIPTION, KIND_LABEL } from "@/lib/format";
-import type { DataKind, DataResult, Quantity } from "@/types/provenance";
+import type { DataResult, Quantity } from "@/types/provenance";
 import styles from "./LakePanel.module.css";
 
 /** DataResult eller "hämtas". */
@@ -17,14 +16,6 @@ export const PLACEHOLDER: Record<Exclude<SectionStatus, "ok">, string> = {
   not_applicable: "Ej klassificerad",
   loading: "Hämtar…",
 };
-
-export function KindBadge({ kind }: { kind: DataKind }) {
-  return (
-    <span className={styles.kind} data-kind={kind} title={KIND_DESCRIPTION[kind]}>
-      {KIND_LABEL[kind]}
-    </span>
-  );
-}
 
 /**
  * Appens informationsmönster: litet "?" som fäller ut en förklaring i flödet
@@ -60,7 +51,6 @@ export function HintButton({ open, onToggle, label }: { open: boolean; onToggle:
 
 export function Section({
   title,
-  kinds,
   status,
   source,
   hint,
@@ -68,7 +58,6 @@ export function Section({
   children,
 }: {
   title: ReactNode;
-  kinds: DataKind[];
   status: SectionStatus;
   source?: string;
   /** Förklaring/metadata bakom "?" vid rubriken. */
@@ -85,9 +74,6 @@ export function Section({
           {hint && <HintButton open={open} onToggle={toggle} label={hintLabel ?? `Information om ${typeof title === "string" ? title : "avsnittet"}`} />}
         </h3>
         <div className={styles.sectionTags}>
-          {kinds.map((k) => (
-            <KindBadge key={k} kind={k} />
-          ))}
           {status === "not_connected" && <span className={styles.status}>Ej ansluten</span>}
           {status === "unavailable" && <span className={styles.status}>Saknas</span>}
         </div>

@@ -14,7 +14,7 @@ const PRECIP_HINT =
 import type { ColdAmountObservation } from "@/types/observations";
 import type { Lake } from "@/types/lake";
 import styles from "./LakePanel.module.css";
-import { KindBadge, Row, Section, fmtQ, fmtSignedQ, type Loadable } from "./parts";
+import { Row, Section, fmtQ, fmtSignedQ, type Loadable } from "./parts";
 
 /*
  * Textprincip: siffror först, minimalt med ord. Station, tid och täckning
@@ -55,7 +55,7 @@ export function OverviewSection({
   const progressPlaceholder =
     progress.kind === "no_reference" ? "Ingen historisk referens" : progress.kind === "no_current" ? "–" : undefined;
   return (
-    <Section title="Köldmängd" kinds={["historical_reference", "observation"]} status="ok">
+    <Section title="Köldmängd" status="ok">
       <Row
         label="Historisk referens"
         value={hca ? fmtQ(hca.amount) : undefined}
@@ -118,12 +118,12 @@ function CollectionAreaOverview({ lake }: { lake: Lake }) {
   const station = lake.temperatureStation;
   return (
     <>
-      <Section title="Köldmängd" kinds={[]} status="ok">
+      <Section title="Köldmängd" status="ok">
         <Row label="Områdestyp" value="Samlingsområde" />
         <Row label="Progress mot referens" status="not_applicable" placeholder="Ej tillämpad" hint={COLLECTION_AREA_NOTE} />
       </Section>
       {area && (
-        <Section title="Områdeshistorik" kinds={["historical_reference"]} status="ok">
+        <Section title="Områdeshistorik" status="ok">
           <Row
             label="Historisk områdesobservation"
             value={fmtQ(area.amount)}
@@ -161,7 +161,6 @@ export function ModelSection({ meps }: { meps: L<"meps"> }) {
   return (
     <Section
       title="Modell · MEPS"
-      kinds={["model", "forecast"]}
       status={meps.status === "unavailable" ? "ok" : meps.status}
       hintLabel="Information om MEPS-modellen"
       hint={
@@ -396,13 +395,12 @@ export function WeatherSection({
   return (
     <Section
       title="Väder"
-      kinds={[]}
       hint={PRECIP_HINT}
       hintLabel="Om nederbörd i diagrammen"
       status={recent.status === "ok" || forecast.status === "ok" || notHistorical ? "ok" : recent.status}
     >
       <h4 className={styles.subhead}>
-        Senaste 24 h <KindBadge kind="observation" />
+        Senaste 24 h
       </h4>
       {observed ? (
         <>
@@ -418,7 +416,7 @@ export function WeatherSection({
       )}
 
       <h4 className={`${styles.subhead} ${styles.subheadNext}`}>
-        Prognos · 48 h <KindBadge kind="forecast" />
+        Prognos · 48 h
       </h4>
       {fc ? (
         <>
