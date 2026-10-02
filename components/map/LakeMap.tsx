@@ -31,6 +31,8 @@ interface Props {
   onSatelliteError?: () => void;
   /** Vad sjöarnas färg visar. Default köldmängd. */
   colorMode?: "cold" | "rideability";
+  /** Kartans mittpunkt när en förflyttning slutat. */
+  onMoveEnd?: (center: LngLat) => void;
 }
 
 const SAT_SOURCE = "satellite";
@@ -61,7 +63,12 @@ export default function LakeMap({
   satellite = null,
   onSatelliteError,
   colorMode = "cold",
+  onMoveEnd,
 }: Props) {
+  const onMoveEndRef = useRef(onMoveEnd);
+  useEffect(() => {
+    onMoveEndRef.current = onMoveEnd;
+  }, [onMoveEnd]);
   const onSatErrorRef = useRef(onSatelliteError);
   useEffect(() => {
     onSatErrorRef.current = onSatelliteError;
@@ -112,6 +119,11 @@ export default function LakeMap({
             (window as unknown as { __isvakMap?: MlMap }).__isvakMap = map;
           }
           setReady(true);
+        });
+
+        map.on("moveend", () => {
+          const c = map?.getCenter();
+          if (c) onMoveEndRef.current?.([c.lng, c.lat]);
         });
 
         map.on("click", (e) => {

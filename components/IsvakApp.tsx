@@ -6,18 +6,19 @@ import LakePanel from "@/components/lake-panel/LakePanel";
 import LakeMap, { type FocusRequest } from "@/components/map/LakeMap";
 import LocateButton from "@/components/map/LocateButton";
 import ColdMapInfo from "@/components/map/ColdMapInfo";
+import LayerControl, { type ActiveSatellite } from "@/components/map/LayerControl";
 import RideabilityLegend from "@/components/map/RideabilityLegend";
 import LakeSearch from "@/components/search/LakeSearch";
 import InfoDialog from "@/components/ui/InfoDialog";
 import { isIsoDate } from "@/lib/cold/api";
 import { fetchCurrentColdByStation } from "@/lib/data/cold";
 import { buildLake, lakeRepository, type RegionLakeData } from "@/lib/data/lakes";
+import { getSatelliteScenesAt } from "@/lib/data/satellite";
 import { loadRideabilityBulk, type RideabilityBulkResult } from "@/lib/data/rideability";
 import { enrichLakeFeatures } from "@/lib/map/lakeFeatures";
 import { computeRideability } from "@/lib/rideability/inputs";
 import { withRideabilityCategory } from "@/lib/rideability/mapStyle";
 import { formatDate, formatShortDateTime } from "@/lib/format";
-import type { SatelliteScene } from "@/lib/satellite/api";
 import { getRegion } from "@/lib/regions";
 import type { LakeId, LakeIndexEntry, LngLat } from "@/types/lake";
 import styles from "./IsvakApp.module.css";
@@ -34,10 +35,12 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
   const [userPosition, setUserPosition] = useState<LngLat | null>(null);
   const [infoOpen, setInfoOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-  // Satellitlager: ett åt gången. Stängs när användaren byter vatten.
-  const [satellite, setSatellite] = useState<{ scene: SatelliteScene; opacity: number } | null>(null);
-  const [satLakeId, setSatLakeId] = useState<LakeId | null>(null);
-  const activeSatellite = satellite && satLakeId === selectedId ? satellite : null;
+  // Satellitlager: ett åt gången, hör till kartan (inte till en sjö) och ligger kvar när man byter vatten.
+  const [satellite, setSatellite] = useState<ActiveSatellite | null>(null);
+  const activeSatellite = satellite;
+  const [satLoading, setSatLoading] = useState<"SAR" | "optical" | null>(null);
+  const [satNotice, setSatNotice] = useState<string | null>(null);
+  const mapCenterRef = useRef<LngLat | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
@@ -124,6 +127,34 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
     toastTimer.current = setTimeout(() => setToast(null), 4000);
   }, []);
 
+  const toggleSatellite = useCallback(
+    async (sensor: "SAR" | "optical", on: boolean) => {
+      setSatNotice(null);
+      if (!on) {
+        setSatellite(null);
+        return;
+      }
+      // Scener för kartvyns mitt (avrundad så att svaren kan cachas).
+      const c = mapCenterRef.current ?? region.view.center;
+      const position: LngLat = [Math.round(c[0] * 10) / 10, Math.round(c[1] * 10) / 10];
+      setSatLoading(sensor);
+      const r = await getSatelliteScenesAt(position, asOf);
+      setSatLoading(null);
+      if (r.status !== "ok") {
+        setSatNotice("Kunde inte hämta satellitscener.");
+        return;
+      }
+      const v = r.value;
+      const scenes = sensor === "SAR" ? v.sar : v.optical.length ? v.optical : v.opticalAny ? [v.opticalAny] : [];
+      if (scenes.length === 0) {
+        setSatNotice(`Ingen ${sensor === "SAR" ? "Sentinel-1-passage" : "Sentinel-2-bild"} senaste ${v.windowDays} d för kartvyn.`);
+        return;
+      }
+      setSatellite((prev) => ({ scene: scenes[0], opacity: prev?.opacity ?? 0.7, scenes }));
+    },
+    [region, asOf],
+  );
+
   const pickFromSearch = (entry: LakeIndexEntry) => {
     setSelectedId(entry.id);
     setFocus({ bbox: entry.bbox, key: Date.now() });
@@ -139,6 +170,7 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
         focus={focus}
         userPosition={userPosition}
         onSelect={setSelectedId}
+        onMoveEnd={(c) => (mapCenterRef.current = c)}
         satellite={activeSatellite}
         onSatelliteError={() => {
           setSatellite(null);
@@ -183,6 +215,26 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
         </button>
       </div>
 
+      <div className={styles.layers} data-hidden-mobile={lake !== null}>
+        <LayerControl
+          rideability={{
+            on: rideabilityOn,
+            loading: rideabilityLoading,
+            failed: bulkReady ? bulk.result.failed : [],
+            onToggle: setRideabilityOn,
+          }}
+          satellite={{
+            active: activeSatellite,
+            loadingSensor: satLoading,
+            notice: satNotice,
+            onToggle: toggleSatellite,
+            onShow: (scene) =>
+              setSatellite((prev) => (scene ? { scene, opacity: prev?.opacity ?? 0.7, scenes: prev?.scenes } : null)),
+            onOpacity: (opacity) => setSatellite((s) => (s ? { ...s, opacity } : s)),
+          }}
+        />
+      </div>
+
       <div className={styles.sideControls}>
         <LocateButton onPosition={setUserPosition} onMessage={showMessage} />
       </div>
@@ -202,18 +254,9 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
           onClose={() => setSelectedId(null)}
           onShowInfo={() => setInfoOpen(true)}
           asOf={asOf}
-          rideability={{
-            active: rideabilityOn,
-            loading: rideabilityLoading,
-            failed: bulkReady ? bulk.result.failed : [],
-            result: rideability?.get(lake.id),
-            onToggle: setRideabilityOn,
-          }}
+          rideability={{ active: rideabilityOn, loading: rideabilityLoading, result: rideability?.get(lake.id) }}
           satellite={activeSatellite}
-          onSatellite={(scene) => {
-            setSatLakeId(lake.id);
-            setSatellite(scene ? { scene, opacity: satellite?.opacity ?? 0.7 } : null);
-          }}
+          onSatellite={(scene) => setSatellite(scene ? { scene, opacity: satellite?.opacity ?? 0.7 } : null)}
           onSatelliteOpacity={(opacity) => setSatellite((s) => (s ? { ...s, opacity } : s))}
         />
       )}

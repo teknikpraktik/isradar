@@ -11,11 +11,10 @@ import type { DataResult } from "@/types/provenance";
 
 const cache = new Map<string, Promise<SatelliteApiResponse>>();
 
-function fetchScenes(lake: Lake, asOf?: string): Promise<SatelliteApiResponse> {
-  const key = `${lake.id}|${asOf ?? ""}`;
+function fetchScenes([lon, lat]: [number, number], asOf?: string): Promise<SatelliteApiResponse> {
+  const key = `${lon},${lat}|${asOf ?? ""}`;
   let p = cache.get(key);
   if (!p) {
-    const [lon, lat] = lake.centroid;
     const qs = new URLSearchParams({ lon: String(lon), lat: String(lat) });
     if (asOf) qs.set("asOf", asOf);
     p = fetch(`/api/satellite?${qs}`).then(async (res) => {
@@ -29,9 +28,14 @@ function fetchScenes(lake: Lake, asOf?: string): Promise<SatelliteApiResponse> {
   return p;
 }
 
-export async function getSatelliteScenes(lake: Lake, asOf?: string): Promise<DataResult<SatelliteScenes>> {
+export function getSatelliteScenes(lake: Lake, asOf?: string): Promise<DataResult<SatelliteScenes>> {
+  return getSatelliteScenesAt(lake.centroid, asOf);
+}
+
+/** Scener som täcker en position – används av kartlager som inte hör till en enskild sjö. */
+export async function getSatelliteScenesAt(position: [number, number], asOf?: string): Promise<DataResult<SatelliteScenes>> {
   try {
-    const r = await fetchScenes(lake, asOf);
+    const r = await fetchScenes(position, asOf);
     return {
       status: "ok",
       value: {

@@ -314,6 +314,83 @@ function PassWindRows({ centroid, time }: { centroid: [number, number]; time: st
   );
 }
 
+/**
+ * Kontroller för aktivt satellitlager: SAR-skala, visning (sann/falsk färg),
+ * opacitet och scenbyte. Delas av sjöpanelen och kartans lagerkontroll.
+ */
+export function SatelliteControls({
+  active,
+  scenes,
+  onShow,
+  onOpacity,
+}: {
+  active: { scene: SatelliteScene; opacity: number };
+  scenes: SatelliteScene[];
+  onShow: (s: SatelliteScene | null) => void;
+  onOpacity: (o: number) => void;
+}) {
+  const scene = active.scene;
+  const idx = scenes.findIndex((s) => s.id === scene.id);
+  const isSar = scene.sensor === "SAR";
+  // Vald visningsvariant följer med vid scenbyte.
+  const renderingId = scene.renderings.find((r) => r.tileUrl === scene.tileUrl)?.id;
+  const show = (s: SatelliteScene) => onShow(withRendering(s, renderingId));
+  return (
+    <div className={styles.satControls}>
+      {isSar && <SarLegend />}
+      {scene.renderings.length > 1 && (
+        <div className={styles.renderToggle} role="group" aria-label="Visning">
+          {scene.renderings.map((r) => {
+            const on = r.tileUrl === scene.tileUrl;
+            return (
+              <button
+                key={r.id}
+                type="button"
+                aria-pressed={on}
+                className={on ? styles.renderOn : undefined}
+                onClick={() => onShow({ ...scene, tileUrl: r.tileUrl })}
+              >
+                {r.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+      <label className={styles.opacity}>
+        <span>Opacitet</span>
+        <input
+          type="range"
+          min={30}
+          max={100}
+          step={5}
+          value={Math.round(active.opacity * 100)}
+          onChange={(e) => onOpacity(Number(e.target.value) / 100)}
+          aria-label="Satellitbildens opacitet"
+        />
+        <span className="num">{Math.round(active.opacity * 100)} %</span>
+      </label>
+      {idx >= 0 && scenes.length > 1 && (
+        <div className={styles.sceneNav}>
+          <button
+            type="button"
+            disabled={idx >= scenes.length - 1}
+            onClick={() => show(scenes[idx + 1])}
+            aria-label="Föregående passage"
+          >
+            ‹ {idx < scenes.length - 1 ? shortDay(scenes[idx + 1].acquiredAt) : ""}
+          </button>
+          <span className="num">
+            {idx + 1}/{scenes.length}
+          </span>
+          <button type="button" disabled={idx <= 0} onClick={() => show(scenes[idx - 1])} aria-label="Nästa passage">
+            {idx > 0 ? shortDay(scenes[idx - 1].acquiredAt) : ""} ›
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** Ett sensorblock: senaste scen, knapp, och när aktivt: opacitet + scenbyte. */
 function SensorBlock({
   title,
@@ -340,9 +417,6 @@ function SensorBlock({
   const isActive = idx >= 0;
   const scene = isActive ? scenes[idx] : scenes[0];
   const isSar = scene?.sensor === "SAR";
-  // Vald visningsvariant följer med vid scenbyte.
-  const renderingId = active ? scene?.renderings.find((r) => r.tileUrl === active.scene.tileUrl)?.id : undefined;
-  const show = (s: SatelliteScene) => onShow(withRendering(s, renderingId));
   return (
     <div className={styles.satBlock}>
       <h4 className={styles.subhead}>{title}</h4>
@@ -359,58 +433,7 @@ function SensorBlock({
             {isActive ? `✓ ${activeLabel}` : showLabel}
           </button>
           {isActive && active && (
-            <div className={styles.satControls}>
-              {isSar && <SarLegend />}
-              {scene.renderings.length > 1 && (
-                <div className={styles.renderToggle} role="group" aria-label="Visning">
-                  {scene.renderings.map((r) => {
-                    const on = r.tileUrl === active.scene.tileUrl;
-                    return (
-                      <button
-                        key={r.id}
-                        type="button"
-                        aria-pressed={on}
-                        className={on ? styles.renderOn : undefined}
-                        onClick={() => onShow({ ...scene, tileUrl: r.tileUrl })}
-                      >
-                        {r.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-              <label className={styles.opacity}>
-                <span>Opacitet</span>
-                <input
-                  type="range"
-                  min={30}
-                  max={100}
-                  step={5}
-                  value={Math.round(active.opacity * 100)}
-                  onChange={(e) => onOpacity(Number(e.target.value) / 100)}
-                  aria-label="Satellitbildens opacitet"
-                />
-                <span className="num">{Math.round(active.opacity * 100)} %</span>
-              </label>
-              {scenes.length > 1 && (
-                <div className={styles.sceneNav}>
-                  <button
-                    type="button"
-                    disabled={idx >= scenes.length - 1}
-                    onClick={() => show(scenes[idx + 1])}
-                    aria-label="Föregående passage"
-                  >
-                    ‹ {idx < scenes.length - 1 ? shortDay(scenes[idx + 1].acquiredAt) : ""}
-                  </button>
-                  <span className="num">
-                    {idx + 1}/{scenes.length}
-                  </span>
-                  <button type="button" disabled={idx <= 0} onClick={() => show(scenes[idx - 1])} aria-label="Nästa passage">
-                    {idx > 0 ? shortDay(scenes[idx - 1].acquiredAt) : ""} ›
-                  </button>
-                </div>
-              )}
-            </div>
+            <SatelliteControls active={active} scenes={scenes} onShow={onShow} onOpacity={onOpacity} />
           )}
         </>
       ) : (

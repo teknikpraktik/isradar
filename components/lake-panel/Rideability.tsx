@@ -1,11 +1,11 @@
 "use client";
 
 /**
- * Förmodad åkbarhet · BETA i sjöpanelen: reglage (under Väder) och detaljvy
- * (visas överst när lagret är aktivt). All beräkning ligger i lib/rideability.
+ * Förmodad åkbarhet · BETA i sjöpanelen: detaljvy för vald sjö (visas överst när
+ * lagret är aktivt; reglaget sitter i kartans lagerkontroll). All beräkning ligger i lib/rideability.
  * Score 0–100 visas aldrig; bara kategori och ingående indikatorer.
  */
-import { CATEGORY_BY_ID, RIDEABILITY_FOOTNOTE, RIDEABILITY_HELP, RIDEABILITY_TITLE, SENTINEL_LABEL_BREAKS } from "@/lib/rideability/config";
+import { CATEGORY_BY_ID, RIDEABILITY_FOOTNOTE, RIDEABILITY_TITLE, SENTINEL_LABEL_BREAKS } from "@/lib/rideability/config";
 import type { GateReason, RideabilityResult } from "@/lib/rideability/types";
 import styles from "./LakePanel.module.css";
 import { Row, Section } from "./parts";
@@ -36,41 +36,6 @@ const Title = () => (
     {RIDEABILITY_TITLE} <BetaBadge />
   </>
 );
-
-/** Reglage + hjälptext. Sitter under Väder. */
-export function RideabilityToggleSection({
-  active,
-  loading,
-  failed,
-  onToggle,
-}: {
-  active: boolean;
-  loading: boolean;
-  failed: string[];
-  onToggle: (on: boolean) => void;
-}) {
-  return (
-    <Section title={<Title />} kinds={[]} status="ok">
-      <label className={styles.switchRow}>
-        <input
-          type="checkbox"
-          role="switch"
-          className={styles.switchInput}
-          checked={active}
-          onChange={(e) => onToggle(e.target.checked)}
-        />
-        <span className={styles.switchTrack} aria-hidden />
-        <span className={styles.switchLabel}>Visa på kartan</span>
-      </label>
-      <p className={styles.rideHelp}>{RIDEABILITY_HELP}</p>
-      {active && <p className={styles.rideHelp}>Köldmängdslagret är avstängt medan detta lager visas.</p>}
-      {active && loading && <p className={styles.rideHelp}>Hämtar underlag…</p>}
-      {active && failed.length > 0 && (
-        <p className={styles.rideHelp}>Kunde inte hämta: {failed.join(", ")}. Räknas som data saknas.</p>
-      )}
-    </Section>
-  );
-}
 
 function sentinelText(favourability: number): string {
   return favourability >= SENTINEL_LABEL_BREAKS.favourable

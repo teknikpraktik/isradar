@@ -63,7 +63,7 @@ export const calculatePrecipitationScore = (mm: number | null) =>
 
 /** Score → kategori (före gating). Otillräckliga data sätts inte här. */
 export function getRideabilityCategory(score: number): RideabilityCategoryId {
-  return (CATEGORIES.find((c) => c.minScore !== null && score >= c.minScore) ?? CATEGORY_BY_ID.weak).id;
+  return (CATEGORIES.find((c) => c.minScore !== null && score >= c.minScore) ?? CATEGORY_BY_ID.none).id;
 }
 
 /** MEPS istjocklek begränsar högsta kategori; saknad istjocklek stoppar "Mycket gynnsamma". */

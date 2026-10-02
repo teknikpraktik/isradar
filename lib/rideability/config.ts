@@ -8,7 +8,7 @@
 
 export type RideabilityFactorId = "iceThickness" | "coldDegree" | "snow" | "sentinel" | "precipitation";
 
-export type RideabilityCategoryId = "very_favourable" | "favourable" | "mixed" | "weak" | "insufficient";
+export type RideabilityCategoryId = "very_favourable" | "favourable" | "mixed" | "none" | "insufficient";
 
 /** Ankarpunkter [indata, andel av maxpoäng 0–1]; linjär interpolering, klampas i ändarna. */
 export type Curve = readonly (readonly [number, number])[];
@@ -91,10 +91,10 @@ export interface RideabilityCategory {
 
 /** Mörkaste grön → orange; grå för otillräckliga data. Sorterad fallande rank. */
 export const CATEGORIES: readonly RideabilityCategory[] = [
-  { id: "very_favourable", label: "Mycket gynnsamma indikatorer", minScore: 80, rank: 4, fill: "#2e7d4f", line: "#5fb882" },
-  { id: "favourable", label: "Gynnsamma indikatorer", minScore: 60, rank: 3, fill: "#6fb86a", line: "#a3d99f" },
-  { id: "mixed", label: "Blandade indikatorer", minScore: 35, rank: 2, fill: "#d9bf4a", line: "#ecd878" },
-  { id: "weak", label: "Svaga indikatorer", minScore: 0, rank: 1, fill: "#d9803f", line: "#eba46e" },
+  { id: "very_favourable", label: "Mycket gynnsamma indikatorer", minScore: 85, rank: 4, fill: "#2e7d4f", line: "#5fb882" },
+  { id: "favourable", label: "Gynnsamma indikatorer", minScore: 70, rank: 3, fill: "#6fb86a", line: "#a3d99f" },
+  { id: "mixed", label: "Blandade indikatorer", minScore: 45, rank: 2, fill: "#d9bf4a", line: "#ecd878" },
+  { id: "none", label: "Inga indikatorer", minScore: 0, rank: 1, fill: "#d9803f", line: "#eba46e" },
   { id: "insufficient", label: "Otillräckliga data", minScore: null, rank: 0, fill: "#59636d", line: "#7d8995" },
 ];
 
@@ -110,10 +110,10 @@ export const CATEGORY_BY_ID = Object.fromEntries(CATEGORIES.map((c) => [c.id, c]
 /**
  * MEPS istjocklek begränsar högsta kategori. Utvärderas uppifrån; första träffen
  * gäller (upToCm är övre gräns, inclusive styr om gränsen själv ingår).
- *   < 2 cm → högst Svaga, 2–5 cm → högst Blandade, > 5 cm → ingen begränsning.
+ *   < 2 cm → högst Inga, 2–5 cm → högst Blandade, > 5 cm → ingen begränsning.
  */
 export const ICE_GATES: readonly { upToCm: number; inclusive: boolean; cap: RideabilityCategoryId; reason: "ice_below_2" | "ice_2_to_5" }[] = [
-  { upToCm: 2, inclusive: false, cap: "weak", reason: "ice_below_2" },
+  { upToCm: 2, inclusive: false, cap: "none", reason: "ice_below_2" },
   { upToCm: 5, inclusive: true, cap: "mixed", reason: "ice_2_to_5" },
 ];
 

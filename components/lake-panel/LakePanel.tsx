@@ -7,7 +7,7 @@ import type { Lake } from "@/types/lake";
 import type { SatelliteScene } from "@/lib/satellite/api";
 import styles from "./LakePanel.module.css";
 import { LOADING } from "./parts";
-import { RideabilityDetail, RideabilityToggleSection } from "./Rideability";
+import { RideabilityDetail } from "./Rideability";
 import { ModelSection, OverviewSection, SatelliteSection, WeatherSection } from "./sections";
 import type { RideabilityResult } from "@/lib/rideability/types";
 
@@ -20,14 +20,8 @@ interface Props {
   satellite?: { scene: SatelliteScene; opacity: number } | null;
   onSatellite?: (scene: SatelliteScene | null) => void;
   onSatelliteOpacity?: (opacity: number) => void;
-  /** Förmodad åkbarhet · BETA (kartlager + detaljer). */
-  rideability?: {
-    active: boolean;
-    loading: boolean;
-    failed: string[];
-    result: RideabilityResult | undefined;
-    onToggle: (on: boolean) => void;
-  };
+  /** Förmodad åkbarhet · BETA – detaljer för sjön när kartlagret är aktivt. */
+  rideability?: { active: boolean; loading: boolean; result: RideabilityResult | undefined };
 }
 
 export default function LakePanel({ lake, onClose, onShowInfo, asOf, satellite = null, onSatellite, onSatelliteOpacity, rideability }: Props) {
@@ -90,14 +84,6 @@ export default function LakePanel({ lake, onClose, onShowInfo, asOf, satellite =
           centroid={lake.centroid}
         />
         <WeatherSection recent={c.weatherRecent ?? LOADING} forecast={c.weatherForecast ?? LOADING} />
-        {rideability && (
-          <RideabilityToggleSection
-            active={rideability.active}
-            loading={rideability.loading}
-            failed={rideability.failed}
-            onToggle={rideability.onToggle}
-          />
-        )}
 
         <p className={styles.disclaimer}>
           Visar inte om isen är bärig. Bedöm alltid på plats.{" "}

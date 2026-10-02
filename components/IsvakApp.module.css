@@ -89,6 +89,16 @@
   gap: 6px;
 }
 
+.layers {
+  display: contents;
+}
+
+@media (max-width: 767px) {
+  .layers[data-hidden-mobile="true"] {
+    display: none;
+  }
+}
+
 .legend {
   position: absolute;
   left: 10px;

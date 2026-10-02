@@ -33,19 +33,19 @@ test("score normaliseras mot tillgänglig maxpoäng", () => {
 });
 
 test("kategorigränser", () => {
-  assert.equal(getRideabilityCategory(80), "very_favourable");
-  assert.equal(getRideabilityCategory(79.9), "favourable");
-  assert.equal(getRideabilityCategory(60), "favourable");
-  assert.equal(getRideabilityCategory(35), "mixed");
-  assert.equal(getRideabilityCategory(34.9), "weak");
+  assert.equal(getRideabilityCategory(85), "very_favourable");
+  assert.equal(getRideabilityCategory(84.9), "favourable");
+  assert.equal(getRideabilityCategory(70), "favourable");
+  assert.equal(getRideabilityCategory(45), "mixed");
+  assert.equal(getRideabilityCategory(44.9), "none");
 });
 
 test("gating på MEPS istjocklek", () => {
-  assert.equal(applyRideabilityGating("very_favourable", 1.9).category, "weak");
+  assert.equal(applyRideabilityGating("very_favourable", 1.9).category, "none");
   assert.equal(applyRideabilityGating("very_favourable", 2).category, "mixed");
   assert.equal(applyRideabilityGating("very_favourable", 5).category, "mixed");
   assert.equal(applyRideabilityGating("very_favourable", 5.1).category, "very_favourable");
-  assert.equal(applyRideabilityGating("weak", 1).gate, null);
+  assert.equal(applyRideabilityGating("none", 1).gate, null);
   const missing = applyRideabilityGating("very_favourable", null);
   assert.equal(missing.category, "favourable");
   assert.equal(missing.gate, "ice_missing");
@@ -53,7 +53,7 @@ test("gating på MEPS istjocklek", () => {
 
 test("hög score men låg istjocklek blir aldrig grön", () => {
   const r = calculateRideabilityScore({ ...full, iceThicknessCm: 1 });
-  assert.equal(r.category, "weak");
+  assert.equal(r.category, "none");
   assert.equal(r.rawCategory, "favourable");
 });
 
