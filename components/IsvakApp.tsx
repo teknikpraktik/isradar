@@ -272,9 +272,9 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
       </div>
 
       <p className={styles.disclaimer} data-hidden-mobile={lake !== null}>
-        <strong>Det är förenat med livsfara att beträda naturis utan rätt kunskap, sällskap och utrustning.</strong>{" "}
         Isvak är en datormodell – isen är inte kontrollerad på plats och modellerna kan inte användas för att bedöma
         is.{" "}
+        <strong>Det är förenat med livsfara att beträda naturis utan rätt kunskap, sällskap och utrustning.</strong>{" "}
         <a href="/om" target="_blank" rel="noopener noreferrer">
           Om Isvak
         </a>
