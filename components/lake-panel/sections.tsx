@@ -2,7 +2,7 @@
 
 import type { LakeConditions } from "@/lib/data/conditions";
 import { distanceKm, formatDate, formatDateShort, formatShortDateTime } from "@/lib/format";
-import { COLLECTION_AREA_NOTE, getColdDayStyle } from "@/lib/map/coldScale";
+import { COLLECTION_AREA_NOTE, formatProgressPercent, getColdProgress } from "@/lib/map/coldScale";
 import { useEffect, useState } from "react";
 import { getPassWind } from "@/lib/data/satellite";
 import type { PassWindResponse, SatelliteScene } from "@/lib/satellite/api";
@@ -72,13 +72,18 @@ export function OverviewSection({
   const hca = lake.historicalColdAmount;
   const current = cold.status === "ok" ? cold.value : null;
   const reason = cold.status === "unavailable" ? cold.reason : undefined;
+  const progress = getColdProgress(lake.areaType, current?.accumulated.value, hca?.amount.value);
+  // Progress kräver både referens och aktuellt värde; laddning visas som laddning.
+  const progressStatus = progress.kind === "no_current" && cold.status === "loading" ? "loading" : "ok";
+  const progressPlaceholder =
+    progress.kind === "no_reference" ? "Ingen historisk referens" : progress.kind === "no_current" ? "–" : undefined;
   return (
     <Section title="Köldmängd" kinds={["historical_reference", "observation"]} status="ok">
       <Row
-        label="Historisk köldmängd"
-        value={hca ? <ColdValue lake={lake} gd={hca.amount.value} /> : undefined}
+        label="Historisk referens"
+        value={hca ? fmtQ(hca.amount) : undefined}
         placeholder={hca ? undefined : "Saknas"}
-        hint="Median vid första rapporterade åkning (Skridskonätet). GD = graddagar. Ingen säkerhetsgräns."
+        hint="Median köldmängd vid första rapporterade åkning (Skridskonätet). GD = graddagar. Ett historiskt referensvärde – ingen gräns för isbildning."
       />
       {lake.parent && <Row label="Del av" value={lake.parent.name} />}
       <Row
@@ -86,9 +91,29 @@ export function OverviewSection({
         status={cold.status}
         placeholder={currentColdPlaceholder(cold, "value")}
         placeholderTitle={reason}
-        value={current ? <ColdValue lake={lake} gd={current.accumulated.value} /> : undefined}
+        value={current ? fmtQ(current.accumulated) : undefined}
         meta={current ? coldMeta(current) : undefined}
         hint="Från 1 okt. SMHI-dygnsmedel vid stationen, netto, golv 0."
+      />
+      <Row
+        label="Av historisk referens"
+        status={progressStatus}
+        placeholder={progressPlaceholder}
+        value={progress.kind === "progress" ? formatProgressPercent(progress.percent) : undefined}
+        hint="Aktuell köldmängd / historisk referens. Kartans färg. Visar inte isstatus, istjocklek eller säkerhet."
+      />
+      <Row
+        label="Status"
+        status={progressStatus}
+        placeholder={progressPlaceholder}
+        value={
+          progress.kind === "progress" ? (
+            <span className={styles.coldValue}>
+              <span className={styles.classSwatch} style={{ background: progress.cls.color }} aria-hidden />
+              {progress.cls.status}
+            </span>
+          ) : undefined
+        }
       />
       <Row
         label="Förändring 24 h"
@@ -108,19 +133,6 @@ export function OverviewSection({
   );
 }
 
-/** GD-värde med klassfärg – via samma centrala regel som kartan. */
-function ColdValue({ lake, gd }: { lake: Lake; gd: number }) {
-  const style = getColdDayStyle(lake.areaType, gd);
-  return (
-    <span className={styles.coldValue}>
-      {style.kind === "class" && (
-        <span className={styles.classSwatch} style={{ background: style.cls.color }} aria-hidden />
-      )}
-      {fmtQ({ value: gd, unit: "GD" })}
-    </span>
-  );
-}
-
 /**
  * Samlingsområde: ingen sjöspecifik GD. Ev. historiskt värde visas separat
  * som områdeshistorik, utan klassfärg.
@@ -132,7 +144,7 @@ function CollectionAreaOverview({ lake }: { lake: Lake }) {
     <>
       <Section title="Köldmängd" kinds={[]} status="ok">
         <Row label="Områdestyp" value="Samlingsområde" />
-        <Row label="GD-klassificering" status="not_applicable" placeholder="Ej tillämpad" hint={COLLECTION_AREA_NOTE} />
+        <Row label="Progress mot referens" status="not_applicable" placeholder="Ej tillämpad" hint={COLLECTION_AREA_NOTE} />
       </Section>
       {area && (
         <Section title="Områdeshistorik" kinds={["historical_reference"]} status="ok">

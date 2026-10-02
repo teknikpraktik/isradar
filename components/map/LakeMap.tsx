@@ -292,7 +292,7 @@ function addLakeLayers(map: MlMap) {
   const hover = ["boolean", ["feature-state", "hover"], false];
   const notCollection = ["!", isCollectionAreaFilter];
 
-  // Samlingsområden (ej GD-färgsatta) ritas UNDER alla vatten och delområden,
+  // Samlingsområden (ej klassificerade) ritas UNDER alla vatten och delområden,
   // så att de aldrig täcker vikar och skärgårdar.
   map.addLayer({
     id: "collection-fill",
@@ -354,15 +354,20 @@ function addLakeLayers(map: MlMap) {
       "line-width": ["interpolate", ["linear"], ["zoom"], 6, 1.5, 12, 2.5],
     },
   });
-  map.addLayer({
-    id: "lakes-label",
-    type: "symbol",
-    source: SOURCE,
-    minzoom: 9,
-    filter: notCollection as never,
-    layout: labelLayout as never,
-    paint: labelPaint,
-  });
+  // Etiketter "Sjönamn XX" i tre nivåer efter storlek (lt): stora vatten syns
+  // utzoomat, små först nära. Överst i stacken placeras först vid krock, så de
+  // största läggs sist och vinner. COLLECTION_AREA får aldrig referenssiffra.
+  for (const [tier, minzoom] of LABEL_TIERS) {
+    map.addLayer({
+      id: `lakes-label-${tier}`,
+      type: "symbol",
+      source: SOURCE,
+      minzoom,
+      filter: ["all", notCollection, ["==", ["get", "lt"], tier]] as never,
+      layout: labelLayout as never,
+      paint: labelPaint,
+    });
+  }
   // Samlingsområden består ofta av många delytor (efter klippning) – deras
   // namn visas först på nära håll för att inte upprepas över hela kartan.
   map.addLayer({
@@ -371,15 +376,22 @@ function addLakeLayers(map: MlMap) {
     source: SOURCE,
     minzoom: 11,
     filter: isCollectionAreaFilter,
-    layout: { ...labelLayout, "symbol-spacing": 600 } as never,
+    layout: { ...labelLayout, "text-field": ["get", "name"], "symbol-spacing": 600 } as never,
     paint: { ...labelPaint, "text-color": "#9aa6b1" },
   });
 }
 
+/** [etikettnivå, minzoom] – minst först (placeras sist vid krock). */
+const LABEL_TIERS = [
+  [2, 10.5],
+  [1, 8.5],
+  [0, 7],
+] as const;
+
 const labelLayout = {
-  "text-field": ["get", "name"],
+  "text-field": ["coalesce", ["get", "label"], ["get", "name"]],
   "text-font": LAKE_LABEL_FONT,
-  "text-size": ["interpolate", ["linear"], ["zoom"], 9, 10, 13, 12.5],
+  "text-size": ["interpolate", ["linear"], ["zoom"], 7, 10, 13, 12.5],
   "text-letter-spacing": 0.03,
   "text-max-width": 8,
 };

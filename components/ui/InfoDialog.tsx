@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { KIND_DESCRIPTION, formatShortDateTime } from "@/lib/format";
-import { COLD_DAY_CLASSES } from "@/lib/map/coldScale";
+import { COLD_PROGRESS_CLASSES } from "@/lib/map/coldScale";
 import { SOURCES } from "@/lib/sources";
 import type { RegionDataManifest, RegionDefinition } from "@/types/region";
 import { KindBadge } from "@/components/lake-panel/parts";
@@ -77,14 +77,14 @@ export default function InfoDialog({ open, onClose, region, manifest, showCollec
           <div>
             <dt>Kartfärg</dt>
             <dd>
-              Historisk GD ({COLD_DAY_CLASSES.map((c) => c.label).join(", ")}). Temperaturindikator,
-              inte isstatus.
+              Aktuell / historisk referens ({COLD_PROGRESS_CLASSES.map((c) => c.range).join(", ")}). Siffran i
+              etiketten är historisk referens-GD. Inte isstatus, istjocklek eller säkerhet.
             </dd>
           </div>
           {showCollectionNote && (
             <div>
               <dt>Blågrå</dt>
-              <dd>Områdespolygon med flera vattenmiljöer – ej GD-klassificerad</dd>
+              <dd>Områdespolygon med flera vattenmiljöer – ej klassificerad</dd>
             </div>
           )}
         </dl>

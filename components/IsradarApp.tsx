@@ -5,11 +5,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import LakePanel from "@/components/lake-panel/LakePanel";
 import LakeMap, { type FocusRequest } from "@/components/map/LakeMap";
 import LocateButton from "@/components/map/LocateButton";
-import MapLegend from "@/components/map/MapLegend";
+import ColdMapInfo from "@/components/map/ColdMapInfo";
 import LakeSearch from "@/components/search/LakeSearch";
 import InfoDialog from "@/components/ui/InfoDialog";
 import { isIsoDate } from "@/lib/cold/api";
+import { fetchCurrentColdByStation } from "@/lib/data/cold";
 import { buildLake, lakeRepository, type RegionLakeData } from "@/lib/data/lakes";
+import { enrichLakeFeatures } from "@/lib/map/lakeFeatures";
 import { formatDate, formatShortDateTime } from "@/lib/format";
 import type { SatelliteScene } from "@/lib/satellite/api";
 import { getRegion } from "@/lib/regions";
@@ -48,6 +50,28 @@ export default function IsradarApp({ regionId }: { regionId?: string }) {
     };
   }, [region.id]);
 
+  // Aktuell köldmängd per station → kartans progressfärg. Utan svar ritas
+  // vattnen som ej klassificerade (ingen gissning).
+  const [currentCold, setCurrentCold] = useState<{ key: string; values: Map<number, number | null> } | null>(null);
+  const coldKey = data ? `${data.regionId}|${asOf ?? ""}` : null;
+  useEffect(() => {
+    if (!data || !coldKey) return;
+    let cancelled = false;
+    fetchCurrentColdByStation([...data.stations.keys()], asOf)
+      .then((values) => !cancelled && setCurrentCold({ key: coldKey, values }))
+      .catch((e: unknown) => console.error(e));
+    return () => {
+      cancelled = true;
+    };
+  }, [data, asOf, coldKey]);
+  const mapLakes = useMemo(
+    () =>
+      data
+        ? enrichLakeFeatures(data.features, data.index, currentCold?.key === coldKey ? currentCold.values : null)
+        : null,
+    [data, currentCold, coldKey],
+  );
+
   const legendFlags = useMemo(
     () => ({
       showCollection: !!data?.index.some((l) => l.areaType === "COLLECTION_AREA"),
@@ -76,7 +100,7 @@ export default function IsradarApp({ regionId }: { regionId?: string }) {
     <main className={styles.app}>
       <LakeMap
         region={region}
-        lakes={data?.features ?? null}
+        lakes={mapLakes}
         selectedId={selectedId}
         focus={focus}
         userPosition={userPosition}
@@ -134,7 +158,7 @@ export default function IsradarApp({ regionId }: { regionId?: string }) {
       </div>
 
       <div className={styles.legend} data-hidden-mobile={lake !== null}>
-        <MapLegend {...legendFlags} />
+        <ColdMapInfo {...legendFlags} />
       </div>
 
       {lake && (

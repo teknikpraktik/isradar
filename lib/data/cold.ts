@@ -5,7 +5,7 @@
  *  - Aktuell köldmängd (OBSERVATION, härledd ur SMHI:s dygnsmedeltemperaturer
  *    vid sjöns temperaturstation) – via /api/cold/station/[measurepoint].
  */
-import type { ApiError, StationColdAmountResponse } from "@/lib/cold/api";
+import type { ApiError, CurrentColdResponse, StationColdAmountResponse } from "@/lib/cold/api";
 import { COLLECTION_AREA_NOTE, canRenderColdDays } from "@/lib/map/coldScale";
 import { SOURCES } from "@/lib/sources";
 import type { HistoricalColdAmount, Lake, LakeIndexEntry } from "@/types/lake";
@@ -113,4 +113,29 @@ export async function getCurrentColdAmount(
       code: "error",
     };
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* Aktuell köldmängd för kartan (alla stationer i regionen)            */
+/* ------------------------------------------------------------------ */
+
+const currentCache = new Map<string, Promise<Map<number, number | null>>>();
+
+/** measurepoint → aktuell GD (null = saknas). Ett anrop för hela regionen. */
+export function fetchCurrentColdByStation(stationIds: number[], asOf?: string): Promise<Map<number, number | null>> {
+  const ids = [...new Set(stationIds)].sort((a, b) => a - b);
+  const key = `${ids.join(",")}|${asOf ?? ""}`;
+  let p = currentCache.get(key);
+  if (!p) {
+    const qs = new URLSearchParams({ stations: ids.join(",") });
+    if (asOf) qs.set("asOf", asOf);
+    p = fetch(`/api/cold/current?${qs}`).then(async (res) => {
+      const body = (await res.json()) as CurrentColdResponse | ApiError;
+      if (!res.ok || "error" in body) throw new Error("error" in body ? body.error : `HTTP ${res.status}`);
+      return new Map(Object.entries(body.values).map(([k, v]) => [Number(k), v]));
+    });
+    p.catch(() => currentCache.delete(key));
+    currentCache.set(key, p);
+  }
+  return p;
 }

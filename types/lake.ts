@@ -113,6 +113,13 @@ export interface LakeFeatureProperties {
   hca: number | null;
   stationId: number | null;
   areaType: AreaType;
+  /* Sätts i klienten (lib/map/lakeFeatures.ts) – finns inte i genererad data. */
+  /** Progress i % av historisk referens; null = ingen progress. */
+  pct?: number | null;
+  /** Kartetikett "Sjönamn XX". */
+  label?: string;
+  /** Etikettnivå efter storlek: 0 stor (syns utzoomat), 1 mellan, 2 liten. */
+  lt?: 0 | 1 | 2;
 }
 
 export type LakeFeature = GeoJSON.Feature<

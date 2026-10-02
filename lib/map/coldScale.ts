@@ -1,135 +1,163 @@
 /**
- * Klassning och färger för KÖLDMÄNGD (GD). Enda stället där klassgränser,
- * färger och etiketter definieras – karta, legend, sidopanel och info-dialog
+ * Köldmängd på kartan. Enda stället där progressklasser, färger och
+ * statustexter definieras – karta, info-kontroll, sidopanel och info-dialog
  * läser härifrån.
  *
- * Färgen visar ENDAST ackumulerad köldmängd – en temperaturbaserad indikator.
- * Den säger inte om is finns, hur den är eller om den är säker. Skalan är
- * därför en enda blå ljushetsramp (ljus = låg GD, mörk = hög GD) utan
- * röd/orange/grön som signalerar risk eller säkerhet.
+ * Låst semantik (beslut 2026-10-02):
+ *   Etikett  = historisk referens-GD ("Värmeln 56").
+ *   Färg     = aktuell köldmängd / historisk referens (progress).
+ * Historisk GD styr aldrig färgen direkt – två vatten på samma relativa nivå
+ * får samma färg oavsett referensvärde.
  *
- * Färgerna är valda mot den mörka baskartan (bakgrund #0c1015, kartvatten
- * #17222d): även den mörkaste klassen ska tydligt läsas som vatten.
- *
- * Intervallen (beslut 2026-10-01) valdes efter fördelningen i Värmland
- * (261 vatten, median 59 GD): <30: 57, 30–50: 45, 50–80: 64, 80–120: 64,
- * ≥120: 31. Ändra här om det finns empiriskt stöd för bättre brytpunkter.
+ * Färgen säger inget om istjocklek, isstatus eller säkerhet. Skalan är därför
+ * en enda blå ramp (ljus = långt från referensen, mörk/mättad = nära/över)
+ * utan grön/gul/orange/röd. Valda mot den mörka baskartan (#0c1015, kartvatten
+ * #17222d): även den mörkaste klassen ska läsas tydligt som vatten.
  */
 import type { ExpressionSpecification } from "maplibre-gl";
 import type { AreaType } from "@/types/lake";
 
-export interface ColdDayClass {
-  /** Inklusive. */
+export interface ColdProgressClass {
+  id: string;
+  /** Inklusive, i procent av historisk referens. */
   min: number;
   /** Exklusive. null = ingen övre gräns. */
   max: number | null;
-  label: string;
+  /** Status i sidopanel och info. */
+  status: string;
+  /** Kort intervalltext för info-kontrollen. */
+  range: string;
   color: string;
+  /** Konturfärg på kartan (högsta klassen får en diskret ljus kontur). */
+  line: string;
 }
 
-export const COLD_DAY_CLASSES: readonly ColdDayClass[] = [
-  { min: 0, max: 30, label: "< 30", color: "#dbe9f0" },
-  { min: 30, max: 50, label: "30–50", color: "#a8cfe3" },
-  { min: 50, max: 80, label: "50–80", color: "#72add3" },
-  { min: 80, max: 120, label: "80–120", color: "#4a88c0" },
-  { min: 120, max: null, label: "≥ 120", color: "#3a6aa8" },
+/**
+ * Justera gränser och färger här – inget annat ställe har trösklar.
+ * 0 % är en egen klass (aktuell GD = 0), skild från saknad referens.
+ */
+export const COLD_PROGRESS_CLASSES: readonly ColdProgressClass[] = [
+  { id: "none", min: 0, max: Number.MIN_VALUE, status: "Ingen ackumulerad köld", range: "0 %", color: "#5d7a94", line: "#7895ad" },
+  { id: "early", min: Number.MIN_VALUE, max: 50, status: "Tidigt", range: "1–49 %", color: "#cfe3ef", line: "#cfe3ef" },
+  { id: "underway", min: 50, max: 80, status: "På väg", range: "50–79 %", color: "#8cc0e2", line: "#8cc0e2" },
+  { id: "near", min: 80, max: 100, status: "Nära historisk referens", range: "80–99 %", color: "#4f9ad8", line: "#4f9ad8" },
+  { id: "reached", min: 100, max: 120, status: "Historisk referens uppnådd", range: "100–119 %", color: "#2b74d0", line: "#2b74d0" },
+  { id: "over", min: 120, max: null, status: "Över historisk referens", range: "≥ 120 %", color: "#1d55b8", line: "#a9d4ff" },
 ];
 
 /**
- * Samlingsområde (COLLECTION_AREA): medvetet ej GD-färgsatt. Lågmäld blågrå,
- * ingen av GD-skalans färger och tydligt ljusare än kartans vatten (#17222d).
+ * Samlingsområde (COLLECTION_AREA): medvetet ej klassificerat. Lågmäld
+ * blågrå, ingen av progressfärgerna och tydligt ljusare än kartans vatten.
  */
 export const COLLECTION_AREA_STYLE = {
-  label: "Områdespolygon – ej GD-klassificerad",
+  label: "Områdespolygon – ej klassificerad",
   fill: "#4b5a66",
   fillOpacity: 0.55,
   line: "#6c7a86",
 } as const;
 
-/** Vatten där GD-värde saknas i källdatan. Endast kontur, ingen fyllning. */
+/** Vatten utan progress (saknad referens eller aktuell GD). Endast kontur. */
 export const NO_VALUE_STYLE = {
-  label: "Värde saknas",
+  label: "Ej klassificerad",
   line: "#7d8995",
 } as const;
 
-export const COLD_INDICATOR_NOTE = "Temperaturbaserad indikator – säger inte om is finns eller är säker.";
+export const COLD_INDICATOR_NOTE = "Färgen visar inte isstatus, istjocklek eller säkerhet.";
+
+export const COLD_MAP_EXPLANATION = [
+  "Kartans siffror visar historisk referens-GD.",
+  "Sjöarnas färg visar hur stor del av denna referens som aktuell köldmängd har nått.",
+  COLD_INDICATOR_NOTE,
+] as const;
 
 export const COLLECTION_AREA_NOTE =
-  "Området omfattar flera olika vattenmiljöer och färgklassificeras därför inte med ett gemensamt GD-värde.";
-
-export function coldDayClassFor(gd: number): ColdDayClass {
-  return COLD_DAY_CLASSES.find((c) => gd >= c.min && (c.max === null || gd < c.max)) ?? COLD_DAY_CLASSES[0];
-}
+  "Området omfattar flera olika vattenmiljöer och klassificeras därför inte med ett gemensamt GD-värde.";
 
 /* ------------------------------------------------------------------ */
-/* Central regel: får objektet GD-färg?                                */
+/* Central regel                                                       */
 /* ------------------------------------------------------------------ */
 
-/** WATER och SUBAREA kan GD-färgsättas, COLLECTION_AREA aldrig. */
+/** WATER och SUBAREA kan klassificeras, COLLECTION_AREA aldrig. */
 export function canRenderColdDays(areaType: AreaType): boolean {
   return areaType !== "COLLECTION_AREA";
 }
 
+export function coldProgressClassFor(percent: number): ColdProgressClass {
+  return (
+    COLD_PROGRESS_CLASSES.find((c) => percent >= c.min && (c.max === null || percent < c.max)) ??
+    COLD_PROGRESS_CLASSES[0]
+  );
+}
+
 /**
- * De tre fallen hålls strikt isär:
- *   class          – värde finns (även 0 GD) → GD-klass
- *   missing        – värdet är okänt
- *   not_applicable – GD används medvetet inte (COLLECTION_AREA)
+ * Fallen hålls strikt isär:
+ *   progress       – referens > 0 och aktuell GD finns (även 0) → klass
+ *   no_reference   – historisk referens saknas eller är ogiltig (≤ 0)
+ *   no_current     – aktuell GD saknas (ej hämtad/ej tillgänglig)
+ *   not_applicable – COLLECTION_AREA, används medvetet inte
+ * percent cappas inte (150 % är 150 %).
  */
-export type ColdDayStyle =
-  | { kind: "class"; gd: number; cls: ColdDayClass }
-  | { kind: "missing" }
+export type ColdProgress =
+  | { kind: "progress"; ratio: number; percent: number; cls: ColdProgressClass }
+  | { kind: "no_reference" }
+  | { kind: "no_current" }
   | { kind: "not_applicable" };
 
-export function getColdDayStyle(areaType: AreaType, gd: number | null | undefined): ColdDayStyle {
+const valid = (v: number | null | undefined): v is number => typeof v === "number" && Number.isFinite(v);
+
+export function getColdProgress(
+  areaType: AreaType,
+  current: number | null | undefined,
+  historical: number | null | undefined,
+): ColdProgress {
   if (!canRenderColdDays(areaType)) return { kind: "not_applicable" };
-  if (gd === null || gd === undefined || !Number.isFinite(gd)) return { kind: "missing" };
-  return { kind: "class", gd, cls: coldDayClassFor(gd) };
+  if (!valid(historical) || historical <= 0) return { kind: "no_reference" };
+  if (!valid(current)) return { kind: "no_current" };
+  const ratio = Math.max(0, current) / historical;
+  const percent = ratio * 100;
+  return { kind: "progress", ratio, percent, cls: coldProgressClassFor(percent) };
+}
+
+/** Procent för etiketter: hela procent, 0,4 % visas inte som 0 %. */
+export function formatProgressPercent(percent: number): string {
+  const p = percent > 0 && percent < 1 ? 1 : Math.round(percent);
+  return `${p} %`;
+}
+
+/** Kartetikett: exakt "Sjönamn XX" när referens finns, annars bara namnet. */
+export function lakeMapLabel(name: string, areaType: AreaType, historical: number | null | undefined): string {
+  if (!canRenderColdDays(areaType) || !valid(historical) || historical <= 0) return name;
+  return `${name} ${Math.round(historical)}`;
 }
 
 /* ------------------------------------------------------------------ */
 /* MapLibre-uttryck                                                    */
 /* ------------------------------------------------------------------ */
 
+/** Feature-egenskap med progress i procent (null = ingen progress). */
+export const PROGRESS_PROPERTY = "pct";
+
 const COLLECTION: AreaType = "COLLECTION_AREA";
 const isCollection = ["==", ["get", "areaType"], COLLECTION];
+const noProgress = ["==", ["get", PROGRESS_PROPERTY], null];
 
-function stepExpression(property: string) {
+function stepExpression(key: "color" | "line") {
   return [
     "step",
-    ["get", property],
-    COLD_DAY_CLASSES[0].color,
-    ...COLD_DAY_CLASSES.slice(1).flatMap((c) => [c.min, c.color]),
+    ["get", PROGRESS_PROPERTY],
+    COLD_PROGRESS_CLASSES[0][key],
+    ...COLD_PROGRESS_CLASSES.slice(1).flatMap((c) => [c.min, c[key]]),
   ];
 }
 
-/*
- * MapLibre-motsvarigheten till getColdDayStyle – samma ordning:
- * not_applicable (COLLECTION_AREA) → missing (null) → GD-klass.
- * property = GD-fält (default "hca" = historisk), parametriserat för framtida
- * kartlager med t.ex. aktuell köldmängd.
- */
-export function coldFillColor(property = "hca"): ExpressionSpecification {
-  return [
-    "case",
-    isCollection,
-    COLLECTION_AREA_STYLE.fill,
-    ["==", ["get", property], null],
-    "rgba(0,0,0,0)",
-    stepExpression(property),
-  ] as unknown as ExpressionSpecification;
+/* Samma ordning som getColdProgress: not_applicable → ingen progress → klass. */
+export function coldFillColor(): ExpressionSpecification {
+  return ["case", isCollection, COLLECTION_AREA_STYLE.fill, noProgress, "rgba(0,0,0,0)", stepExpression("color")] as unknown as ExpressionSpecification;
 }
 
-export function coldLineColor(property = "hca"): ExpressionSpecification {
-  return [
-    "case",
-    isCollection,
-    COLLECTION_AREA_STYLE.line,
-    ["==", ["get", property], null],
-    NO_VALUE_STYLE.line,
-    stepExpression(property),
-  ] as unknown as ExpressionSpecification;
+export function coldLineColor(): ExpressionSpecification {
+  return ["case", isCollection, COLLECTION_AREA_STYLE.line, noProgress, NO_VALUE_STYLE.line, stepExpression("line")] as unknown as ExpressionSpecification;
 }
 
-/** Filter för objekt som inte GD-färgsätts. */
+/** Filter för objekt som inte klassificeras. */
 export const isCollectionAreaFilter = isCollection as unknown as ExpressionSpecification;

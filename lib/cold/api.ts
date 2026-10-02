@@ -35,3 +35,11 @@ export interface ApiError {
 
 export const isIsoDate = (s: string): s is IsoDate =>
   /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(`${s}T00:00:00Z`));
+
+/** GET /api/cold/current?stations=1,2[&asOf] */
+export interface CurrentColdResponse {
+  asOf: string;
+  /** measurepoint → aktuell köldmängd (GD), null om data saknas. */
+  values: Record<string, number | null>;
+  retrievedAt: string;
+}

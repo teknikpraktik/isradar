@@ -161,7 +161,7 @@ Beräknas av ISRADAR per temperaturstation och visas för alla vatten som använ
 app/                 Next.js App Router (page, layout, manifest)
 components/
   IsradarApp.tsx     klientskal: state för vald sjö, sök, position
-  map/               LakeMap (MapLibre), MapLegend, LocateButton
+  map/               LakeMap (MapLibre), ColdMapInfo, LocateButton
   search/            LakeSearch
   lake-panel/        LakePanel + sektioner (Översikt, Modell, Satellit, Väder)
   ui/                InfoDialog, GdUnit
@@ -194,22 +194,31 @@ Kvalitet (`DataQuality`): upplösning, molntäckning, okänd andel, flagga – f
 
 ### Kartan
 
-MapLibre GL JS 6 med en egen mörk, avskalad stil ovanpå OpenFreeMap-vektortiles (ingen API-nyckel; byt via `NEXT_PUBLIC_MAP_STYLE_URL`). Sjöarna färgas efter **historisk köldmängd** med en enda blå ljushetsramp (ljus = låg GD, mörk = hög GD). Klassgränser, färger och etiketter finns på ett ställe – `COLD_DAY_CLASSES` i `lib/map/coldScale.ts` – och används av kartan, legenden och sidopanelen (testas i `coldScale.test.mts`). Färgerna är valda så att även högsta klassen syns tydligt mot den mörka baskartan. Färgen är en temperaturindikator, inte isstatus.
+MapLibre GL JS 6 med en egen mörk, avskalad stil ovanpå OpenFreeMap-vektortiles (ingen API-nyckel; byt via `NEXT_PUBLIC_MAP_STYLE_URL`).
+
+**Låst semantik (2026-10-02):** etiketten visar **historisk referens-GD** ("Värmeln 56"), färgen visar **aktuell köldmängd / historisk referens**. Historisk GD styr aldrig färgen direkt – två vatten på samma relativa nivå får samma färg.
+
+- **Progress:** `getColdProgress(areaType, current, historical)` i `lib/map/coldScale.ts` → `{ ratio, percent, cls }` eller `no_reference` (saknad/≤ 0 referens, ingen division) / `no_current` / `not_applicable` (COLLECTION_AREA). Procent cappas inte (sidopanelen visar t.ex. 254 %); färgskalan slutar i klassen ≥ 120 %.
+- **Klasser** (`COLD_PROGRESS_CLASSES`, enda stället med gränser och färger): 0 % Ingen ackumulerad köld (dämpad blågrå `#5d7a94`) · 1–49 % Tidigt (`#cfe3ef`) · 50–79 % På väg (`#8cc0e2`) · 80–99 % Nära historisk referens (`#4f9ad8`) · 100–119 % Historisk referens uppnådd (`#2b74d0`) · ≥ 120 % Över historisk referens (`#1d55b8` + ljus kontur). Enbart blått – ingen grön/gul/orange/röd.
+- **Aktuell GD till kartan:** `GET /api/cold/current?stations=…[&asOf]` räknar alla regionens stationer i ett anrop (samma metod som stationsrouten, CDN-cache 30 min). Klienten berikar sjöarnas GeoJSON med `pct`, `label` och `lt` (`lib/map/lakeFeatures.ts`). Innan svaret finns ritas vattnen som ej klassificerade (endast kontur).
+- **Etiketter:** exakt "Sjönamn XX" (avrundad referens); utan referens bara namnet. Tre lager efter omslutande rektangels yta: ≥ 25 km² från zoom 7, ≥ 4 km² från 8,5, övriga från 10,5. Större vatten placeras först vid krock; MapLibres kollisionshantering döljer resten.
+- **Info:** liten kontroll "Aktuell / historisk ?" på kartan ersätter den gamla GD-legenden.
+- **Datakvalitet:** referens ≤ 0 loggas i konsolen och ger ingen progress.
 
 #### Objekttyp (`areaType`)
 
-Varje vattenobjekt har en `areaType` (`types/lake.ts`). GD-färgsättning avgörs **enbart** av `canRenderColdDays()` / `getColdDayStyle()` i `lib/map/coldScale.ts` (kartuttrycket följer samma ordning).
+Varje vattenobjekt har en `areaType` (`types/lake.ts`). Progressfärg och referensetikett avgörs **enbart** av `canRenderColdDays()` / `getColdProgress()` i `lib/map/coldScale.ts` (kartuttrycket följer samma ordning).
 
-| areaType | Innebörd | GD-färg |
+| areaType | Innebörd | Progressfärg + referensetikett |
 |---|---|---|
 | `WATER` | Faktisk sjö eller tydligt avgränsat vattenobjekt | Ja |
 | `SUBAREA` | Avgränsad del av ett större vatten (centroiden ligger inuti ett annat objekt). `parent` anger det omslutande objektet | Ja |
-| `COLLECTION_AREA` | Samlingsområde med flera vattenmiljöer | **Nej** – neutral blågrå yta, separat legendpost |
+| `COLLECTION_AREA` | Samlingsområde med flera vattenmiljöer | **Nej** – neutral grå yta, bara namn som etikett |
 
 - **COLLECTION_AREA anges manuellt** i `data/area-types.json` (`collectionAreaIds`) tills källan har bättre metadata. Värmland: Norra Vänern, Värmlandsskärgården, Hammarösjön, Jutviken-Otterbäcken, Värmlandsnäs och Lurö Skärgård, Segerstads skärgård (+ Södra Vänern, Yttre Dalbosjön utanför länet). Urvalet bygger på struktur – polygoner som omsluter flera egna vattenobjekt med avvikande värden – inte på storlek.
 - **SUBAREA härleds ur geometrin** vid bygget. Ger strukturen för framtida delvatten (vikar, fjordar, innerskärgård).
 - **Historiska värden behålls.** Ett samlingsområdes GD finns kvar i datan (`hca`) och visas i panelen som "Historisk områdesobservation" under *Områdeshistorik*, utan klassfärg. `Lake.historicalColdAmount` (sjöspecifik) och `Lake.areaHistoricalColdAmount` (område) hålls isär.
-- **Tre fall hålls isär:** 0 GD (riktigt värde, GD-klass), saknat värde (endast kontur / "Saknas"), ej tillämpad (`COLLECTION_AREA`, `not_applicable`). Gäller både historisk och aktuell köldmängd.
+- **Fall som hålls isär:** aktuell 0 GD (riktigt värde → 0 %-klass), saknad referens eller aktuell GD (endast kontur), ej tillämpad (`COLLECTION_AREA`, `not_applicable`).
 - **Geometri:** samlingsområden klipps fria från alla omslutna vattenobjekt (och mindre samlingsområden) med `polygon-clipping` (endast vid bygget). Objekt ritas största först så att delområden alltid hamnar ovanpå.
 - **Övergång till metadata:** när källan (eller egen PostGIS-tabell) får en objekttyp ersätts `collectionAreaIds` av den – `areaType` sätts då i byggsteget/API:t och resten av appen är oförändrad.
 
