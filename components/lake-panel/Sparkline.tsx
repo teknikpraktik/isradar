@@ -6,7 +6,7 @@
  * med meteogrammet. Temperatur som linje, nederbörd som staplar.
  * Saknade timmar bryter linjen; inget interpoleras.
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { hourLabel, splitAtGaps } from "@/lib/weather/meteogram";
 import styles from "./Sparkline.module.css";
 
@@ -32,6 +32,7 @@ export default function Sparkline({
   from: string;
   to: string;
 }) {
+  const gradId = `spark-temp-${useId().replace(/:/g, "")}`;
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(300);
   const [active, setActive] = useState<number | null>(null);
@@ -81,6 +82,8 @@ export default function Sparkline({
     yAt = (v) => PAD_TOP + plotH - (v / max) * plotH;
   }
 
+  // Andel av plotytan (uppifrån) där 0 °C ligger; under den ritas linjen blå.
+  const freezeAt = kind === "temperature" ? Math.min(1, Math.max(0, (yAt(0) - PAD_TOP) / plotH)) : 1;
   const barW = Math.max(2, (width / 24) * 0.7);
   const segments = kind === "temperature" ? splitAtGaps(points) : [];
   const ticks = [
@@ -128,11 +131,30 @@ export default function Sparkline({
         {kind === "precipitation" && (
           <line x1={0} x2={width} y1={PAD_TOP + plotH} y2={PAD_TOP + plotH} className={styles.base} />
         )}
+        {kind === "temperature" && (
+          <defs>
+            <linearGradient id={gradId} gradientUnits="userSpaceOnUse" x1={0} x2={0} y1={PAD_TOP} y2={PAD_TOP + plotH}>
+              <stop offset={freezeAt} className={styles.stopWarm} />
+              <stop offset={freezeAt} className={styles.stopCold} />
+            </linearGradient>
+          </defs>
+        )}
         {segments.map((seg, k) =>
           seg.length === 1 ? (
-            <circle key={k} cx={xAt(seg[0].t)} cy={yAt(seg[0].v)} r={1.6} className={styles.dot} />
+            <circle
+              key={k}
+              cx={xAt(seg[0].t)}
+              cy={yAt(seg[0].v)}
+              r={1.6}
+              className={seg[0].v < 0 ? `${styles.dot} ${styles.dotCold}` : styles.dot}
+            />
           ) : (
-            <polyline key={k} points={seg.map((p) => `${xAt(p.t)},${yAt(p.v)}`).join(" ")} className={styles.line} />
+            <polyline
+              key={k}
+              points={seg.map((p) => `${xAt(p.t)},${yAt(p.v)}`).join(" ")}
+              className={styles.line}
+              style={{ stroke: `url(#${gradId})` }}
+            />
           ),
         )}
         {kind === "precipitation" &&

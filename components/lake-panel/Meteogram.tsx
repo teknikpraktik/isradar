@@ -7,7 +7,7 @@
  *   vindrad var 3:e timme – pilen visar VART vinden blåser.
  * Hover (mus), tap (pekskärm, ligger kvar) och piltangenter visar exakt timme.
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { ForecastHour } from "@/lib/weather/api";
 import { compassSv } from "@/lib/weather/compute";
 import {
@@ -73,12 +73,15 @@ export default function Meteogram({ hours }: { hours: ForecastHour[] }) {
     return () => document.removeEventListener("pointerdown", onDown);
   }, [pinned]);
 
+  const gradId = `meteo-temp-${useId().replace(/:/g, "")}`;
   const n = hours.length;
   const plotW = width - LEFT - RIGHT;
   const xAt = (i: number) => LEFT + ((i + 0.5) / n) * plotW;
   const dom = useMemo(() => temperatureDomain(hours.map((h) => h.temperature)), [hours]);
   const yT = (t: number) => TEMP_BOTTOM - ((t - dom.min) / (dom.max - dom.min)) * (TEMP_BOTTOM - TEMP_TOP);
-  const maxMm = Math.max(1, ...hours.map((h) => h.precipitationMm ?? 0));
+  // Andel av temperaturytan (uppifrån) där 0 °C ligger; under den ritas kurvan blå.
+  const freezeAt = Math.min(1, Math.max(0, (yT(0) - TEMP_TOP) / (TEMP_BOTTOM - TEMP_TOP)));
+  const maxMm =Math.max(1, ...hours.map((h) => h.precipitationMm ?? 0));
   const barH = (mm: number) => (mm / maxMm) * (PRECIP_BOTTOM - PRECIP_TOP);
   const barW = Math.max(2, plotW / n - 1.5);
 
@@ -174,11 +177,28 @@ export default function Meteogram({ hours }: { hours: ForecastHour[] }) {
         ))}
 
         {/* Temperaturkurva – segment bryts vid saknade timmar */}
+        <defs>
+          <linearGradient id={gradId} gradientUnits="userSpaceOnUse" x1={0} x2={0} y1={TEMP_TOP} y2={TEMP_BOTTOM}>
+            <stop offset={freezeAt} className={styles.stopWarm} />
+            <stop offset={freezeAt} className={styles.stopCold} />
+          </linearGradient>
+        </defs>
         {segments.map((seg, k) =>
           seg.length === 1 ? (
-            <circle key={k} cx={xAt(seg[0].index)} cy={yT(seg[0].t)} r={1.8} className={styles.tempDot} />
+            <circle
+              key={k}
+              cx={xAt(seg[0].index)}
+              cy={yT(seg[0].t)}
+              r={1.8}
+              className={seg[0].t < 0 ? `${styles.tempDot} ${styles.tempDotCold}` : styles.tempDot}
+            />
           ) : (
-            <polyline key={k} points={seg.map((p) => `${xAt(p.index)},${yT(p.t)}`).join(" ")} className={styles.temp} />
+            <polyline
+              key={k}
+              points={seg.map((p) => `${xAt(p.index)},${yT(p.t)}`).join(" ")}
+              className={styles.temp}
+              style={{ stroke: `url(#${gradId})` }}
+            />
           ),
         )}
 

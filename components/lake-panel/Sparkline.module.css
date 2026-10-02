@@ -21,6 +21,19 @@
   fill: var(--text);
 }
 
+.dotCold {
+  fill: #5aa9f0;
+}
+
+/* Gradientstopp: hård övergång vid 0 °C */
+.stopWarm {
+  stop-color: var(--text);
+}
+
+.stopCold {
+  stop-color: #5aa9f0;
+}
+
 .zero {
   stroke: #9fb2c2;
   stroke-width: 1;
