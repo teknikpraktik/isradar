@@ -18,6 +18,8 @@ interface Point {
 }
 
 const nf = (v: number, d = 1) => new Intl.NumberFormat("sv-SE", { maximumFractionDigits: d }).format(v);
+const clock = (t: number) =>
+  new Intl.DateTimeFormat("sv-SE", { hour: "2-digit", minute: "2-digit" }).format(new Date(t));
 const sign = (v: number) => `${v < 0 ? "−" : ""}${nf(Math.abs(v))}`;
 
 export default function Sparkline({
@@ -87,9 +89,9 @@ export default function Sparkline({
   const barW = Math.max(2, (width / 24) * 0.7);
   const segments = kind === "temperature" ? splitAtGaps(points) : [];
   const ticks = [
-    { t: t0, label: "−24 h", anchor: "start" },
-    { t: t0 + 12 * HOUR, label: "−12 h", anchor: "middle" },
-    { t: t1, label: "nu", anchor: "end" },
+    { t: t0, label: clock(t0), anchor: "start" },
+    { t: t0 + 12 * HOUR, label: clock(t0 + 12 * HOUR), anchor: "middle" },
+    { t: t1, label: `nu ${clock(t1)}`, anchor: "end" },
   ] as const;
 
   const pick = (clientX: number) => {
