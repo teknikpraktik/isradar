@@ -6,9 +6,7 @@ import { formatCoord } from "@/lib/format";
 import type { Lake } from "@/types/lake";
 import styles from "./LakePanel.module.css";
 import { LOADING } from "./parts";
-import { RideabilityDetail } from "./Rideability";
 import { ModelSection, OverviewSection, WeatherSection } from "./sections";
-import type { RideabilityResult } from "@/lib/rideability/types";
 
 interface Props {
   lake: Lake;
@@ -16,11 +14,9 @@ interface Props {
   onShowInfo: () => void;
   /** Visa läget ett tidigare datum (YYYY-MM-DD). */
   asOf?: string;
-  /** Modellerad åkbarhet · BETA – detaljer för sjön när kartlagret är aktivt. */
-  rideability?: { active: boolean; loading: boolean; result: RideabilityResult | undefined };
 }
 
-export default function LakePanel({ lake, onClose, onShowInfo, asOf, rideability }: Props) {
+export default function LakePanel({ lake, onClose, onShowInfo, asOf }: Props) {
   const [loaded, setLoaded] = useState<{ key: string; data: Partial<LakeConditions> }>({ key: "", data: {} });
   const [expanded, setExpanded] = useState(false);
 
@@ -69,7 +65,6 @@ export default function LakePanel({ lake, onClose, onShowInfo, asOf, rideability
       </header>
 
       <div className={styles.body}>
-        {rideability?.active && <RideabilityDetail result={rideability.result} loading={rideability.loading} />}
         <OverviewSection lake={lake} cold={c.currentCold ?? LOADING} asOf={asOf} />
         <ModelSection meps={c.meps ?? LOADING} />
         <WeatherSection recent={c.weatherRecent ?? LOADING} forecast={c.weatherForecast ?? LOADING} />

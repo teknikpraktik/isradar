@@ -268,7 +268,6 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
           onClose={() => setSelectedId(null)}
           onShowInfo={() => setInfoOpen(true)}
           asOf={asOf}
-          rideability={{ active: rideabilityOn, loading: rideabilityLoading, result: rideability?.get(lake.id) }}
         />
       )}
 
