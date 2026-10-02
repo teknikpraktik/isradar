@@ -40,7 +40,7 @@ export default function InfoDialog({ open, onClose, region, manifest, showCollec
     >
       <div className={styles.inner}>
         <header className={styles.head}>
-          <h2 id="info-title">Om ISRADAR</h2>
+          <h2 id="info-title">Om Isvak</h2>
           <button type="button" className={styles.close} onClick={onClose} aria-label="Stäng">
             ×
           </button>

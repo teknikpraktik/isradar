@@ -1,5 +1,5 @@
 /**
- * Bygger regionsdataset för ISRADAR ur Skridskonätet-researchdatan.
+ * Bygger regionsdataset för Isvak ur Skridskonätet-researchdatan.
  *
  *   node scripts/build-region-data.mts            # alla regioner i data/regions/
  *   node scripts/build-region-data.mts varmland   # en region
@@ -41,7 +41,7 @@ import type { RegionDataManifest, RegionDefinition } from "../types/region";
 import { cellCenter, nearestCell, type MepsCell } from "../lib/meps/grid.ts";
 
 const ROOT = resolve(import.meta.dirname, "..");
-const SOURCE_DIR = resolve(ROOT, process.env.ISRADAR_SOURCE_DIR ?? "isradar_koldmangd");
+const SOURCE_DIR = resolve(ROOT, process.env.ISVAK_SOURCE_DIR ?? process.env.ISRADAR_SOURCE_DIR ?? "isradar_koldmangd");
 const REGIONS_DIR = join(ROOT, "data", "regions");
 const OUT_ROOT = join(ROOT, "public", "data", "generated");
 
@@ -416,7 +416,7 @@ function main() {
       return;
     }
     throw new Error(
-      `Källdata saknas: ${missing.join(", ")}\nLägg researchdatan i ${SOURCE_DIR} eller sätt ISRADAR_SOURCE_DIR.`,
+      `Källdata saknas: ${missing.join(", ")}\nLägg researchdatan i ${SOURCE_DIR} eller sätt ISVAK_SOURCE_DIR.`,
     );
   }
 

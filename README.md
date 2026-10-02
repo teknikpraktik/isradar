@@ -1,10 +1,12 @@
-# ISRADAR
+# Isvak
+
+Datadriven bevakning av isbildning
 
 Analysverktyg för erfarna långfärdsskridskoåkare: **var händer det något intressant med isarna just nu?**
 
-ISRADAR kombinerar historisk köldmängd, aktuell köldmängd, MEPS sjöismodell, Sentinel-satellitobservationer och väder – och presenterar observationer och modeller, **inte säkerhetsbedömningar**. Appen säger aldrig att is är säker, åkbar eller bra.
+Isvak kombinerar historisk köldmängd, aktuell köldmängd, MEPS sjöismodell, Sentinel-satellitobservationer och väder – och presenterar observationer och modeller, **inte säkerhetsbedömningar**. Appen säger aldrig att is är säker, åkbar eller bra.
 
-> ISRADAR visar fjärranalys-, modell- och väderdata. Informationen visar inte om isen är bärig. Bedöm alltid isen på plats.
+> Isvak visar fjärranalys-, modell- och väderdata. Informationen visar inte om isen är bärig. Bedöm alltid isen på plats.
 
 ## Status (V1)
 
@@ -53,7 +55,7 @@ npm run dev      # kör först prepare-assets (data + MapLibre-worker), sedan ne
 ```bash
 npm run data               # alla regioner i data/regions/
 node scripts/build-region-data.mts varmland
-ISRADAR_SOURCE_DIR=/annan/sökväg npm run data
+ISVAK_SOURCE_DIR=/annan/sökväg npm run data
 ```
 
 1. Läser CSV (riktig RFC 4180-parser – vissa namn innehåller kommatecken) och GeoJSON, joinar på `objektid`.
@@ -87,16 +89,16 @@ npm run data
 
 Utan länskod/region skrivs bara `scb-lan.geojson`. En region utan `countyCodes` filtreras med punkt-i-polygon mot `boundary.geometry` (används t.ex. för egna testområden).
 
-Ny region: lägg till `data/regions/<id>.json`, registrera i `lib/regions.ts`, kör `npm run data`, välj via `NEXT_PUBLIC_ISRADAR_REGION`.
+Ny region: lägg till `data/regions/<id>.json`, registrera i `lib/regions.ts`, kör `npm run data`, välj via `NEXT_PUBLIC_ISVAK_REGION`.
 
 ### Aktuell köldmängd (SMHI)
 
-Beräknas av ISRADAR per temperaturstation och visas för alla vatten som använder stationen.
+Beräknas av Isvak per temperaturstation och visas för alla vatten som använder stationen.
 
 - **Data:** SMHI Öppna data, meteorologiska observationer, parameter 2 (dygnsmedeltemperatur). Licens **CC BY 4.0** – källan anges i appens info-dialog. `latest-months` (cache 1 h) kompletteras med `corrected-archive` (cache 24 h) när säsongen sträcker sig längre bak än fyra månader.
 - **Stationskoppling:** `data/stations/smhi.json` kopplar Skridskonätets 28 stationer (`measurepoint`) till närmaste aktiva SMHI-station (alla inom 650 m och med samma namn, t.ex. Örebro A → Örebro Flygplats). Genereras med `node scripts/map-smhi-stations.mts` (kräver `isradar_koldmangd/stations.csv`).
 - **Metod** (`lib/cold/compute.ts`, beslut 2026-10-01): säsongen börjar **1 oktober**; **netto med golv vid 0** – minusgrader ökar, plusgrader minskar, summan blir aldrig negativ. Saknade dygn interpoleras inte utan hoppas över och redovisas. Förändring 24 h / 7 dygn blir tom om jämförelsedygnet saknas.
-- **Obs:** metoden är ISRADAR:s egen och kan avvika från hur Skridskonätet räknat fram den historiska köldmängden (deras metod är inte dokumenterad för oss).
+- **Obs:** metoden är Isvak:s egen och kan avvika från hur Skridskonätet räknat fram den historiska köldmängden (deras metod är inte dokumenterad för oss).
 - **API:** `GET /api/cold/station/[measurepoint]?asOf=YYYY-MM-DD` returnerar ackumulerat värde, förändringar, saknade dygn, SMHI-kvalitetskoder och hela säsongsserien (grund för kommande ICE SCOUT).
 - **Tidigare datum:** `/?asOf=2026-02-15` visar köldmängden ett tidigare datum. Datumet markeras tydligt i toppfältet; × återgår till nuläget.
 
@@ -160,7 +162,7 @@ Beräknas av ISRADAR per temperaturstation och visas för alla vatten som använ
 ```
 app/                 Next.js App Router (page, layout, manifest)
 components/
-  IsradarApp.tsx     klientskal: state för vald sjö, sök, position
+  IsvakApp.tsx     klientskal: state för vald sjö, sök, position
   map/               LakeMap (MapLibre), ColdMapInfo, LocateButton
   search/            LakeSearch
   lake-panel/        LakePanel + sektioner (Översikt, Modell, Satellit, Väder)
@@ -238,3 +240,7 @@ GeoJSON räcker för Värmland (~260 polygoner, ~2,5 MB okomprimerat). Nationell
 - **Vector tiles** (t.ex. PMTiles eller `ST_AsMVT` från PostGIS) för sjögeometrin istället för en stor GeoJSON-fil.
 - Serverbaserad sökning (indexet har redan samma form som ett sök-API skulle returnera).
 - Regionsvisa förändringsanalyser på servern – grunden för kommande **ICE SCOUT** (störst förändring i isutbredning 24/48/72 h, köldmängd som närmar sig historiskt intervall, modellerad istillväxt).
+
+## Namnbyte
+
+Tidigare namn: Isradar. `isradar_koldmangd/` (källdatamappen) behåller sitt namn. Gamla miljövariablerna `ISRADAR_SOURCE_DIR` och `NEXT_PUBLIC_ISRADAR_REGION` stöds fortfarande som fallback.

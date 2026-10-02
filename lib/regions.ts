@@ -10,7 +10,7 @@ const REGIONS: Record<string, RegionDefinition> = {
   varmland: varmland as RegionDefinition,
 };
 
-export const DEFAULT_REGION_ID = process.env.NEXT_PUBLIC_ISRADAR_REGION ?? "varmland";
+export const DEFAULT_REGION_ID = process.env.NEXT_PUBLIC_ISVAK_REGION ?? process.env.NEXT_PUBLIC_ISRADAR_REGION ?? "varmland";
 
 export function getRegion(id: string = DEFAULT_REGION_ID): RegionDefinition {
   const region = REGIONS[id];

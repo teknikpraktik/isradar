@@ -18,7 +18,7 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // ISRADAR: researchdata, python-miljö och genererade/kopierade filer
+    // Isvak: researchdata, python-miljö och genererade/kopierade filer
     ".venv/**",
     "isradar_koldmangd/**",
     "public/vendor/**",

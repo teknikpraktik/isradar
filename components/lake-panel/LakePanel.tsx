@@ -83,7 +83,7 @@ export default function LakePanel({ lake, onClose, onShowInfo, asOf, satellite =
         <p className={styles.disclaimer}>
           Visar inte om isen är bärig. Bedöm alltid på plats.{" "}
           <button type="button" className={styles.linkBtn} onClick={onShowInfo}>
-            Om ISRADAR
+            Om Isvak
           </button>
         </p>
       </div>

@@ -13,11 +13,18 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ISRADAR",
+  title: { default: "Isvak – Datadriven bevakning av isbildning", template: "%s | Isvak" },
   description:
-    "Analysverktyg för långfärdsskridsko: köldmängd, modell-, satellit- och väderdata för svenska vatten.",
-  applicationName: "ISRADAR",
-  appleWebApp: { capable: true, title: "ISRADAR", statusBarStyle: "black-translucent" },
+    "Isvak är en datadriven tjänst för bevakning av isbildning med hjälp av köldmängd, väderdata, prognosmodeller och satellitdata.",
+  applicationName: "Isvak",
+  openGraph: {
+    title: "Isvak – Datadriven bevakning av isbildning",
+    description: "Datadriven bevakning av isbildning med köldmängd, väder, prognosmodeller och satellitdata.",
+    siteName: "Isvak",
+    locale: "sv_SE",
+    type: "website",
+  },
+  appleWebApp: { capable: true, title: "Isvak", statusBarStyle: "black-translucent" },
 };
 
 export const viewport: Viewport = {

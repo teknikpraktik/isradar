@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "ISRADAR",
-    short_name: "ISRADAR",
-    description: "Köldmängd, modell-, satellit- och väderdata för svenska vatten.",
+    name: "Isvak",
+    short_name: "Isvak",
+    description: "Datadriven bevakning av isbildning",
     lang: "sv",
     start_url: "/",
     display: "standalone",

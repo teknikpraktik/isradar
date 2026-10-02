@@ -7,7 +7,7 @@ export const SOURCES = {
     name: "Skridskonätet (köldmängdsmodell)",
     url: "https://www.solstaskaret.se/skridskonet/koldmangd/koldmangd.html",
   },
-  coldAmount: { id: "isradar-cold", name: "Aktuell köldmängd" },
+  coldAmount: { id: "isvak-cold", name: "Aktuell köldmängd" },
   meps: { id: "met-meps", name: "MEPS sjöismodell" },
   sentinel: { id: "copernicus-sentinel", name: "Copernicus Sentinel" },
   weather: { id: "weather", name: "Väderdata" },

@@ -15,7 +15,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
 const ROOT = resolve(import.meta.dirname, "..");
-const SOURCE = resolve(ROOT, process.env.ISRADAR_SOURCE_DIR ?? "isradar_koldmangd", "stations.csv");
+const SOURCE = resolve(ROOT, process.env.ISVAK_SOURCE_DIR ?? process.env.ISRADAR_SOURCE_DIR ?? "isradar_koldmangd", "stations.csv");
 const OUT = join(ROOT, "data", "stations", "smhi.json");
 const SMHI_STATIONS = "https://opendata-download-metobs.smhi.se/api/version/1.0/parameter/2.json";
 const MAX_DISTANCE_M = 3000;

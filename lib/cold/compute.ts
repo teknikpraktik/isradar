@@ -7,7 +7,7 @@
  *     köldmängden och plusgrader minskar den, men summan blir aldrig < 0.
  *   - Saknade dygn hoppas över (inga värden interpoleras) och redovisas.
  *
- * Metoden är ISRADAR:s egen. Den kan avvika från Skridskonätets beräkning av
+ * Metoden är Isvak:s egen. Den kan avvika från Skridskonätets beräkning av
  * historisk köldmängd, vars exakta metod inte är dokumenterad för oss.
  *
  * Ren funktion utan I/O – samma kod kan köras i API-route, script och test.

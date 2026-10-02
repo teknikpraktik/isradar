@@ -1,5 +1,5 @@
 /**
- * Proveniens, tid och kvalitet för all data i ISRADAR.
+ * Proveniens, tid och kvalitet för all data i Isvak.
  *
  * Central princip: varje värde som visas måste bära VILKEN SORTS uppgift det
  * är. En observation, en modellanalys, en prognos och en historisk referens
@@ -105,7 +105,7 @@ export interface DataQuality {
 export interface Provenance<T extends DataTime = DataTime> {
   source: DataSource;
   time: T;
-  /** När ISRADAR hämtade/beräknade värdet. Används för dataålder. */
+  /** När Isvak hämtade/beräknade värdet. Används för dataålder. */
   retrievedAt?: IsoDateTime;
   quality?: DataQuality;
 }

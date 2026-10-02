@@ -105,7 +105,7 @@ export default function LakeMap({
           mapRef.current = map;
           // Endast i utveckling: gör kartan inspekterbar från konsolen/testverktyg.
           if (process.env.NODE_ENV === "development") {
-            (window as unknown as { __isradarMap?: MlMap }).__isradarMap = map;
+            (window as unknown as { __isvakMap?: MlMap }).__isvakMap = map;
           }
           setReady(true);
         });

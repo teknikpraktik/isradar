@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { LngLat } from "@/types/lake";
-import styles from "@/components/IsradarApp.module.css";
+import styles from "@/components/IsvakApp.module.css";
 
 interface Props {
   onPosition: (p: LngLat) => void;

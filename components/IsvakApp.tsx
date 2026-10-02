@@ -16,9 +16,9 @@ import { formatDate, formatShortDateTime } from "@/lib/format";
 import type { SatelliteScene } from "@/lib/satellite/api";
 import { getRegion } from "@/lib/regions";
 import type { LakeId, LakeIndexEntry, LngLat } from "@/types/lake";
-import styles from "./IsradarApp.module.css";
+import styles from "./IsvakApp.module.css";
 
-export default function IsradarApp({ regionId }: { regionId?: string }) {
+export default function IsvakApp({ regionId }: { regionId?: string }) {
   const region = useMemo(() => getRegion(regionId), [regionId]);
   // ?asOf=YYYY-MM-DD visar läget ett tidigare datum (t.ex. förra vintern).
   const asOfParam = useSearchParams().get("asOf");
@@ -126,7 +126,7 @@ export default function IsradarApp({ regionId }: { regionId?: string }) {
 
       <div className={styles.topBar}>
         <div className={styles.brand}>
-          <span className={styles.logo}>ISRADAR</span>
+          <span className={styles.logo} title="Datadriven bevakning av isbildning">ISVAK</span>
           <span className={styles.region}>{region.name}</span>
         </div>
         <LakeSearch
@@ -146,8 +146,8 @@ export default function IsradarApp({ regionId }: { regionId?: string }) {
           type="button"
           className={styles.iconBtn}
           onClick={() => setInfoOpen(true)}
-          aria-label="Om ISRADAR och datan"
-          title="Om ISRADAR"
+          aria-label="Om Isvak och datan"
+          title="Om Isvak"
         >
           i
         </button>

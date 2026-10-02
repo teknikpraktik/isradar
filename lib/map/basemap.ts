@@ -1,6 +1,6 @@
 /**
  * Mörk, avskalad basemap byggd på OpenFreeMap (OpenMapTiles-schema, ingen
- * API-nyckel). Avsiktligt dämpad så att vattnen från ISRADAR dominerar.
+ * API-nyckel). Avsiktligt dämpad så att vattnen från Isvak dominerar.
  *
  * Kan ersättas helt via NEXT_PUBLIC_MAP_STYLE_URL.
  */
