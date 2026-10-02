@@ -406,7 +406,7 @@ export function WeatherSection({
       </h4>
       {observed ? (
         <>
-          <Meteogram hours={observed} label="Observationer senaste 24 timmarna" scales={scales} refHours={48} />
+          <Meteogram hours={observed} label="Observationer senaste 24 timmarna" scales={scales} refHours={48} markNow />
         </>
       ) : (
         <Row

@@ -126,4 +126,3 @@ export const MIN_SOURCES = 3;
 export const RIDEABILITY_TITLE = "Modellerad åkbarhet";
 export const RIDEABILITY_HELP =
   "Sammanvägd indikator baserad på köldmängd, modellerad is och snö, satellitdata och senaste nederbörd. Ska alltid verifieras på plats.";
-export const RIDEABILITY_FOOTNOTE = "Modellbaserad indikering. Isförhållanden måste alltid verifieras på plats.";

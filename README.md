@@ -176,7 +176,7 @@ components/
   map/               LakeMap (MapLibre), ColdLegend, LayerControl, LocateButton
   search/            LakeSearch
   lake-panel/        LakePanel + sektioner (Översikt, Modell, Satellit, Väder)
-  ui/                InfoDialog, GdUnit
+  ui/                GdUnit
 lib/
   data/lakes.ts      LakeRepository – idag statiska filer, senare API/PostGIS
   data/cold.ts       historisk (finns) + aktuell köldmängd (ej ansluten)

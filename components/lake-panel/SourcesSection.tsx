@@ -1,15 +1,13 @@
 "use client";
 
 /**
- * Källor och underlag för sjövyn, så detaljerat som datan medger: källa, licens,
- * mätstation (namn, id, avstånd), tidpunkter, täckning och metod – för varje källa
- * som använts för just det här vattnet. Visar bara det som källan faktiskt levererat.
+ * Källor för sjövyn – bara det viktigaste per källa: vilken källa, var (station,
+ * ruta eller position) och när (tidpunkt för data). Visar bara det källan levererat.
  */
 import type { LakeConditions } from "@/lib/data/conditions";
-import { formatDate, formatShortDateTime } from "@/lib/format";
-import { formatCoord } from "@/lib/format";
+import { formatCoord, formatDate, formatDateShort, formatShortDateTime } from "@/lib/format";
 import type { Lake } from "@/types/lake";
-import type { DataResult, DataSource, Provenance } from "@/types/provenance";
+import type { DataResult, DataSource } from "@/types/provenance";
 import styles from "./LakePanel.module.css";
 import { Section } from "./parts";
 
@@ -19,19 +17,14 @@ type Rows = [label: string, value: React.ReactNode | null | undefined | false][]
 
 const time = (iso: string | undefined) => (iso ? formatShortDateTime(iso) : null);
 
-/** Källnamn med länk och licens, om de finns. */
+/** Källnamn, med länk om den finns. */
 function SourceName({ source }: { source: DataSource }) {
-  return (
-    <>
-      {source.url ? (
-        <a href={source.url} target="_blank" rel="noopener noreferrer">
-          {source.name}
-        </a>
-      ) : (
-        source.name
-      )}
-      {source.license ? ` · ${source.license}` : ""}
-    </>
+  return source.url ? (
+    <a href={source.url} target="_blank" rel="noopener noreferrer">
+      {source.name}
+    </a>
+  ) : (
+    <>{source.name}</>
   );
 }
 
@@ -41,8 +34,8 @@ function Group({ title, rows }: { title: string; rows: Rows }) {
     <div className={styles.srcGroup}>
       <h4 className={styles.srcTitle}>{title}</h4>
       <dl className={styles.srcList}>
-        {shown.map(([label, value]) => (
-          <div key={label}>
+        {shown.map(([label, value], i) => (
+          <div key={`${label}-${i}`}>
             <dt>{label}</dt>
             <dd>{value}</dd>
           </div>
@@ -53,7 +46,7 @@ function Group({ title, rows }: { title: string; rows: Rows }) {
 }
 
 /** Rad som berättar varför en källa saknar data (eller att den hämtas). */
-function statusRows<T>(r: L<never> | DataResult<T> | { status: "loading" } | undefined): Rows | null {
+function statusRows<T>(r: DataResult<T> | { status: "loading" } | undefined): Rows | null {
   if (!r || r.status === "loading") return [["Status", "Hämtas…"]];
   if (r.status === "unavailable") return [["Status", `Ej tillgänglig – ${r.reason}`]];
   if (r.status === "not_connected") return [["Status", "Ej ansluten"]];
@@ -61,7 +54,7 @@ function statusRows<T>(r: L<never> | DataResult<T> | { status: "loading" } | und
   return null;
 }
 
-const SOURCE_LABEL: Record<string, string> = { SMHI: "SMHI", TRAFIKVERKET_VVIS: "Trafikverket (VViS)" };
+const ORIGIN: Record<string, string> = { SMHI: "SMHI", TRAFIKVERKET_VVIS: "Trafikverket (VViS)" };
 
 export function SourcesSection({
   lake,
@@ -80,71 +73,45 @@ export function SourcesSection({
   const fc = c.weatherForecast?.status === "ok" ? c.weatherForecast.value : null;
   const station = lake.temperatureStation;
 
-  const lastDay = (p: Provenance) =>
-    p.time.kind === "observation"
-      ? formatDate(new Date(Date.parse(p.time.observedAt) - 1).toISOString().slice(0, 10))
-      : null;
-
-  const variable = (
-    name: string,
-    v: {
-      station: { id: string; name: string; source: string; distanceKm: number };
-      coverage: { hours: number; expectedHours: number };
-      provenance: Provenance;
-    } | null | undefined,
-  ): Rows[number] | null =>
-    v
-      ? [
-          name,
-          <>
-            {v.station.name} (id {v.station.id}) · {SOURCE_LABEL[v.station.source] ?? v.station.source} ·{" "}
-            {v.station.distanceKm} km från vattnet
-            {v.provenance.time.kind === "observation" && (
-              <>
-                <br />
-                senaste värde {time(v.provenance.time.observedAt)}
-                {v.provenance.time.period && ` · period ${time(v.provenance.time.period.from)} – ${time(v.provenance.time.period.to)}`}
-                <br />
-                {v.coverage.hours} av {v.coverage.expectedHours} timmar med värde
-              </>
-            )}
-          </>,
-        ]
-      : null;
-
-  const weatherRows: Rows = [];
-  if (w) {
-    for (const row of [
-      variable("Temperatur", w.temperature),
-      variable("Nederbörd", w.precipitation),
-      variable("Vind", w.wind),
-    ]) {
-      if (row) weatherRows.push(row);
-    }
-    const prov = w.temperature?.provenance ?? w.precipitation?.provenance ?? w.wind?.provenance;
-    if (prov) {
-      weatherRows.push(["Hämtat", time(prov.retrievedAt)]);
-      weatherRows.push(["Källor", <SourceName key="s" source={prov.source} />]);
-    }
-    const vvis = [w.temperature, w.precipitation, w.wind].some((v) => v?.station.source === "TRAFIKVERKET_VVIS");
-    if (vvis) {
-      weatherRows.push([
-        "Trafikverket",
-        "Vägväderstationer (VViS) står vid vägar och representerar inte sjön. Källa: Trafikverket.",
-      ]);
-    }
+  // Observerat väder: en rad per station (samma station för flera variabler slås ihop).
+  const stations = new Map<string, { label: string; vars: string[]; last: string | null }>();
+  for (const [name, v] of [
+    ["temperatur", w?.temperature],
+    ["nederbörd", w?.precipitation],
+    ["vind", w?.wind],
+  ] as const) {
+    if (!v) continue;
+    const key = `${v.station.source}:${v.station.id}`;
+    const last = v.provenance.time.kind === "observation" ? v.provenance.time.observedAt : null;
+    const prev = stations.get(key);
+    stations.set(key, {
+      label: `${v.station.name} (${ORIGIN[v.station.source] ?? v.station.source}), ${v.station.distanceKm} km från vattnet`,
+      vars: [...(prev?.vars ?? []), name],
+      last: prev?.last && last && prev.last > last ? prev.last : (last ?? prev?.last ?? null),
+    });
   }
+  const weatherShown: Rows = stations.size
+    ? [
+        ["Källa", "SMHI och Trafikverket"],
+        ...[...stations.values()].flatMap((s): Rows => [
+          ["Plats", `${s.label} – ${s.vars.join(", ")}`],
+          ["Tid", s.last ? `senaste värde ${time(s.last)}` : null],
+        ]),
+      ]
+    : [];
+
+  const coldDay = coldObs
+    ? formatDateShort(new Date(Date.parse(coldObs.provenance.time.kind === "observation" ? coldObs.provenance.time.observedAt : "") - 1).toISOString().slice(0, 10))
+    : null;
 
   return (
-    <Section title="Källor och underlag" kinds={[]} status="ok">
+    <Section title="Källor" kinds={[]} status="ok">
       <Group
-        title="Historisk köldmängd (referens)"
+        title="Historisk köldmängd"
         rows={[
-          ["Källa", hist ? <SourceName key="s" source={hist.provenance.source} /> : null],
-          ["Värde", hist ? `${hist.amount.value} GD` : "Saknas"],
-          ["Metod", hist && hist.provenance.time.kind === "historical_reference" ? hist.provenance.time.method : null],
-          ["Station i källan", station ? `${station.name} (id ${station.id}) · ${formatCoord(station.position)}` : null],
-          ["Objekt-id", String(lake.id)],
+          ["Källa", hist ? <SourceName key="s" source={hist.provenance.source} /> : "Saknas"],
+          ["Plats", station ? `${station.name} · ${formatCoord(station.position)}` : null],
+          ["Tid", hist ? "median av tidigare säsonger" : null],
         ]}
       />
 
@@ -153,64 +120,39 @@ export function SourcesSection({
         rows={
           statusRows(cold) ?? [
             ["Källa", coldObs ? <SourceName key="s" source={coldObs.provenance.source} /> : null],
-            ["Mätstation", coldObs ? `${coldObs.measuringStation.name} (id ${coldObs.measuringStation.id})` : null],
-            ["Säsong från", coldObs ? formatDate(coldObs.seasonStart.slice(0, 10)) : null],
-            ["Data till och med", coldObs ? lastDay(coldObs.provenance) : null],
-            ["Dygn utan värde", coldObs ? String(coldObs.missingDays) : null],
-            ["Metod", coldObs?.methodDescription],
-            ["Hämtat", time(coldObs?.provenance.retrievedAt)],
+            ["Plats", coldObs ? `${coldObs.measuringStation.name} (mätstation)` : null],
+            ["Tid", coldDay ? `1 okt – ${coldDay}` : null],
           ]
         }
       />
 
       <Group
-        title="Modellerad is och snö (MEPS)"
+        title="Modellerad is och snö"
         rows={
           statusRows(c.meps) ?? [
             ["Källa", meps?.analysis ? <SourceName key="s" source={meps.analysis.provenance.source} /> : null],
-            ["Modellkörning", time(meps?.modelRun)],
             [
-              "Gäller",
-              meps?.analysis && meps.analysis.provenance.time.kind === "model"
-                ? `${time(meps.analysis.provenance.time.validAt)} (analys), prognos +${meps.forecasts
-                    .map((f) => (f.provenance.time.kind === "forecast" ? f.provenance.time.leadTimeHours : null))
-                    .filter(Boolean)
-                    .join(", +")} h`
+              "Plats",
+              meps?.analysis?.provenance.quality?.cells
+                ? `${meps.analysis.provenance.quality.cells.valid} gitterrutor med sjöyta (${(meps.analysis.provenance.quality.resolutionM ?? 2500) / 1000} km)`
                 : null,
             ],
-            ["Gitterrutor med sjöyta", meps?.analysis?.provenance.quality?.cells ? `${meps.analysis.provenance.quality.cells.valid} av ${meps.analysis.provenance.quality.cells.total}` : null],
-            ["Upplösning", meps?.analysis?.provenance.quality?.resolutionM ? `${meps.analysis.provenance.quality.resolutionM / 1000} km` : null],
-            ["Hämtat", time(meps?.analysis?.provenance.retrievedAt)],
-            ["Obs", "Värdet gäller modellens sjöyta i rutorna, inte nödvändigtvis just det här vattnet."],
+            ["Tid", meps ? `modellkörning ${time(meps.modelRun)}` : null],
           ]
         }
       />
 
-      <Group title="Observerat väder (senaste 24 h)" rows={statusRows(c.weatherRecent) ?? weatherRows} />
+      <Group title="Observerat väder" rows={statusRows(c.weatherRecent) ?? weatherShown} />
 
       <Group
-        title="Väderprognos (48 h)"
+        title="Väderprognos"
         rows={
           statusRows(c.weatherForecast) ?? [
             ["Källa", fc ? <SourceName key="s" source={fc.provenance.source} /> : null],
-            ["Läge", fc ? `vid vattnets position ${formatCoord(lake.centroid)}` : null],
-            ["Modellkörning", fc && fc.provenance.time.kind === "forecast" ? time(fc.provenance.time.modelRun) : null],
-            ["Gäller till", fc && fc.provenance.time.kind === "forecast" ? time(fc.provenance.time.validAt) : null],
-            ["Hämtat", time(fc?.provenance.retrievedAt)],
-            [
-              "Regn eller snö",
-              "Enkel tumregel utifrån temperatur: ≤ 0 °C snö, annars regn.",
-            ],
+            ["Plats", fc ? `vattnets position ${formatCoord(lake.centroid)}` : null],
+            ["Tid", fc && fc.provenance.time.kind === "forecast" ? `modellkörning ${time(fc.provenance.time.modelRun)}` : null],
           ]
         }
-      />
-
-      <Group
-        title="Karta och vattenobjekt"
-        rows={[
-          ["Baskarta", "© OpenStreetMap-bidragsgivare, OpenMapTiles, OpenFreeMap"],
-          ["Länsgränser", "SCB (CC0)"],
-        ]}
       />
     </Section>
   );

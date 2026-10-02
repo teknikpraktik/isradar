@@ -7,7 +7,7 @@
 
 .explain {
   margin: 0 0 4px;
-  font-size: 11px;
+  font-size: 12.5px;
   line-height: 1.4;
   color: var(--text-muted);
 }
@@ -18,7 +18,7 @@
   padding: 0;
   display: grid;
   gap: 3px;
-  font-size: 11.5px;
+  font-size: 12.5px;
 }
 
 .list li {
@@ -49,13 +49,13 @@
   justify-content: space-between;
   gap: 8px;
   margin-top: 3px;
-  font-size: 10.5px;
+  font-size: 11.5px;
   color: var(--text-faint);
 }
 
 .note {
   margin: 6px 0 0;
-  font-size: 10.5px;
+  font-size: 11.5px;
   line-height: 1.4;
   color: var(--text-faint);
 }
@@ -70,5 +70,5 @@
 
 .status {
   color: var(--text-muted);
-  font-size: 10.5px;
+  font-size: 11.5px;
 }

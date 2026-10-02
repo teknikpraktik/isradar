@@ -9,7 +9,6 @@ import LayerControl, { type ActiveSatellite } from "@/components/map/LayerContro
 import MeasureControl from "@/components/map/MeasureControl";
 import PassWind from "@/components/map/PassWind";
 import LakeSearch from "@/components/search/LakeSearch";
-import InfoDialog from "@/components/ui/InfoDialog";
 import { isIsoDate } from "@/lib/cold/api";
 import { fetchCurrentColdByStation } from "@/lib/data/cold";
 import { buildLake, lakeRepository, type RegionLakeData } from "@/lib/data/lakes";
@@ -34,7 +33,6 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
   const [selectedId, setSelectedId] = useState<LakeId | null>(null);
   const [focus, setFocus] = useState<FocusRequest | null>(null);
   const [userPosition, setUserPosition] = useState<LngLat | null>(null);
-  const [infoOpen, setInfoOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   // Satellitlager: ett åt gången, hör till kartan (inte till en sjö) och ligger kvar när man byter vatten.
   const [satellite, setSatellite] = useState<ActiveSatellite | null>(null);
@@ -229,15 +227,6 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
             <span aria-hidden>×</span>
           </a>
         )}
-        <button
-          type="button"
-          className={styles.iconBtn}
-          onClick={() => setInfoOpen(true)}
-          aria-label="Om Isvak och datan"
-          title="Om Isvak"
-        >
-          i
-        </button>
       </div>
 
       <div className={styles.layers} data-hidden-mobile={lake !== null}>
@@ -298,14 +287,6 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
           {loadError ?? toast}
         </div>
       )}
-
-      <InfoDialog
-        open={infoOpen}
-        onClose={() => setInfoOpen(false)}
-        region={region}
-        manifest={data?.manifest ?? null}
-        showCollectionNote={legendFlags.showCollection}
-      />
     </main>
   );
 }

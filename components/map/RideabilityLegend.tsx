@@ -1,7 +1,7 @@
 "use client";
 
 /** Legend för Modellerad åkbarhet · BETA, inbäddad under reglaget i lagerkontrollen. */
-import { CATEGORIES, RIDEABILITY_FOOTNOTE } from "@/lib/rideability/config";
+import { CATEGORIES } from "@/lib/rideability/config";
 import styles from "./Legend.module.css";
 
 export default function RideabilityLegend({ loading }: { loading: boolean }) {
@@ -15,7 +15,7 @@ export default function RideabilityLegend({ loading }: { loading: boolean }) {
           </li>
         ))}
       </ul>
-      <p className={styles.note}>{loading ? "Hämtar underlag…" : RIDEABILITY_FOOTNOTE}</p>
+      {loading && <p className={styles.note}>Hämtar underlag…</p>}
     </div>
   );
 }

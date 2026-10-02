@@ -66,6 +66,7 @@ export default function Meteogram({
   label,
   scales,
   refHours,
+  markNow,
 }: {
   hours: ForecastHour[];
   /** Beskrivning för skärmläsare, t.ex. "Prognos 48 timmar". */
@@ -77,6 +78,8 @@ export default function Meteogram({
    * timmar / refHours, så att t.ex. 24 h-observationen får samma tidsupplösning som 48 h-prognosen.
    */
   refHours?: number;
+  /** Markerar högerkanten som "nu" (observationsdiagrammet, där sista timmen är nuläget). */
+  markNow?: boolean;
 }) {
   // Vindrad när timmarna har vindvärden (prognos och observation formateras likadant).
   const hasWind = hours.some((h) => h.windSpeed !== null);
@@ -229,6 +232,16 @@ export default function Meteogram({
           <text x={LEFT + plotW / 2} y={(TEMP_TOP + TEMP_BOTTOM) / 2} className={styles.empty}>
             Temperatur saknas
           </text>
+        )}
+
+        {/* "Nu": tydlig högerkant för observationer – tidsaxelns slut är nuläget */}
+        {markNow && (
+          <>
+            <line x1={LEFT + plotW} x2={LEFT + plotW} y1={TEMP_TOP - 6} y2={PRECIP_BOTTOM} className={styles.nowLine} />
+            <text x={LEFT + plotW - 3} y={DAY_Y} className={styles.nowLabel}>
+              nu
+            </text>
+          </>
         )}
 
         {/* Avdelare mellan temperatur och nederbörd */}

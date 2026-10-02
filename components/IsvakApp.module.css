@@ -59,6 +59,7 @@
   color: var(--text-faint);
 }
 
+/* Rund/kvadratisk ikonknapp (används av positionsknappen) */
 .iconBtn {
   flex: none;
   width: 38px;
@@ -127,10 +128,6 @@
     right: 10px;
     bottom: 110px;
   }
-  /* sidopanelen täcker högerkanten – flytta kontrollerna till vänster om den */
-  .app:has(aside) .sideControls {
-    right: 424px;
-  }
 }
 
 .toast {
@@ -146,12 +143,6 @@
   border-radius: var(--radius);
   font-size: 13px;
   color: var(--text);
-}
-
-@media (min-width: 768px) {
-  .app:has(aside) :global(.maplibregl-ctrl-bottom-right) {
-    right: 414px;
-  }
 }
 
 /* Tydlig markering när ett tidigare datum visas (?asOf=) */
@@ -234,12 +225,12 @@
   bottom: 30px; /* ovanför kartans källhänvisning (©), som måste synas */
   z-index: 30;
   margin: 0;
-  max-width: min(340px, calc(100vw - 56px - 120px));
+  max-width: min(380px, calc(100vw - 56px - 120px));
   padding: 4px 9px;
   background: rgb(12 16 21 / 0.86);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);
-  font-size: 10px;
+  font-size: 11.5px;
   line-height: 1.35;
   color: var(--text-muted);
 }
@@ -252,13 +243,6 @@
 .disclaimer a {
   color: var(--accent);
   white-space: nowrap;
-}
-
-/* Sidopanelen täcker högerkanten på bred skärm – flytta friskrivningen till vänster om den */
-@media (min-width: 768px) {
-  .app:has(aside) .disclaimer {
-    right: 434px;
-  }
 }
 
 @media (max-width: 767px) {

@@ -194,3 +194,18 @@
   font-size: 11px;
   text-anchor: middle;
 }
+
+/* Högerkanten på observationsdiagrammet = nu */
+.nowLine {
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+
+.nowLabel {
+  fill: var(--accent);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-anchor: end;
+  text-transform: uppercase;
+}
