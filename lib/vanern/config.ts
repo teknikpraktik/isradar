@@ -29,7 +29,7 @@ export const VANERN_GRID = {
   /** Cellstorlek i km (kvadrat). Ändra till t.ex. 1 för att testa finare grid. */
   defaultCellKm: 2,
   /** Celler med mindre vattenyta än så (km²) ignoreras. */
-  minCellAreaKm2: 0.15,
+  minCellAreaKm2: 0.05,
   /** Väderunderlag delas mellan celler inom rutor av denna storlek (grader). */
   weatherTileDeg: 0.25,
 } as const;
