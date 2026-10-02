@@ -59,7 +59,7 @@ function focusPadding(map: MlMap) {
   const { clientWidth: w, clientHeight: h } = map.getContainer();
   return w < 768
     ? { top: 90, left: 32, right: 32, bottom: Math.round(h * 0.5) }
-    : { top: 90, left: 60, right: 440, bottom: 60 };
+    : { top: 90, left: 60, right: 500, bottom: 60 };
 }
 
 export default function LakeMap({

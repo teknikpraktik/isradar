@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import LakePanel from "@/components/lake-panel/LakePanel";
 import LakeMap, { type FocusRequest } from "@/components/map/LakeMap";
 import LocateButton from "@/components/map/LocateButton";
@@ -9,6 +9,7 @@ import LayerControl, { type ActiveSatellite } from "@/components/map/LayerContro
 import MeasureControl from "@/components/map/MeasureControl";
 import PassWind from "@/components/map/PassWind";
 import LakeSearch from "@/components/search/LakeSearch";
+import DisclaimerGate from "@/components/ui/DisclaimerGate";
 import { isIsoDate } from "@/lib/cold/api";
 import { fetchCurrentColdByStation } from "@/lib/data/cold";
 import { buildLake, lakeRepository, type RegionLakeData } from "@/lib/data/lakes";
@@ -34,8 +35,8 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
   const [selectedId, setSelectedId] = useState<LakeId | null>(null);
   const [focus, setFocus] = useState<FocusRequest | null>(null);
   const [userPosition, setUserPosition] = useState<LngLat | null>(null);
-  // Friskrivningen kan stängas (visas igen vid omladdning).
-  const [disclaimerClosed, setDisclaimerClosed] = useState(false);
+  // Friskrivningen visas som en ruta mitt i skärmen vid varje sidladdning och måste kvitteras med OK.
+  const [accepted, setAccepted] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   // Satellitlager: ett åt gången, hör till kartan (inte till en sjö) och ligger kvar när man byter vatten.
   const [satellite, setSatellite] = useState<ActiveSatellite | null>(null);
@@ -185,11 +186,9 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
   };
 
   return (
-    // På bred skärm ligger friskrivningen uppe till höger och sjöpanelen startar under den.
-    <main
-      className={styles.app}
-      style={{ "--lake-panel-top": disclaimerClosed ? "56px" : "108px" } as CSSProperties}
-    >
+    <main className={styles.app}>
+      {/* Allt bakom friskrivningen är inaktivt (inert) tills användaren tryckt OK. */}
+      <div className={styles.content} inert={!accepted}>
       <LakeMap
         region={region}
         lakes={colorLakes}
@@ -287,21 +286,6 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
         </div>
       </div>
 
-      <div className={styles.disclaimer} data-hidden-mobile={lake !== null} data-closed={disclaimerClosed}>
-        <button
-          type="button"
-          className={styles.disclaimerClose}
-          onClick={() => setDisclaimerClosed(true)}
-          aria-label="Stäng friskrivningen"
-        >
-          ×
-        </button>
-        <p>
-          <strong className={styles.obs}>OBS!</strong> Isvak är en datormodell. Isen är inte kontrollerad på plats och modellerna kan inte användas för att
-          bedöma is.{" "}
-          Det är förenat med livsfara att beträda naturis utan rätt kunskap, sällskap och utrustning.
-        </p>
-      </div>
       {/* Längst ner till höger, under friskrivningen och kartans källhänvisning */}
       <footer className={styles.footerBar} data-hidden-mobile={lake !== null}>
         <span>© 2026 Per Björkman Teknikpraktik</span>
@@ -312,23 +296,6 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
           Om Isvak
         </a>
       </footer>
-      {/* Liten knapp som tar fram friskrivningen igen när den stängts */}
-      {disclaimerClosed && (
-        <button
-          type="button"
-          className={styles.disclaimerReopen}
-          data-hidden-mobile={lake !== null}
-          onClick={() => setDisclaimerClosed(false)}
-          aria-label="Visa friskrivningen"
-        >
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <path d="M12 3 2.5 20h19z" />
-            <path d="M12 10v5M12 18v.5" />
-          </svg>
-          Friskrivning
-        </button>
-      )}
-
       {lake && (
         <LakePanel
           key={lake.id}
@@ -343,6 +310,8 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
           {loadError ?? toast}
         </div>
       )}
+      </div>
+      {!accepted && <DisclaimerGate onAccept={() => setAccepted(true)} />}
     </main>
   );
 }

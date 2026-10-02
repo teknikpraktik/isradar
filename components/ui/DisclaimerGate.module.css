@@ -1,0 +1,67 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgb(5 8 11 / 0.82);
+  overflow-y: auto;
+}
+
+.box {
+  width: min(480px, 100%);
+  padding: 22px 24px 20px;
+  background: var(--surface-solid);
+  border: 1px solid var(--border-strong);
+  border-top: 4px solid #b5483f;
+  border-radius: var(--radius);
+  box-shadow: 0 24px 60px rgb(0 0 0 / 0.65);
+  color: var(--text);
+}
+
+.title {
+  margin: 0 0 10px;
+  font-size: calc(22px * var(--ui-scale, 1));
+  letter-spacing: 0.08em;
+  color: #ff9d92;
+}
+
+.text {
+  font-size: calc(15px * var(--ui-scale, 1));
+  line-height: 1.55;
+}
+
+.text p {
+  margin: 0 0 12px;
+}
+
+.danger {
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.text a {
+  color: var(--accent);
+}
+
+.ok {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px 16px;
+  font-size: calc(16px * var(--ui-scale, 1));
+  font-weight: 600;
+  color: var(--bg);
+  background: var(--accent);
+  border: 0;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.ok:hover,
+.ok:focus-visible {
+  background: #bfe2f2;
+  outline: 2px solid var(--text-strong);
+  outline-offset: 2px;
+}
