@@ -1,9 +1,9 @@
 /**
- * Sentinel-1-underlag för Vänernmodellen via Microsoft Planetary Computer.
- * Endast server.
+ * Sentinel-1-underlag för Modellerad åkbarhet (sjömodellen och modellen för stora sjöar)
+ * via Microsoft Planetary Computer. Endast server.
  *
- *   passes()  – senaste pass över regionen och föregående pass från samma bana
- *   cellStats – median/std av 10·log10(VV) för en gridcell (ett anrop per cell och pass)
+ *   findPassGroups() – alla pass över ett område (nyast först), vind vid de nyaste
+ *   cellStats        – median/std av 10·log10(VV) för en yta (sjö eller gridcell), ett anrop per yta och pass
  *
  * Cache: statistik per (scen, cellgeometri) cachas länge i Nexts datacache
  * (scener ändras inte) och dessutom i minnet med dedupe av pågående anrop, så att
@@ -12,14 +12,14 @@
  */
 import "server-only";
 import { smhiWindAt } from "@/lib/server/smhi";
-import { SENTINEL_SERVER } from "@/lib/vanern/config";
+import { SENTINEL_SERVER } from "@/lib/sentinel/config";
 import type {
   SentinelCellRequest,
   SentinelCellStats,
   SentinelItemRef,
   SentinelPassRef,
   SentinelStatsRequest,
-} from "@/lib/vanern/api";
+} from "@/lib/sentinel/api";
 
 const STAC = "https://planetarycomputer.microsoft.com/api/stac/v1/search";
 const STATS = "https://planetarycomputer.microsoft.com/api/data/v1/item/statistics";
@@ -92,10 +92,10 @@ function groupPasses(items: StacItem[]): PassGroup[] {
 }
 
 /**
- * Senaste pass som täcker `center` och föregående pass från samma bana (samma
- * omloppsriktning och relativa bana), med vind vid passagen från SMHI.
+ * Alla pass över området de senaste dygnen (nyast först). Vind vid passagen (SMHI) hämtas för de
+ * nyaste passen, vid områdets mitt – äldre pass får null (okänd vind, inte 0).
  */
-export async function findPasses(bbox: [number, number, number, number], center: [number, number]): Promise<SentinelPassRef[]> {
+export async function findPassGroups(bbox: [number, number, number, number]): Promise<SentinelPassRef[]> {
   const to = new Date(Math.ceil(Date.now() / 3_600_000) * 3_600_000);
   const from = new Date(to.getTime() - SENTINEL_SERVER.searchDays * 86_400_000);
   const items = await stacSearch({
@@ -103,28 +103,25 @@ export async function findPasses(bbox: [number, number, number, number], center:
     bbox,
     datetime: `${from.toISOString()}/${to.toISOString()}`,
     sortby: [{ field: "datetime", direction: "desc" }],
-    limit: 100,
+    limit: 200,
   });
-  const groups = groupPasses(items).filter((g) => g.items.some((i) => contains(i.bbox, center)));
-  const latest = groups[0];
-  if (!latest) return [];
-  const previous = groups.find(
-    (g) => g !== latest && g.orbit === latest.orbit && g.relativeOrbit === latest.relativeOrbit && Date.parse(latest.time) - Date.parse(g.time) > 86_400_000,
-  );
+  const center: [number, number] = [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2];
   return Promise.all(
-    [latest, previous].filter((g): g is PassGroup => !!g).map(async (g): Promise<SentinelPassRef> => {
+    groupPasses(items).map(async (g, i): Promise<SentinelPassRef> => {
       let windMs: number | null = null;
       let gustMs: number | null = null;
-      try {
-        const t = Date.parse(g.time);
-        const obs = await smhiWindAt(center[1], center[0], t, { maxKm: 60, limit: 3 });
-        const best = obs.sort((a, b) => Math.abs(a.t - t) - Math.abs(b.t - t))[0];
-        if (best) {
-          windMs = best.speed;
-          gustMs = best.gust;
+      if (i < SENTINEL_SERVER.windForNewestPasses) {
+        try {
+          const t = Date.parse(g.time);
+          const obs = await smhiWindAt(center[1], center[0], t, { maxKm: 60, limit: 3 });
+          const best = obs.sort((a, b) => Math.abs(a.t - t) - Math.abs(b.t - t))[0];
+          if (best) {
+            windMs = best.speed;
+            gustMs = best.gust;
+          }
+        } catch (err) {
+          console.error("[sentinel/wind]", err);
         }
-      } catch (err) {
-        console.error("[vanern/wind]", err);
       }
       return {
         key: g.time,
@@ -132,7 +129,7 @@ export async function findPasses(bbox: [number, number, number, number], center:
         platform: g.platform,
         orbit: g.orbit,
         relativeOrbit: g.relativeOrbit,
-        items: g.items.map((i): SentinelItemRef => ({ id: i.id, bbox: i.bbox })),
+        items: g.items.map((it): SentinelItemRef => ({ id: it.id, bbox: it.bbox })),
         windMs,
         gustMs,
       };
@@ -174,10 +171,13 @@ async function fetchStats(itemId: string, geometry: SentinelCellRequest["geometr
     }
     // 500 = cellen ligger utanför scenens giltiga yta – ingen täckning, inte ett fel.
     if (!res.ok) return null;
-    const json = (await res.json()) as { properties?: { statistics?: Record<string, { median: number; std: number; valid_percent: number }> } };
+    const json = (await res.json()) as {
+      properties?: { statistics?: Record<string, { median: number; std: number; valid_pixels?: number; count?: number }> };
+    };
     const s = json.properties?.statistics?.[EXPRESSION];
     if (!s || !Number.isFinite(s.median) || !Number.isFinite(s.std)) return null;
-    return { medianDb: s.median, stdDb: s.std, validPercent: s.valid_percent };
+    // valid_percent räknas mot omslutande ruta; vi använder antal giltiga pixlar inom polygonen.
+    return { medianDb: s.median, stdDb: s.std, validPixels: s.valid_pixels ?? s.count ?? 0 };
   }
 }
 

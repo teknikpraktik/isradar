@@ -7,9 +7,10 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import type { FeatureCollection, MultiPolygon, Polygon } from "geojson";
-import { loadPasses, loadSentinelStats, loadWeatherContext, type SentinelResults } from "@/lib/data/vanern";
+import { loadPassGroups, loadSentinelFor } from "@/lib/data/sentinel";
+import { loadWeatherContext } from "@/lib/data/vanern";
 import type { RegionLakeData } from "@/lib/data/lakes";
-import type { SentinelPassRef } from "@/lib/vanern/api";
+import type { SentinelCellInput } from "@/lib/sentinel/score";
 import { geometryBox } from "@/lib/geo/clip";
 import { generateVanernGrid, groupWeatherTiles, type VanernCell } from "@/lib/vanern/grid";
 import { vanernGridMembers, vanernMemberIds } from "@/lib/vanern/members";
@@ -57,8 +58,7 @@ export function useVanernCells({
   }, [def, data]);
 
   const [weatherByTile, setWeatherByTile] = useState<Map<string, WeatherContextSummary> | null>(null);
-  const [passes, setPasses] = useState<SentinelPassRef[] | null>(null);
-  const [sentinel, setSentinel] = useState<SentinelResults>(new Map());
+  const [sentinel, setSentinel] = useState<Map<string, SentinelCellInput>>(new Map());
   const [failed, setFailed] = useState<string[]>([]);
   const [done, setDone] = useState(false);
   const gridKey = grid ? `${region.id}|${grid.cells.length}` : null;
@@ -72,19 +72,17 @@ export function useVanernCells({
       const bbox = grid.cells.map((c) => geometryBox(c.geometry)).reduce(
         (a, b) => [Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.max(a[2], b[2]), Math.max(a[3], b[3])],
       );
-      const [weather, pass] = await Promise.all([
+      const [weather, passes] = await Promise.all([
         loadWeatherContext(grid.tiles).catch(() => (fail("Vänern väder"), null)),
-        loadPasses(bbox as [number, number, number, number]).catch(() => (fail("Vänern Sentinel-1"), null)),
+        loadPassGroups(bbox as [number, number, number, number]).catch(() => (fail("Vänern Sentinel-1"), null)),
       ]);
       if (cancelled) return;
       if (weather) setWeatherByTile(weather);
-      const list = pass?.passes ?? [];
-      setPasses(list);
-      if (list.length > 0) {
-        await loadSentinelStats(
-          grid.cells,
-          list,
-          (partial) => setSentinel((prev) => new Map([...prev, ...partial])),
+      if (passes && passes.length > 0) {
+        await loadSentinelFor(
+          grid.cells.map((c) => ({ id: c.id, geometry: c.geometry, centroid: c.centroid })),
+          passes,
+          (all) => setSentinel(all),
           () => cancelled,
         );
       }
@@ -113,10 +111,9 @@ export function useVanernCells({
       computeVanernCells(cells, {
         coldPercentByArea,
         weatherByTile: weatherByTile ?? new Map(),
-        passes: passes ?? [],
         sentinelByCell: sentinel,
       }),
-    [cells, coldPercentByArea, weatherByTile, passes, sentinel],
+    [cells, coldPercentByArea, weatherByTile, sentinel],
   );
   const features = useMemo(() => (grid ? vanernCellFeatures(cells, results) : null), [grid, cells, results]);
 

@@ -50,13 +50,11 @@ function Switch({
   checked,
   onChange,
   label,
-  badge,
   busy,
 }: {
   checked: boolean;
   onChange: (on: boolean) => void;
   label: string;
-  badge?: string;
   busy?: boolean;
 }) {
   return (
@@ -71,7 +69,6 @@ function Switch({
       <span className={styles.switchTrack} aria-hidden />
       <span className={styles.switchLabel}>
         {label}
-        {badge && <span className={styles.beta}>{badge}</span>}
         {busy && <span className={styles.busy}> …</span>}
       </span>
     </label>
@@ -109,36 +106,25 @@ export default function LayerControl({ colorLayer, onColorLayer, rideability, co
             checked={riding}
             onChange={(on) => onColorLayer(on ? "rideability" : "none")}
             label={RIDEABILITY_TITLE}
-            badge="BETA"
             busy={riding && rideability.loading}
           />
-          {/* På mobil ligger förklaringen infälld bakom frågetecknet */}
+          {/* BETA är en ren märkning utanför reglaget – inte klickbar */}
+          <span className={styles.beta} aria-label="Betaversion">
+            BETA
+          </span>
           <button
             type="button"
-            className={`${styles.hintBtn} ${styles.mobileOnly}`}
+            className={`${styles.hintBtn} ${styles.hintRight}`}
             onClick={() => setModelInfo((v) => !v)}
             aria-expanded={modelInfo}
-            aria-label="Om modellerna bakom Modellerad åkbarhet"
+            aria-label="Om Modellerad åkbarhet och modellerna bakom den"
           >
             ?
           </button>
         </div>
-        <p className={`${styles.help} ${styles.desktopOnly}`}>
-          {RIDEABILITY_HELP}{" "}
-          <button
-            type="button"
-            className={styles.hintBtn}
-            onClick={() => setModelInfo((v) => !v)}
-            aria-expanded={modelInfo}
-            aria-label="Om modellerna bakom Modellerad åkbarhet"
-          >
-            ?
-          </button>
-        </p>
         {modelInfo && (
           <p className={`${styles.help} ${styles.modelInfo}`}>
-            <span className={styles.mobileOnly}>{RIDEABILITY_HELP} </span>
-            {VANERN_HINT}{" "}
+            {RIDEABILITY_HELP} {VANERN_HINT}{" "}
             <a href="/om" target="_blank" rel="noopener noreferrer">
               Läs mer här
             </a>

@@ -1,12 +1,11 @@
 /**
- * Hämtar bulkdata för kartlagret Modellerad åkbarhet (MEPS-analys, nederbörd 24 h,
- * Sentinel-adapter). Varje källa fallerar för sig – en källa som saknas gör
+ * Hämtar bulkdata för kartlagret Modellerad åkbarhet (MEPS-analys och nederbörd 24 h;
+ * Sentinel-1 hämtas separat och successivt av components/useLakeSentinel). Varje källa fallerar för sig – en källa som saknas gör
  * bara att den räknas som "data saknas" i bedömningen.
  */
 import type { ApiError } from "@/lib/cold/api";
 import type { MepsCellsResponse, PrecipitationPointsResponse } from "@/lib/rideability/api";
 import { cellKey, type RideabilityBulkData } from "@/lib/rideability/inputs";
-import { getSentinelIndications } from "@/lib/rideability/sentinel";
 import type { LakeId, LakeIndexEntry } from "@/types/lake";
 
 async function post<T>(url: string, body: unknown): Promise<T> {
@@ -34,7 +33,7 @@ async function loadPrecipitation(index: LakeIndexEntry[]): Promise<Map<LakeId, n
 }
 
 export interface RideabilityBulkResult {
-  data: Omit<RideabilityBulkData, "gdPercent">;
+  data: Omit<RideabilityBulkData, "gdPercent" | "sentinel">;
   /** Källor som inte kunde hämtas. */
   failed: string[];
 }
@@ -50,10 +49,9 @@ export async function loadRideabilityBulk(index: LakeIndexEntry[]): Promise<Ride
       return null;
     }
   };
-  const [mepsCells, precipitationMm, sentinel] = await Promise.all([
+  const [mepsCells, precipitationMm] = await Promise.all([
     guard("MEPS", loadMepsCells(index)),
     guard("nederbörd", loadPrecipitation(index)),
-    guard("Sentinel-1", getSentinelIndications(index.map((l) => l.id))),
   ]);
-  return { data: { mepsCells, precipitationMm, sentinel }, failed };
+  return { data: { mepsCells, precipitationMm }, failed };
 }

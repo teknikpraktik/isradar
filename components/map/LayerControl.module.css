@@ -67,7 +67,12 @@
 }
 
 .switchWithHint > label {
-  flex: 1;
+  flex: 0 1 auto;
+}
+
+/* Frågetecknet ligger längst ut till höger på raden */
+.switchWithHint .hintRight {
+  margin-left: auto;
 }
 
 .mobileOnly {
@@ -188,7 +193,10 @@
 }
 
 .beta {
-  margin-left: 6px;
+  margin-left: 0;
+  flex: none;
+  pointer-events: none;
+  user-select: none;
   font-family: var(--font-mono);
   font-size: 9px;
   letter-spacing: 0.06em;

@@ -17,6 +17,7 @@ import { loadRideabilityBulk, type RideabilityBulkResult } from "@/lib/data/ride
 import { enrichLakeFeatures } from "@/lib/map/lakeFeatures";
 import { computeRideability } from "@/lib/rideability/inputs";
 import { useVanernCells } from "@/components/useVanernCells";
+import { useLakeSentinel } from "@/components/useLakeSentinel";
 import { withRideabilityCategory } from "@/lib/rideability/mapStyle";
 import { formatDate, formatShortDateTime } from "@/lib/format";
 import { getRegion } from "@/lib/regions";
@@ -95,7 +96,7 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
     let cancelled = false;
     // MEPS och väder finns bara för nuläget – i historiskt läge räknas de som saknade.
     const load = asOf
-      ? Promise.resolve<RideabilityBulkResult>({ data: { mepsCells: null, precipitationMm: null, sentinel: null }, failed: [] })
+      ? Promise.resolve<RideabilityBulkResult>({ data: { mepsCells: null, precipitationMm: null }, failed: [] })
       : loadRideabilityBulk(data.index);
     load.then((result) => !cancelled && setBulk({ key: bulkKey, result }));
     return () => {
@@ -112,11 +113,17 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
     enabled: rideabilityOn,
     asOf,
   });
+  // Sjömodellens Sentinel-1-faktor: statistik över varje sjös yta, hämtas successivt och cachas på servern.
+  const lakeSentinel = useLakeSentinel({ region, data, skipIds: vanern.memberIds, enabled: rideabilityOn, asOf });
   const rideability = useMemo(() => {
     if (!rideabilityOn || !data || !mapLakes || !bulkReady) return null;
     const gdPercent = new Map(mapLakes.features.map((f) => [f.properties.id, f.properties.pct ?? null]));
-    return computeRideability(data.index, { ...bulk.result.data, gdPercent }, vanern.memberIds);
-  }, [rideabilityOn, data, mapLakes, bulk, bulkReady, vanern.memberIds]);
+    return computeRideability(
+      data.index,
+      { ...bulk.result.data, gdPercent, sentinel: lakeSentinel.indications },
+      vanern.memberIds,
+    );
+  }, [rideabilityOn, data, mapLakes, bulk, bulkReady, vanern.memberIds, lakeSentinel.indications]);
   const colorLakes = useMemo(
     () => (rideabilityOn && mapLakes ? withRideabilityCategory(mapLakes, rideability ?? new Map()) : mapLakes),
     [rideabilityOn, mapLakes, rideability],
@@ -242,8 +249,8 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
             if (layer !== "none") setSatellite(null);
           }}
           rideability={{
-            loading: rideabilityLoading || vanern.loading,
-            failed: [...(bulkReady ? bulk.result.failed : []), ...vanern.failed],
+            loading: rideabilityLoading || vanern.loading || lakeSentinel.loading,
+            failed: [...(bulkReady ? bulk.result.failed : []), ...vanern.failed, ...(lakeSentinel.failed ? ["Sentinel-1 (sjöar)"] : [])],
           }}
           coldLegend={legendFlags}
           satellite={{
@@ -294,6 +301,22 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
           Om Isvak
         </a>
       </div>
+      {/* Liten knapp som tar fram friskrivningen igen när den stängts */}
+      {disclaimerClosed && (
+        <button
+          type="button"
+          className={styles.disclaimerReopen}
+          data-hidden-mobile={lake !== null}
+          onClick={() => setDisclaimerClosed(false)}
+          aria-label="Visa friskrivningen"
+        >
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M12 3 2.5 20h19z" />
+            <path d="M12 10v5M12 18v.5" />
+          </svg>
+          Friskrivning
+        </button>
+      )}
 
       {lake && (
         <LakePanel

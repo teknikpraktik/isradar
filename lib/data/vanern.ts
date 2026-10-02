@@ -1,17 +1,10 @@
 /**
- * Klientsidans hämtning för Vänernmodellen: väderunderlag per väderruta och
- * Sentinel-1-statistik per gridcell. Allt cachas i minnet per session och
- * Sentinel-statistiken hämtas i delar så att kartan fylls på successivt.
+ * Klientsidans väderhämtning för modellen för stora sjöar: väderunderlag per väderruta,
+ * cachat i minnet per session. (Sentinel-1 hämtas av lib/data/sentinel.ts, som delas med sjömodellen.)
  */
 import type { ApiError } from "@/lib/cold/api";
-import { SENTINEL_SERVER } from "@/lib/vanern/config";
-import type {
-  SentinelCellStats,
-  SentinelPassesResponse,
-  SentinelStatsResponse,
-  WeatherHistoryResponse,
-} from "@/lib/vanern/api";
-import type { VanernCell, WeatherTile } from "@/lib/vanern/grid";
+import type { WeatherHistoryResponse } from "@/lib/vanern/api";
+import type { WeatherTile } from "@/lib/vanern/grid";
 import type { WeatherContextSummary } from "@/lib/vanern/weatherContext";
 
 async function json<T>(res: Response): Promise<T> {
@@ -40,43 +33,4 @@ export function loadWeatherContext(tiles: WeatherTile[]): Promise<Map<string, We
     weatherCache.set(key, p);
   }
   return p;
-}
-
-export function loadPasses(bbox: [number, number, number, number]): Promise<SentinelPassesResponse> {
-  return fetch(`/api/vanern/passes?bbox=${bbox.join(",")}`).then((r) => json<SentinelPassesResponse>(r));
-}
-
-/** cellId → passnyckel → statistik. */
-export type SentinelResults = Map<string, Record<string, SentinelCellStats | null>>;
-
-/**
- * Hämtar Sentinel-statistik i delar om `chunkSize` celler (två delar samtidigt) och
- * anropar onChunk efter varje del. Avbryts av `isCancelled`.
- */
-export async function loadSentinelStats(
-  cells: VanernCell[],
-  passes: SentinelPassesResponse["passes"],
-  onChunk: (partial: SentinelResults) => void,
-  isCancelled: () => boolean,
-): Promise<void> {
-  const size = SENTINEL_SERVER.chunkSize;
-  const chunks: VanernCell[][] = [];
-  for (let i = 0; i < cells.length; i += size) chunks.push(cells.slice(i, i + size));
-  const refs = passes.map((p) => ({ key: p.key, items: p.items }));
-  let next = 0;
-  const worker = async () => {
-    while (next < chunks.length && !isCancelled()) {
-      const chunk = chunks[next++];
-      try {
-        const r = await post<SentinelStatsResponse>("/api/vanern/sentinel", {
-          cells: chunk.map((c) => ({ id: c.id, geometry: c.geometry })),
-          passes: refs,
-        });
-        if (!isCancelled()) onChunk(new Map(Object.entries(r.results)));
-      } catch (err) {
-        console.error("[vanern] sentinel-del misslyckades", err);
-      }
-    }
-  };
-  await Promise.all([worker(), worker()]);
 }

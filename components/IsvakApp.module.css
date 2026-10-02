@@ -240,7 +240,7 @@
 .disclaimer {
   position: fixed;
   right: 12px; /* linjerad med sjöpanelens högerkant */
-  bottom: 30px; /* ovanför kartans källhänvisning (©), som måste synas */
+  bottom: 46px; /* ovanför kartans källhänvisning (©) med luft emellan; källhänvisningen måste synas */
   z-index: 30;
   /* Lika bred som sjövyns panel (400 px) på bred skärm */
   width: min(400px, calc(100vw - 24px));
@@ -249,8 +249,8 @@
   background: rgb(12 16 21 / 0.86);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);
-  font-size: 11.5px;
-  line-height: 1.35;
+  font-size: 12.5px;
+  line-height: 1.45;
   color: var(--text-muted);
 }
 
@@ -296,10 +296,46 @@
 @media (max-width: 767px) {
   .disclaimer {
     right: 10px;
-    bottom: 34px;
+    bottom: 50px;
     width: calc(100vw - 20px);
   }
   .disclaimer[data-hidden-mobile="true"] {
+    display: none;
+  }
+}
+
+/* Knapp som visar friskrivningen igen efter att den stängts */
+.disclaimerReopen {
+  all: unset;
+  box-sizing: border-box;
+  position: fixed;
+  right: 12px;
+  bottom: 46px;
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 11px;
+  cursor: pointer;
+  background: rgb(12 16 21 / 0.86);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.disclaimerReopen:hover,
+.disclaimerReopen:focus-visible {
+  background: var(--surface-hover);
+  color: var(--text);
+  outline: none;
+}
+
+@media (max-width: 767px) {
+  .disclaimerReopen {
+    bottom: 50px;
+  }
+  .disclaimerReopen[data-hidden-mobile="true"] {
     display: none;
   }
 }

@@ -10,6 +10,7 @@ import {
   WEIGHTS,
   type RideabilityFactorId,
 } from "@/lib/rideability/config";
+import { LAKE_SENTINEL } from "@/lib/sentinel/config";
 import { SOURCES } from "@/lib/sources";
 import {
   MIN_AVAILABLE_WEIGHT,
@@ -71,6 +72,9 @@ export default function OmIsvak() {
 
         <section className={styles.danger} aria-labelledby="varning">
           <h2 id="varning">Livsfara: läs detta först</h2>
+          <p>
+            <strong>Isvak bedömer inte om is är säker eller bärig. Kontrollera alltid isen själv på plats.</strong>
+          </p>
           <p>
             <strong>Det är förenat med livsfara att vistas på isar utan rätt utrustning, sällskap och kunskap.</strong>{" "}
             Människor drunknar och dör varje vinter efter att ha gått, åkt eller kört genom isen.
@@ -147,9 +151,15 @@ export default function OmIsvak() {
 
         <h3>Modellerad åkbarhet (BETA)</h3>
         <p>
-          Huvudlagret. Varje vatten färgas efter en sammanvägd modellindikering av nuläget. Färgen är ett uttryck för
-          hur många av de underliggande indikatorerna som pekar åt ett håll, <strong>inte</strong> för hur isen är.
-          Ingen framtida prognos vägs in.
+          Huvudlagret. Varje vatten färgas efter en sammanvägd modellindikering av nuläget.
+        </p>
+        <p>
+          <strong>Vad begreppet betyder.</strong> Med modellerad åkbarhet avses hur gynnsamma de analyserade
+          förhållandena är för möjlig åkbar is. Begreppet innebär inte att isen faktiskt är åkbar, bärig eller säker.
+        </p>
+        <p>
+          Färgen bygger på en viktad sammanvägning av flera underliggande indikatorer och modellregler. Den beskriver{" "}
+          <strong>inte</strong> hur isen faktiskt är. Ingen framtida prognos vägs in.
         </p>
         <ul className={styles.legend}>
           {CATEGORIES.map((c) => (
@@ -160,10 +170,14 @@ export default function OmIsvak() {
         </ul>
         <p>
           <strong>Samma färger, två modeller.</strong> Kartan väljer modell automatiskt efter vattnet: sjömodellen där
-          data från MEPS finns och Vänernmodellen på Vänern. Båda ger en poäng från 0 till 100 (används internt och visas inte som
-          primärvärde) som översätts till samma kategorier. Poängen delas in så här: 85 och uppåt Mycket gynnsamma, 70 till 84
-          Gynnsamma, 45 till 69 Blandade, under 45 Inga indikationer. Otillräckliga data (grå) visas när för lite underlag
-          finns.
+          data från MEPS finns och modellen för stora sjöar där modellerad istjocklek saknas (för närvarande Vänern).
+          Båda ger en poäng från 0 till 100 (används internt och visas inte som primärvärde) som översätts till samma
+          kategorier. Poängen delas in så här: 85 och uppåt Mycket gynnsamma, 70 till 84 Gynnsamma, 45 till 69
+          Blandade, under 45 Inga indikationer.
+        </p>
+        <p>
+          <strong>Otillräckliga data</strong> (grå) betyder inte dåliga isförhållanden. Det betyder att Isvak saknar
+          tillräckligt underlag för att beräkna modellen.
         </p>
 
         <h4>Sjömodellen</h4>
@@ -194,14 +208,25 @@ export default function OmIsvak() {
         </ul>
         <p>
           Saknad data räknas aldrig som noll. Den är &quot;data saknas&quot; och påverkar bara tillgängligt underlag.
-          Sentinel-1 är ännu inte kopplat till sjömodellen för enskilda sjöar, så den indikatorn saknas där.
+        </p>
+        <p>
+          <strong>Sentinel-1 i sjömodellen.</strong> För varje sjö beräknas statistik över sjöns yta: median och
+          spridning av radarsignalen (VV) för senaste pass och föregående pass från samma bana, samt vinden vid
+          passagen. Samma metod som i modellen för stora sjöar används. Heuristiken väger variationen över ytan och
+          förändringen mellan passen tyngre än absolut nivå, eftersom lugnt öppet vatten och vissa isytor kan ge
+          liknande radarrespons. Sentinel är en indikator bland flera och ersätter inte spärren för modellerad
+          istjocklek. Vatten mindre än {LAKE_SENTINEL.minAreaKm2} km², och vatten som saknar användbart satellitpass, får
+          ingen indikator från Sentinel (data saknas). <strong>Tolkningen är experimentell och inte kalibrerad.</strong>
         </p>
 
-        <h4>Vänernmodellen (beta)</h4>
+        <h4>Modell för stora sjöar (beta)</h4>
+        <p>Används för närvarande på Vänern.</p>
         <p>
-          På Vänern saknas modellerad istjocklek. Där används en separat modell som räknas per analyscell om{" "}
-          {VANERN_GRID.defaultCellKm} × {VANERN_GRID.defaultCellKm} km, klippt mot vattenytan (ca 450 celler för
-          Värmlands del). Varje cell får egen färg. Komponenterna:
+          Modellen är till för stora sjöar där modellerad istjocklek saknas. Den räknas per analyscell om{" "}
+          {VANERN_GRID.defaultCellKm} × {VANERN_GRID.defaultCellKm} km, klippt mot vattenytan (flera hundra celler på
+          Vänern). Varje cell får egen färg. Stora sjöar delas upp eftersom isförhållanden och ytförhållanden kan skilja sig
+          betydligt mellan olika delar av samma sjö. Rutstorleken innebär inte att modellens faktiska precision är{" "}
+          {VANERN_GRID.defaultCellKm} km. Komponenterna:
         </p>
         <ul>
           {VANERN_COMPONENTS.map((id) => (
@@ -229,9 +254,10 @@ export default function OmIsvak() {
           </li>
           <li>
             <strong>Sentinel-1:</strong> för varje cell hämtas median och spridning av radarsignalen (VV) för senaste
-            pass och föregående pass från samma bana. Modellen väger variationen inom cellen och förändringen mellan
-            passen tyngre än absolut nivå, eftersom låg radarrespons även kan finnas över öppet lugnt vatten. Hög
-            variation vid vind tolkas som vindpåverkat öppet vatten och sänker poängen kraftigt (tak 30).{" "}
+            pass och föregående pass från samma bana, med samma metod som i sjömodellen. Modellen väger variationen
+            inom cellen och förändringen mellan passen tyngre än absolut nivå, eftersom låg radarrespons även kan
+            finnas över öppet lugnt vatten. Hög variation i kombination med vind kan i den nuvarande heuristiken bidra
+            till en tolkning som är förenlig med vindpåverkat öppet vatten och sänker därför poängen.{" "}
             <strong>Tolkningen är experimentell och inte kalibrerad.</strong>
           </li>
           <li>
@@ -303,13 +329,20 @@ export default function OmIsvak() {
             saknas på Vänern.
           </li>
           <li>
-            <strong>Väder:</strong> två meteogram med samma uppbyggnad: observationer senaste 24 timmarna och SMHI:s
-            prognos 48 timmar, med temperatur överst och nederbörd nederst, samt vind. Nederbörden märks som snö vid
-            0 °C eller kallare och annars som regn (en enkel tumregel, inte en meteorologisk klassning). Observationerna
-            kommer från närmaste station per variabel (SMHI och Trafikverket VViS, högst 50 km), och stationens avstånd
-            kan göra att värdena skiljer sig från sjön.
+            <strong>Väder:</strong> två meteogram med samma uppbyggnad. Det ena visar observationer bakåt i tiden
+            (senaste 24 timmarna) och det andra SMHI:s prognos framåt i tiden (48 timmar). Båda visar temperatur,
+            nederbörd och vind, med temperatur överst och nederbörd nederst. Nederbörden märks som snö vid 0 °C eller
+            kallare och annars som regn (en enkel tumregel, inte en meteorologisk klassning). Observationerna kommer
+            från närmaste station per variabel (SMHI och Trafikverket VViS, högst 50 km), och stationens avstånd kan
+            göra att värdena skiljer sig från sjön.
           </li>
         </ul>
+
+        <h2>Hur aktuell är informationen?</h2>
+        <p>
+          Datakällorna uppdateras vid olika tidpunkter. Isvak visar därför tidsstämpel för tillgängliga data där det är
+          möjligt. Ett modellresultat kan innehålla komponenter från olika tidpunkter och är inte en realtidsmätning.
+        </p>
 
         <h2>Källor</h2>
         <ul>

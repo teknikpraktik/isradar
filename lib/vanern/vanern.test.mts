@@ -21,7 +21,7 @@ const pass = (hoursAgo: number, medianDb: number, stdDb: number, windMs: number 
   time: new Date(NOW - hoursAgo * H).toISOString(),
   medianDb,
   stdDb,
-  validPercent: 100,
+  validPixels: 5000,
   windMs,
 });
 
@@ -101,7 +101,7 @@ test("Sentinel: saknas, för gammalt eller för få giltiga pixlar → null (int
   assert.equal(calculateSentinelScore(null, new Date(NOW)), null);
   assert.equal(calculateSentinelScore({ latest: null, previous: null }, new Date(NOW)), null);
   assert.equal(calculateSentinelScore({ latest: pass(24 * 20, -14, 1), previous: null }, new Date(NOW)), null);
-  assert.equal(calculateSentinelScore({ latest: { ...pass(10, -14, 1), validPercent: 20 }, previous: null }, new Date(NOW)), null);
+  assert.equal(calculateSentinelScore({ latest: { ...pass(10, -14, 1), validPixels: 20 }, previous: null }, new Date(NOW)), null);
 });
 
 test("Vänern: komplett exempel ger hög score, alla delscore och hög datatillit", () => {

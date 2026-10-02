@@ -151,15 +151,23 @@ Beräknas av Isvak per temperaturstation och visas för alla vatten som använde
 - **Värde:** median över rutor med sjöyta (fyllnadsvärde 9.97e36 = ingen sjö i rutan), för +0 h (MODEL) och +24/+48/+66 h (FORECAST). Antal rutor med sjöyta visas.
 - **Begränsning:** värdet gäller modellens sjöyta i rutan, inte nödvändigtvis just det vattnet – särskilt för små vatten. Endast senaste körning (`?asOf=` ger "Endast nuläge").
 
-### Modellerad åkbarhet · Vänernmodellen (BETA)
+### Modellerad åkbarhet (BETA)
 
-Samma kartlager och färgskala som sjömodellen, men en separat modell för vatten där MEPS-istjocklek saknas (`data/regions/*.json` → `waterModels`; för Värmland Vänerns tre samlingsområden och deras delområden). Allt i `lib/vanern/`; parametrar i `config.ts`.
+Huvudlagret på kartan. Två modeller ger samma 0–100-poäng och samma kategorier/färger (`lib/rideability/config.ts`): **sjömodellen** där MEPS-data finns och **modellen för stora sjöar** där modellerad istjocklek saknas (för närvarande Vänern, anges i `data/regions/*.json` → `waterModels`). Vikter, kurvor och spärrar ligger i konfigurationsfilerna och läses av både beräkningen och infosidan (`/om`).
 
-- **Analysgrid:** `generateVanernGrid` lägger ett rutnät (standard 2 × 2 km, `cellKm`) över vattenytan och klipper cellerna mot polygonerna (`lib/geo/clip.ts`). Ca 450 celler i Värmland. Cellerna visas i lagret Modellerad åkbarhet; klick väljer det underliggande vattenobjektet.
-- **Komponenter (0–100, vikter):** köldmängd 30 % (aktuell/historisk ur befintlig logik), temperaturhistorik 20 % (72 h + 7 dygn, observerat), Sentinel-1 20 %, vind 15 % (72 h), nederbörd 15 % (48 h, regn/blandat/snö efter temperatur). Saknad komponent = `null` (aldrig 0); vikterna normaliseras. Sentinel saknas → tak 55 och låg datatillit.
+**Sentinel-1 (gemensam för båda modellerna)** – `lib/sentinel/`:
+- `GET /api/sentinel/passes?bbox=` ger alla pass över området (nyast först, vind vid passagen för de nyaste). `POST /api/sentinel/stats` ger median/std av VV (dB) och antal giltiga pixlar per yta (sjö eller gridcell) och pass via Planetary Computers statistik-endpoint, ett anrop per yta och pass.
+- `lib/sentinel/passes.ts` väljer per yta senaste pass som täcker den och föregående pass från samma bana (`assignPasses`); ytor utanför ett pass svep provas mot nästa pass (högst två omgångar). `lib/data/sentinel.ts` hämtar i delar och fyller på kartan successivt.
+- `lib/sentinel/score.ts` (`calculateSentinelScore`) är den enda heuristiken: variation över ytan, förändring mellan pass och en svagt styrande VV-nivå, plus vind vid passagen. **Experimentell och okalibrerad; radarrespons är tvetydig** (lugnt öppet vatten och vissa isytor kan likna varandra). Parametrar i `lib/sentinel/config.ts`.
+- Cache: statistik per (scen, yta) cachas 7 dygn i Nexts datacache och i minnet; passökningen 1 h. Täckning mäts i antal giltiga pixlar (titilers `valid_percent` räknas mot polygonens omslutande ruta och duger inte).
+
+**Sjömodellen** (`lib/rideability/`): MEPS istjocklek 35 %, köldmängd 25 %, snö på is 20 %, Sentinel-1 15 %, nederbörd 24 h 5 %. Sentinel-1 beräknas som statistik över varje sjös yta (`components/useLakeSentinel.ts`; vatten under 0,2 km² och sjöar utan användbart pass får ingen Sentinel-indikator = data saknas, aldrig 0). Spärrarna på MEPS-istjocklek gäller oförändrade.
+
+**Modell för stora sjöar** (`lib/vanern/`, internt namn kvar):
+- **Analysgrid:** `generateVanernGrid` lägger ett rutnät (standard 2 × 2 km, `cellKm`) över vattenytan och klipper cellerna mot polygonerna (`lib/geo/clip.ts`). Ca 670 celler på Vänern i Värmland. Rutstorleken är inte modellens faktiska precision. Cellerna visas i lagret Modellerad åkbarhet; klick väljer det underliggande vattenobjektet.
+- **Komponenter (0–100, vikter):** köldmängd 30 %, temperaturhistorik 20 %, Sentinel-1 20 %, vind 15 %, nederbörd 15 %. Saknad komponent = `null` (aldrig 0); vikterna normaliseras. Sentinel saknas → tak 55. Spärrar: för lite köld eller varmt väder ger lågt tak.
 - **Väder:** hämtas en gång per 0,25°-ruta (`/api/weather/history`), närmaste SMHI-station med tillräcklig täckning, och delas av cellerna i rutan.
-- **Sentinel-1:** `/api/vanern/passes` hittar senaste pass och föregående pass från samma bana; `/api/vanern/sentinel` hämtar median/std av VV (dB) per cell via Planetary Computers statistik-endpoint (ett anrop per cell och pass, 6 samtidiga, hämtas i delar om 60 celler). Cachas i Nexts datacache (7 dygn) och i minnet. **Tolkningen (`lib/vanern/sentinel.ts`) är experimentell och inte kalibrerad:** den väger jämnhet inom cellen och förändring mellan pass tyngre än absolut nivå.
-- **Internt resultat per cell:** `{ score, category, confidence, components, cap }` (`VanernCellResult`); i utveckling tillgängligt som `window.__isvakVanern`. Ingen detaljvy per cell.
+- **Internt resultat per cell:** `{ score, category, confidence, components, cap }`; i utveckling tillgängligt som `window.__isvakVanern` (sjöarnas Sentinel-underlag som `window.__isvakLakeSentinel`). Ingen detaljvy per cell.
 
 ### Kända egenheter i källdatan
 

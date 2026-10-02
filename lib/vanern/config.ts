@@ -99,53 +99,8 @@ export const WIND_EXTREME = { maxMs: 14, factor: 0.8 } as const;
 /** Sentinel-poäng över detta antyder stabil sammanhängande yta → vindens negativa effekt dämpas. */
 export const WIND_DAMPING = { sentinelFrom: 70, sentinelFull: 100, maxRecovery: 0.5 } as const;
 
-/* ------------------------------------------------------------------ */
-/* Sentinel-1 (experimentell heuristik, okalibrerad)                    */
-/* ------------------------------------------------------------------ */
-
-export const SENTINEL = {
-  /** Cellen analyseras bara om minst så här stor andel av pixlarna är giltiga. */
-  minValidPercent: 60,
-  /** Max ålder (timmar) för senaste pass för att räknas som färskt. */
-  freshHours: 72,
-  /** Äldre än detta (timmar) räknas inte alls. */
-  maxAgeHours: 14 * 24,
-  /** Andel när förändring saknas (föregående pass finns inte) – neutral, ej straff. */
-  noChangeNeutral: 0.6,
-  /** Vikter mellan delarna (summerar till 1). */
-  parts: { level: 0.3, homogeneity: 0.4, stability: 0.3 },
-  /** VV-median (dB) → andel. Svagt styrande – ersätter inte "mörk = is, ljus = vatten". */
-  levelCurve: [
-    [-26, 0.45],
-    [-22, 0.55],
-    [-18, 0.8],
-    [-13, 0.9],
-    [-9, 0.65],
-    [-5, 0.35],
-  ] as Curve,
-  /** Standardavvikelse inom cellen (dB) → andel. Hög variation = ojämn/öppen/vindpåverkad yta. */
-  homogeneityCurve: [
-    [1.5, 1],
-    [3, 0.75],
-    [5, 0.4],
-    [7, 0.1],
-  ] as Curve,
-  /** |ΔVV median| mellan passen (dB) → andel. Stor förändring = instabilt läge. */
-  stabilityCurve: [
-    [0.5, 1],
-    [1.5, 0.85],
-    [3, 0.5],
-    [6, 0.15],
-  ] as Curve,
-  /**
-   * Signatur för vindpåverkat öppet vatten: hög respons + stor variation vid
-   * måttlig/hård vind vid passagen. Lugnt vatten kan se ut som slät is och
-   * klassas därför INTE som öppet vatten.
-   */
-  roughOpenWater: { minWindMs: 5, minMedianDb: -16, minStdDb: 3 },
-  /** Tak för totalpoäng när cellen visar vindpåverkat öppet vatten. null = av. */
-  roughOpenWaterCap: 30 as number | null,
-};
+/** Sentinel-1-heuristiken och hämtningen delas med sjömodellen (lib/sentinel/config.ts). */
+export { SENTINEL, SENTINEL_SERVER } from "../sentinel/config.ts";
 
 /* ------------------------------------------------------------------ */
 /* Tak, täckning och datatillit                                        */
@@ -170,19 +125,5 @@ export const VANERN_GATES = {
 /** Under denna summa tillgängliga vikter blir cellen "Otillräckliga data". */
 export const MIN_AVAILABLE_WEIGHT = 0.5;
 
-/** Server: cache och anropsstrategi för Sentinel-statistik. */
-export const SENTINEL_SERVER = {
-  /** Sekunder som statistik per (scen, cell) cachas (scener ändras inte). */
-  statsRevalidateS: 7 * 86_400,
-  /** Sekunder som passökningen cachas. */
-  passesRevalidateS: 3600,
-  /** Samtidiga statistikanrop mot Planetary Computer. */
-  concurrency: 6,
-  /** Celler per klientanrop (kartan fylls på successivt). */
-  chunkSize: 60,
-  /** Dygn bakåt som scener söks. */
-  searchDays: 30,
-} as const;
-
 export const VANERN_HINT =
-  "Sjömodellen väger köldmängd, modellerad istjocklek och snö (MEPS), Sentinel-1 och nederbörd. På Vänern saknas MEPS-istjocklek, så en separat Vänernmodell (beta) används: köldmängd, temperaturhistorik, Sentinel-1, vind och nederbörd, beräknad per 2 × 2 km-cell. Sentinel-1-tolkningen är experimentell och inte kalibrerad. Båda ger samma skala och färger. Visar modellerad indikering, inte isens skick.";
+  "Sjömodellen väger köldmängd, modellerad istjocklek och snö (MEPS), Sentinel-1 och nederbörd. För stora sjöar där MEPS-istjocklek saknas, i dag Vänern, används en separat modell (beta): köldmängd, temperaturhistorik, Sentinel-1, vind och nederbörd, beräknad per 2 × 2 km-cell. Sentinel-1-tolkningen är experimentell och inte kalibrerad. Båda modellerna ger samma skala och färger och visar modellerad indikering, inte isens skick.";

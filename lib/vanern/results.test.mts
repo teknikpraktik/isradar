@@ -26,17 +26,19 @@ test("computeVanernCells: celler med och utan Sentinel får olika tak och datati
     precipitation: summarizePrecipitation(series(48, 0), series(48, -8), NOW.getTime()),
     wind: summarizeWind(series(72, 2), NOW.getTime()),
   };
-  const pass = (hoursAgo: number, med: number) => ({ medianDb: med, stdDb: 1.2, validPercent: 100 });
-  const sentinelByCell = new Map([[cells[0].id, { A: pass(0, -14), B: pass(0, -14.5) }]]);
+  const pass = (hoursAgo: number, med: number) => ({
+    time: new Date(NOW.getTime() - hoursAgo * H).toISOString(),
+    medianDb: med,
+    stdDb: 1.2,
+    validPixels: 5000,
+    windMs: 2,
+  });
+  const sentinelByCell = new Map([[cells[0].id, { latest: pass(20, -14), previous: pass(20 + 288, -14.5) }]]);
   const results = computeVanernCells(
     cells,
     {
       coldPercentByArea: new Map([[7, 100]]),
       weatherByTile: new Map(cells.map((c) => [c.weatherTile, weather])),
-      passes: [
-        { key: "A", time: new Date(NOW.getTime() - 20 * H).toISOString(), windMs: 2 },
-        { key: "B", time: new Date(NOW.getTime() - 20 * H - 288 * H).toISOString(), windMs: 2 },
-      ],
       sentinelByCell,
     },
     NOW,

@@ -42,7 +42,7 @@
     right: 12px;
     /* Stannar ovanför friskrivningen och källhänvisningen i nedre högra hörnet
        och scrollar internt (se .body) i stället för att knuffa undan dem. */
-    bottom: 150px;
+    bottom: 172px;
     width: 400px;
     max-height: none;
     border: 1px solid var(--border);

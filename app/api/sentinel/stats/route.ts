@@ -1,14 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { ApiError } from "@/lib/cold/api";
-import { statsForCells } from "@/lib/server/vanernSentinel";
-import { SENTINEL_MAX_CELLS, type SentinelStatsRequest, type SentinelStatsResponse } from "@/lib/vanern/api";
+import { statsForCells } from "@/lib/server/sentinel";
+import { SENTINEL_MAX_CELLS, type SentinelStatsRequest, type SentinelStatsResponse } from "@/lib/sentinel/api";
 
-/** Vänernmodellen räknar bara på en handfull gridceller per anrop. */
 export const maxDuration = 120;
 
 /**
- * VV-statistik (median, standardavvikelse) per gridcell och pass: ett anrop mot
- * Planetary Computer per cell och pass, med server- och datacache. Body: { cells, passes }.
+ * VV-statistik (median, standardavvikelse) per yta (sjö eller gridcell) och pass: ett anrop mot
+ * Planetary Computer per yta och pass, med server- och datacache. Body: { cells, passes }.
  */
 export async function POST(request: NextRequest) {
   let req: SentinelStatsRequest | null = null;
