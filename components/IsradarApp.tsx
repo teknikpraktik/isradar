@@ -84,14 +84,19 @@ export default function IsradarApp({ regionId }: { regionId?: string }) {
         satellite={activeSatellite}
         onSatelliteError={() => {
           setSatellite(null);
-          showMessage("Satellitbild kunde inte laddas");
+          showMessage(activeSatellite?.scene.sensor === "SAR" ? "Sentinel-1-bild kunde inte laddas" : "Sentinel-2-bild kunde inte laddas");
         }}
       />
 
       {activeSatellite && (
         <div className={styles.satLabel} role="status">
-          <span>{activeSatellite.scene.sensor === "SAR" ? "Sentinel-1 radar" : "Sentinel-2 optisk"}</span>
+          <span>{activeSatellite.scene.sensor === "SAR" ? "Sentinel-1 SAR" : "Sentinel-2 optisk"}</span>
           <span className="num">{formatShortDateTime(activeSatellite.scene.acquiredAt)}</span>
+          <span>
+            {[activeSatellite.scene.platform, activeSatellite.scene.orbitState === "ascending" ? "stigande" : activeSatellite.scene.orbitState === "descending" ? "fallande" : null]
+              .filter(Boolean)
+              .join(" · ")}
+          </span>
         </div>
       )}
 

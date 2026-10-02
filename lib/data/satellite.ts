@@ -3,7 +3,7 @@
  * Scenerna visas som rasterlager på kartan – ingen is/vatten-klassning ännu.
  */
 import type { ApiError } from "@/lib/cold/api";
-import type { SatelliteApiResponse } from "@/lib/satellite/api";
+import type { PassWindResponse, SatelliteApiResponse } from "@/lib/satellite/api";
 import { SOURCES } from "@/lib/sources";
 import type { Lake } from "@/types/lake";
 import type { SatelliteScenes } from "@/types/observations";
@@ -45,4 +45,24 @@ export async function getSatelliteScenes(lake: Lake, asOf?: string): Promise<Dat
   } catch (err) {
     return { status: "unavailable", source: SOURCES.sentinel, reason: err instanceof Error ? err.message : "Okänt fel", code: "error" };
   }
+}
+
+const windCache = new Map<string, Promise<PassWindResponse>>();
+
+/** Observerad vind vid en passage (cachas per position + tid). */
+export function getPassWind(centroid: [number, number], time: string): Promise<PassWindResponse> {
+  const [lon, lat] = centroid;
+  const key = `${lon},${lat}|${time}`;
+  let p = windCache.get(key);
+  if (!p) {
+    const qs = new URLSearchParams({ lon: String(lon), lat: String(lat), time });
+    p = fetch(`/api/satellite/wind?${qs}`).then(async (res) => {
+      const body = (await res.json()) as PassWindResponse | ApiError;
+      if (!res.ok || "error" in body) throw new Error("error" in body ? body.error : `HTTP ${res.status}`);
+      return body;
+    });
+    p.catch(() => windCache.delete(key));
+    windCache.set(key, p);
+  }
+  return p;
 }

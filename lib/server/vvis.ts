@@ -161,3 +161,40 @@ export const VVIS_SOURCE = {
   name: "Trafikverket VViS",
   url: "https://data.trafikverket.se",
 } as const;
+
+/**
+ * Råa 5-minutersobservationer av vind inom ±windowMs från `time` (VViS har
+ * ~7 dygns historik). Riktning och byvind från samma mätning.
+ */
+export async function vvisWindAt(
+  stations: ObservationStationRef[],
+  time: number,
+  windowMs = 3_600_000,
+): Promise<{ station: ObservationStationRef; t: number; speed: number; fromDirection: number | null; gust: number | null }[]> {
+  if (stations.length === 0) return [];
+  const ids = stations.map((s) => `<EQ name="Measurepoint.Id" value="${esc(s.id)}"/>`).join("");
+  const iso = (ms: number) => new Date(ms).toISOString();
+  const rows = await query<ObservationRow>(
+    "WeatherObservation",
+    `<FILTER><AND><OR>${ids}</OR><GT name="Sample" value="${iso(time - windowMs)}"/><LT name="Sample" value="${iso(time + windowMs)}"/></AND></FILTER>` +
+      ["Measurepoint.Id", "Sample", "Wind.Speed.Value", "Wind.Direction.Value", "Aggregated10minutes.Wind.SpeedMax.Value"]
+        .map((f) => `<INCLUDE>${f}</INCLUDE>`)
+        .join(""),
+    86400,
+  );
+  return rows.flatMap((r) => {
+    const station = stations.find((s) => s.id === String(r.Measurepoint?.Id ?? ""));
+    const t = r.Sample ? Date.parse(r.Sample) : NaN;
+    const speed = r.Wind?.[0]?.Speed?.Value;
+    if (!station || !Number.isFinite(t) || !isValid("windSpeed", speed)) return [];
+    const dir = r.Wind?.[0]?.Direction?.Value;
+    const gust = r.Aggregated10minutes?.Wind?.SpeedMax?.Value;
+    return [{
+      station,
+      t,
+      speed: speed as number,
+      fromDirection: isValid("windDirection", dir) ? (dir as number) : null,
+      gust: isValid("gust", gust) ? (gust as number) : null,
+    }];
+  });
+}

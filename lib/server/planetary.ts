@@ -20,24 +20,60 @@ const REVALIDATE = 3600;
 export class PlanetaryError extends Error {}
 
 /** Visualisering per sensor – neutral, ingen klassificering. */
-const RENDER: Record<"SAR" | "optical", Record<string, string>> = {
-  // VV-backscatter i dB, gråskala. Lugnt vatten blir mörkt.
-  SAR: { expression: "10*log10(vv)", asset_as_band: "true", rescale: "-25,0", colormap_name: "gray" },
-  // Sann färg (TCI). nodata=0 gör ytan utanför scenen genomskinlig.
-  optical: { assets: "visual", asset_bidx: "visual|1,2,3", nodata: "0" },
+/**
+ * Visualiseringar – neutrala, ingen klassificering.
+ *
+ * Sentinel-1 SAR: VV-backscatter (gamma0, RTC) i dB med FAST skala −25…0 dB och
+ * färgskalan "turbo" (låg respons = blå → grön → gul → orange → röd → mörk).
+ * Skalan är densamma för alla scener (ingen autokontrast), så samma färg
+ * motsvarar samma dB i varje passage. Ingen specklefiltrering görs.
+ */
+export const SAR_DB_RANGE: [number, number] = [-25, 0];
+
+const RENDERINGS: Record<"SAR" | "optical", { id: string; label: string; params: [string, string][] }[]> = {
+  SAR: [
+    {
+      id: "sar-vv-db",
+      label: "SAR VV (dB)",
+      params: [
+        ["expression", "10*log10(vv)"],
+        ["asset_as_band", "true"],
+        ["rescale", SAR_DB_RANGE.join(",")],
+        ["colormap_name", "turbo"],
+      ],
+    },
+  ],
+  optical: [
+    // Sann färg (TCI). nodata=0 gör ytan utanför scenen genomskinlig.
+    { id: "true-color", label: "Sann färg", params: [["assets", "visual"], ["asset_bidx", "visual|1,2,3"], ["nodata", "0"]] },
+    // Falsk färg NIR-röd-grön: vegetation röd, vatten mörkt, snö/is ljust.
+    {
+      id: "false-color",
+      label: "Falsk färg (IR)",
+      params: [["assets", "B08"], ["assets", "B04"], ["assets", "B03"], ["rescale", "0,4000"], ["nodata", "0"]],
+    },
+  ],
 };
 
 const COLLECTION = { SAR: "sentinel-1-rtc", optical: "sentinel-2-l2a" } as const;
 
-export function tileUrl(sensor: "SAR" | "optical", itemId: string): string {
-  const qs = new URLSearchParams({ collection: COLLECTION[sensor], item: itemId, ...RENDER[sensor] });
+function tileUrl(sensor: "SAR" | "optical", itemId: string, params: [string, string][]): string {
+  const qs = new URLSearchParams([["collection", COLLECTION[sensor]], ["item", itemId], ...params]);
   return `${TILES}?${qs.toString()}`;
 }
 
 interface StacItem {
   id: string;
   bbox?: [number, number, number, number];
-  properties: { datetime: string; platform?: string; "eo:cloud_cover"?: number; "sat:orbit_state"?: string };
+  properties: {
+    datetime: string;
+    platform?: string;
+    "eo:cloud_cover"?: number;
+    "sat:orbit_state"?: string;
+    "sar:polarizations"?: string[];
+    "s1:product_type"?: string;
+    "sar:product_type"?: string;
+  };
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -72,7 +108,10 @@ function toScene(item: StacItem, sensor: "SAR" | "optical"): SatelliteScene {
     cloudCoverPct: sensor === "optical" ? (item.properties["eo:cloud_cover"] ?? null) : null,
     orbitState: item.properties["sat:orbit_state"] ?? null,
     bounds: item.bbox ?? null,
-    tileUrl: tileUrl(sensor, item.id),
+    polarizations: item.properties["sar:polarizations"] ?? null,
+    productType: sensor === "SAR" ? "RTC (GRD, gamma0)" : "L2A",
+    renderings: RENDERINGS[sensor].map((r) => ({ id: r.id, label: r.label, tileUrl: tileUrl(sensor, item.id, r.params) })),
+    tileUrl: tileUrl(sensor, item.id, RENDERINGS[sensor][0].params),
   };
 }
 
@@ -83,7 +122,7 @@ function toScene(item: StacItem, sensor: "SAR" | "optical"): SatelliteScene {
 export async function scenesAt(
   point: [number, number],
   to: Date,
-  { days = 30, limit = 8, maxCloud = 30 } = {},
+  { days = 30, limit = 5, maxCloud = 30 } = {},
 ): Promise<{ sar: SatelliteScene[]; optical: SatelliteScene[]; opticalAny: SatelliteScene | null }> {
   const from = new Date(to.getTime() - days * 86_400_000);
   const base = {

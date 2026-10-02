@@ -32,7 +32,7 @@ const AXIS_Y = 172;
 const WIND_ARROW_Y = 190;
 const WIND_TEXT_Y = 210;
 const HEIGHT = 218;
-const LEFT = 28;
+const LEFT = 32;
 const RIGHT = 6;
 /** Minsta bredd innan diagrammet blir horisontellt scrollbart. */
 const MIN_WIDTH = 320;
@@ -85,6 +85,13 @@ export default function Meteogram({ hours }: { hours: ForecastHour[] }) {
   const yTicks = useMemo(() => {
     const out: number[] = [];
     for (let t = dom.min; t <= dom.max + 1e-9; t += dom.step) out.push(t);
+    return out;
+  }, [dom]);
+  // Mellanstreck: varje grad vid steg ≤ 5, annars halvsteg.
+  const minorTicks = useMemo(() => {
+    const minor = dom.step <= 5 ? 1 : dom.step / 2;
+    const out: number[] = [];
+    for (let t = dom.min; t <= dom.max + 1e-9; t += minor) if (Math.abs(t % dom.step) > 1e-9) out.push(t);
     return out;
   }, [dom]);
   const ticks = useMemo(() => timeTicks(hours, width < 400 ? 6 : 3), [hours, width]);
@@ -151,11 +158,16 @@ export default function Meteogram({ hours }: { hours: ForecastHour[] }) {
           </text>
         ))}
 
-        {/* Temperatur-grid och axel */}
+        {/* Temperaturaxel: axellinje, huvudstreck med etikett, mellanstreck */}
+        <line x1={LEFT} x2={LEFT} y1={TEMP_TOP} y2={TEMP_BOTTOM} className={styles.yAxis} />
+        {minorTicks.map((t) => (
+          <line key={`n${t}`} x1={LEFT - 2.5} x2={LEFT} y1={yT(t)} y2={yT(t)} className={styles.yAxis} />
+        ))}
         {yTicks.map((t) => (
           <g key={`y${t}`}>
             <line x1={LEFT} x2={width - RIGHT} y1={yT(t)} y2={yT(t)} className={t === 0 ? styles.zero : styles.grid} />
-            <text x={LEFT - 4} y={yT(t) + 3} className={t === 0 ? `${styles.axis} ${styles.zeroLabel}` : styles.axis}>
+            <line x1={LEFT - 5} x2={LEFT} y1={yT(t)} y2={yT(t)} className={styles.yAxis} />
+            <text x={LEFT - 7} y={yT(t) + 3.5} className={t === 0 ? `${styles.tempTick} ${styles.zeroLabel}` : styles.tempTick}>
               {sign(t, 0)}°
             </text>
           </g>

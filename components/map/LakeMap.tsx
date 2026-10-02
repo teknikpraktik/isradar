@@ -33,7 +33,7 @@ interface Props {
 const SAT_SOURCE = "satellite";
 const SAT_LAYER = "satellite-raster";
 /** Sjöfyllning när satellitbild visas – tonas ned så att bilden syns. Konturer kvar. */
-const DIMMED_FILL = { lakes: 0.12, collection: 0.06 };
+const DIMMED_FILL = { lakes: 0.08, collection: 0.04 };
 
 const SOURCE = "lakes";
 // Ordning spelar ingen roll för träffar: queryRenderedFeatures ger översta först.

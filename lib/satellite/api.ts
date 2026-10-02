@@ -14,8 +14,29 @@ export interface SatelliteScene {
   cloudCoverPct: number | null;
   orbitState: string | null;
   bounds: [number, number, number, number] | null;
-  /** XYZ-tilemall för MapLibre ({z}/{x}/{y}). */
+  /** Sentinel-1: t.ex. ["VV","VH"]. Visas inte i UI. */
+  polarizations: string[] | null;
+  /** t.ex. "RTC (GRD, gamma0)" eller "L2A". */
+  productType: string;
+  /** Visningsvarianter (t.ex. sann/falsk färg). Första är standard. */
+  renderings: { id: string; label: string; tileUrl: string }[];
+  /** XYZ-tilemall för standardvisningen. */
   tileUrl: string;
+}
+
+/** Observerad vind vid en satellitpassage (GET /api/satellite/wind). */
+export interface PassWind {
+  /** Observationens tid (närmast passagen, högst ±1 h). */
+  observedAt: IsoDateTime;
+  speed: number;
+  fromDirection: number | null;
+  gust: number | null;
+  station: { name: string; source: "SMHI" | "TRAFIKVERKET_VVIS"; distanceKm: number };
+}
+
+export interface PassWindResponse {
+  passTime: IsoDateTime;
+  wind: PassWind | null;
 }
 
 export interface SatelliteApiResponse {

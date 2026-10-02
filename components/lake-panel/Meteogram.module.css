@@ -43,8 +43,21 @@
   text-anchor: end;
 }
 
-.zeroLabel {
+/* Temperaturens skala – tydligare än övriga axlar */
+.yAxis {
+  stroke: var(--text-muted);
+  stroke-width: 1;
+}
+
+.tempTick {
   fill: var(--text);
+  font-size: 10px;
+  text-anchor: end;
+}
+
+.zeroLabel {
+  fill: var(--text-strong);
+  font-weight: 600;
 }
 
 .day {

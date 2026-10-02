@@ -527,3 +527,63 @@
   line-height: 1.35;
   color: var(--text-faint);
 }
+
+.passWind {
+  margin: 0 0 6px;
+}
+
+.sarLegend {
+  margin: 2px 0 10px;
+}
+
+.sarLegendTitle {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.sarRamp {
+  height: 10px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+}
+
+.sarEnds {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 3px;
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--text-faint);
+}
+
+.sarEnds span:last-child {
+  text-align: right;
+}
+
+.renderToggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.renderToggle button {
+  min-height: 34px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.renderToggle .renderOn {
+  border-color: var(--accent);
+  color: var(--text-strong);
+  font-weight: 600;
+}

@@ -76,6 +76,7 @@ export default function LakePanel({ lake, onClose, onShowInfo, asOf, satellite =
           active={satellite}
           onShow={onSatellite ?? (() => {})}
           onOpacity={onSatelliteOpacity ?? (() => {})}
+          centroid={lake.centroid}
         />
         <WeatherSection recent={c.weatherRecent ?? LOADING} forecast={c.weatherForecast ?? LOADING} />
 

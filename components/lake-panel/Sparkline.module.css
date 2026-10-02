@@ -71,3 +71,14 @@
   color: var(--text-strong);
   font-weight: 500;
 }
+
+.yAxis {
+  stroke: var(--text-faint);
+  stroke-width: 1;
+}
+
+.yLabel {
+  fill: var(--text-muted);
+  font-size: 9px;
+  text-anchor: end;
+}

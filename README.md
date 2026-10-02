@@ -118,13 +118,16 @@ Beräknas av ISRADAR per temperaturstation och visas för alla vatten som använ
 
 `GET /api/satellite?lon&lat` (`lib/server/planetary.ts`) söker scener som täcker vattnets centroid de senaste 30 dagarna i Microsoft Planetary Computers öppna STAC och returnerar färdiga XYZ-tilemallar. Ingen nyckel eller env-variabel krävs.
 
-- **Sentinel-1:** `sentinel-1-rtc` (terrängkorrigerad), VV i dB (`10*log10(vv)`, −25–0 dB, gråskala). Upp till 8 scener.
-- **Sentinel-2:** `sentinel-2-l2a`, sann färg (`visual`), scener med ≤ 30 % molnighet (för hela 100 km-rutan); annars senaste oavsett moln. Dubbletter från överlappande rutor tas bort.
-- **Leverans:** MapLibre-rasterkälla med tiles direkt från Planetary Computer (CORS öppet, PNG med genomskinlighet utanför scenen, tiles cachas 1 h hos dem; scensökning cachas 1 h på servern). Inga rasterfiler laddas ned till servern.
-- **Lagerordning:** baskarta → satellitraster → ortnamn → sjöpolygoner → etiketter. Sjöfyllningen tonas ned (0,12) när satellitlager visas; konturer, hover och klick finns kvar.
-- **UI:** ett lager åt gången, opacitet 30–100 % (default 70 %), bläddring mellan scener, tidsetikett på kartan. Stängs vid byte av vatten. Tile-fel ger "Satellitbild kunde inte laddas".
-- **Begränsningar:** Planetary Computer publicerar Sentinel-1 RTC med några timmars fördröjning. Scener kan täcka vattnet bara delvis (stråkets kant). Radarbilden är rå SAR – ingen klassning.
-- **Framåt:** is/vatten-klassning och förändringsdetektion kan byggas på samma scen-id:n (t.ex. Planetary Computers statistik-endpoint per polygon, eller differens mellan två RTC-scener).
+- **Sentinel-1 SAR:** `sentinel-1-rtc` (GRD → radiometriskt terrängkorrigerad gamma0, VV+VH; produkt från Planetary Computer). Visas: VV i dB (`10*log10(vv)`) med **fast** skala −25…0 dB och titilers färgskala `turbo` (låg respons blå → grön → gul → orange → röd → mörk). Ingen autokontrast per scen, så samma färg = samma dB i alla passager. Ingen extra specklefiltrering (RTC-produkten som den är). De 5 senaste passagerna, med satellit och stigande/fallande bana. VH lagras som metadata (`polarizations`) men visas inte.
+- **Legend:** "SAR ytrespons" – Låg respons/Slät yta ↔ Hög respons/Grov yta. Inga isklasser.
+- **Vind vid passage:** `GET /api/satellite/wind?lon&lat&time` – observerad vind inom ±1 h från passagen: SMHI `latest-months` (timvärden ~4 mån, param 4/3/21) och Trafikverket VViS (5-min, ~7 dygn). Närmaste 3 stationer inom 50 km per källa; vald på avstånd + 0,5 km per minuts tidsskillnad (`lib/satellite/passWind.ts`). Riktning och byvind från samma station och tid. Saknas observation: "Vind vid passage: ingen observation tillgänglig". Ingen prognos som ersättning. CDN-cache 24 h (30 min om inget hittades).
+- **Sentinel-2 optisk:** `sentinel-2-l2a`, sann färg (`visual`) eller falsk färg (B08/B04/B03, 0–4000) via `renderings`. Scener med ≤ 30 % molnighet (för hela 100 km-rutan); annars senaste oavsett moln. Dubbletter från överlappande rutor tas bort.
+- **Scenmodell:** `SatelliteScene` (`lib/satellite/api.ts`): id, sensor, tid, satellit, bana, moln, bbox, polarisationer, produkttyp, `renderings[]` (id, etikett, tile-URL).
+- **Leverans:** MapLibre-rasterkälla med tiles direkt från Planetary Computer (CORS öppet, PNG med genomskinlighet utanför scenen, tiles cachas 1 h hos dem; scensökning cachas 1 h på CDN). Inga rasterfiler laddas ned till servern.
+- **Lagerordning:** baskarta → satellitraster → ortnamn → sjöpolygoner → etiketter. Sjöfyllningen tonas ned (8 %, samlingsområden 4 %) när satellitlager visas; konturer, hover och klick finns kvar.
+- **UI:** ett lager åt gången, opacitet 30–100 % (default 70 %), bläddring mellan passager, etikett på kartan (sensor, tid, satellit, bana). Stängs vid byte av vatten. Tile-fel ger "Sentinel-1-bild kunde inte laddas" (resp. Sentinel-2).
+- **Begränsningar:** Planetary Computer publicerar Sentinel-1 RTC med några timmars fördröjning. Scener kan täcka vattnet bara delvis (stråkets kant). Absolut dB varierar mellan passager med infallsvinkel, bana (stigande/fallande), vind och speckle – fast skala gör färgerna jämförbara men inte fysikaliskt likvärdiga. VViS-historik räcker bara ~7 dygn; äldre passager får vind enbart från SMHI.
+- **Framåt (ej byggt):** jämförelse två passager (swipe/sida vid sida) kan använda två `SatelliteScene` samtidigt. Förändringsdetektion kräver samma bana (relative orbit) för jämförbar geometri, differens i dB (t.ex. titiler-expression över två items eller statistik-endpoint per sjöpolygon), tröskel mot speckle och vindkontext – presenteras som "förändrad radarrespons", aldrig som "is".
 
 ### Trafikverket VViS (kompletterande observationer)
 

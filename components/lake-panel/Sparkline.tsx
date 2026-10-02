@@ -53,10 +53,14 @@ export default function Sparkline({
   const PAD_TOP = 6;
   const AXIS = 12;
   const plotH = H - PAD_TOP - AXIS;
-  const xAt = (t: number) => ((t - t0) / (t1 - t0)) * width;
+  // Temperatur får en smal axelmarginal med skalstreck; nederbörd ingen.
+  const LEFT = kind === "temperature" ? 26 : 0;
+  const plotW = width - LEFT;
+  const xAt = (t: number) => LEFT + ((t - t0) / (t1 - t0)) * plotW;
 
   let yAt: (v: number) => number;
   let zeroY: number | null = null;
+  const yTicks: number[] = [];
   if (kind === "temperature") {
     const vs = points.map((p) => p.v);
     const lo = Math.min(...vs);
@@ -67,6 +71,9 @@ export default function Sparkline({
     const min = mid - half;
     const max = mid + half;
     yAt = (v) => PAD_TOP + (1 - (v - min) / (max - min)) * plotH;
+    // 2–3 avrundade skalstreck – fler får inte plats på ~40 px.
+    const step = [1, 2, 5, 10, 20].find((st) => Math.floor(max / st) - Math.ceil(min / st) + 1 <= 3) ?? 20;
+    for (let v = Math.ceil(min / step) * step; v <= max + 1e-9; v += step) yTicks.push(v);
     // 0 °C bara när kurvan passerar eller ligger nära fryspunkten.
     if (min < 0 && max > 0) zeroY = yAt(0);
   } else {
@@ -103,7 +110,21 @@ export default function Sparkline({
       aria-hidden
     >
       <svg width={width} height={H} viewBox={`0 0 ${width} ${H}`} className={styles.svg}>
-        {zeroY !== null && <line x1={0} x2={width} y1={zeroY} y2={zeroY} className={styles.zero} />}
+        {kind === "temperature" && (
+          <>
+            <line x1={LEFT} x2={LEFT} y1={PAD_TOP} y2={PAD_TOP + plotH} className={styles.yAxis} />
+            {yTicks.map((v) => (
+              <g key={v}>
+                <line x1={LEFT - 4} x2={LEFT} y1={yAt(v)} y2={yAt(v)} className={styles.yAxis} />
+                <text x={LEFT - 6} y={yAt(v) + 3} className={styles.yLabel}>
+                  {v < 0 ? "−" : ""}
+                  {Math.abs(v)}°
+                </text>
+              </g>
+            ))}
+          </>
+        )}
+        {zeroY !== null && <line x1={LEFT} x2={width} y1={zeroY} y2={zeroY} className={styles.zero} />}
         {kind === "precipitation" && (
           <line x1={0} x2={width} y1={PAD_TOP + plotH} y2={PAD_TOP + plotH} className={styles.base} />
         )}

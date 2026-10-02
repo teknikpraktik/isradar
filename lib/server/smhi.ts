@@ -245,3 +245,61 @@ export const SMHI_FORECAST_SOURCE = {
   url: "https://www.smhi.se/data/oppna-data",
   license: "CC BY 4.0",
 } as const;
+
+/* ------------------------------------------------------------------ */
+/* Observation vid en given tidpunkt (satellitpassage)                 */
+
+async function latestMonthsHourly(param: number, stationId: string): Promise<SmhiHourly[]> {
+  const url = `${BASE}/parameter/${param}/station/${stationId}/period/latest-months/data.json`;
+  const res = await fetch(url, { next: { revalidate: 3600 } });
+  if (res.status === 404) return [];
+  if (!res.ok) throw new SmhiError(`SMHI svarade ${res.status} för ${url}`);
+  const json = (await res.json()) as { value: { date: number; value: string; quality: string }[] | null };
+  return (json.value ?? [])
+    .map((x) => ({ t: x.date, v: Number(x.value), quality: x.quality }))
+    .filter((x) => Number.isFinite(x.v));
+}
+
+export interface SmhiWindAt {
+  station: { name: string; distanceKm: number };
+  t: number;
+  speed: number;
+  fromDirection: number | null;
+  gust: number | null;
+}
+
+/**
+ * Vindobservationer inom ±windowMs från `time` för de närmaste stationerna
+ * (latest-months, ~4 månader). Riktning och byvind från samma station och timme.
+ */
+export async function smhiWindAt(
+  lat: number,
+  lon: number,
+  time: number,
+  { maxKm = 50, limit = 3, windowMs = 3_600_000 } = {},
+): Promise<SmhiWindAt[]> {
+  const stations = (await stationsFor(SMHI_PARAM.windSpeed))
+    .filter((s) => s.to >= time - windowMs)
+    .map((s) => ({ ...s, distanceKm: distKm(lat, lon, s.lat, s.lon) }))
+    .filter((s) => s.distanceKm <= maxKm)
+    .sort((a, b) => a.distanceKm - b.distanceKm)
+    .slice(0, limit);
+  const near = (vs: SmhiHourly[]) => vs.filter((v) => Math.abs(v.t - time) <= windowMs);
+  const per = await Promise.all(
+    stations.map(async (s) => {
+      const [speed, dir, gust] = await Promise.all(
+        [SMHI_PARAM.windSpeed, SMHI_PARAM.windDirection, SMHI_PARAM.gust].map((p) =>
+          latestMonthsHourly(p, s.id).then(near, () => [] as SmhiHourly[]),
+        ),
+      );
+      return speed.map((v) => ({
+        station: { name: s.name, distanceKm: Math.round(s.distanceKm) },
+        t: v.t,
+        speed: v.v,
+        fromDirection: dir.find((d) => d.t === v.t)?.v ?? null,
+        gust: gust.find((g) => g.t === v.t)?.v ?? null,
+      }));
+    }),
+  );
+  return per.flat();
+}

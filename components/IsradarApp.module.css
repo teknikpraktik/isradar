@@ -186,6 +186,11 @@
   color: var(--text-strong);
   pointer-events: none;
   white-space: nowrap;
+  flex-wrap: wrap;
+  justify-content: center;
+  column-gap: 8px;
+  row-gap: 0;
+  max-width: calc(100vw - 120px);
 }
 
 .satLabel span:first-child {
