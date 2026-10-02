@@ -12,7 +12,7 @@
  */
 import { useState } from "react";
 import { SatelliteControls } from "@/components/lake-panel/sections";
-import { RIDEABILITY_HELP, RIDEABILITY_TITLE } from "@/lib/rideability/config";
+import { RIDEABILITY_TITLE } from "@/lib/rideability/config";
 import { VANERN_HINT } from "@/lib/vanern/config";
 import type { LngLat } from "@/types/lake";
 import type { SatelliteScene } from "@/lib/satellite/api";
@@ -106,7 +106,6 @@ export default function LayerControl({ colorLayer, onColorLayer, rideability, co
             checked={riding}
             onChange={(on) => onColorLayer(on ? "rideability" : "none")}
             label={RIDEABILITY_TITLE}
-            busy={riding && rideability.loading}
           />
           {/* BETA är en ren märkning utanför reglaget – inte klickbar */}
           <span className={styles.beta} aria-label="Betaversion">
@@ -124,7 +123,7 @@ export default function LayerControl({ colorLayer, onColorLayer, rideability, co
         </div>
         {modelInfo && (
           <p className={`${styles.help} ${styles.modelInfo}`}>
-            {RIDEABILITY_HELP} {VANERN_HINT}{" "}
+            {VANERN_HINT}{" "}
             <a href="/om" target="_blank" rel="noopener noreferrer">
               Läs mer här
             </a>
@@ -133,7 +132,7 @@ export default function LayerControl({ colorLayer, onColorLayer, rideability, co
         {riding && rideability.failed.length > 0 && (
           <p className={styles.help}>Kunde inte hämta: {rideability.failed.join(", ")}. Räknas som data saknas.</p>
         )}
-        {riding && <RideabilityLegend loading={rideability.loading} />}
+        {riding && <RideabilityLegend />}
 
         <h3 className={styles.group}>Analyslager</h3>
         <p className={`${styles.help} ${styles.desktopOnly}`}>Underliggande beslutsunderlag.</p>

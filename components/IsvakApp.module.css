@@ -240,7 +240,7 @@
 .disclaimer {
   position: fixed;
   right: 12px; /* linjerad med sjöpanelens högerkant */
-  bottom: 46px; /* ovanför kartans källhänvisning (©) med luft emellan; källhänvisningen måste synas */
+  bottom: 58px; /* ovanför kartans källhänvisning (©) med luft emellan; källhänvisningen måste synas */
   z-index: 30;
   /* Lika bred som sjövyns panel (400 px) på bred skärm */
   width: min(400px, calc(100vw - 24px));
@@ -260,14 +260,6 @@
 
 .disclaimer p {
   margin: 0;
-}
-
-/* "Om Isvak" på egen rad */
-.disclaimer a {
-  display: block;
-  margin-top: 4px;
-  color: var(--accent);
-  width: fit-content;
 }
 
 /* Stängknapp (dator och mobil) */
@@ -296,7 +288,7 @@
 @media (max-width: 767px) {
   .disclaimer {
     right: 10px;
-    bottom: 50px;
+    bottom: 62px;
     width: calc(100vw - 20px);
   }
   .disclaimer[data-hidden-mobile="true"] {
@@ -310,7 +302,7 @@
   box-sizing: border-box;
   position: fixed;
   right: 12px;
-  bottom: 46px;
+  bottom: 58px;
   z-index: 30;
   display: inline-flex;
   align-items: center;
@@ -333,9 +325,51 @@
 
 @media (max-width: 767px) {
   .disclaimerReopen {
-    bottom: 50px;
+    bottom: 62px;
   }
   .disclaimerReopen[data-hidden-mobile="true"] {
+    display: none;
+  }
+}
+
+/*
+ * Längst ner till höger: "Om Isvak", copyright och kontakt. Kartans källhänvisning (©) lyfts
+ * ett steg så att den ligger ovanför raden, och friskrivningen ligger ovanför källhänvisningen.
+ */
+.footerBar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  background: rgb(12 16 21 / 0.82);
+  border-top-left-radius: var(--radius);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.footerBar a {
+  color: var(--accent);
+}
+
+:global(.maplibregl-ctrl-bottom-right) {
+  bottom: 14px !important;
+}
+
+@media (max-width: 767px) {
+  .footerBar {
+    left: 0;
+    justify-content: flex-end;
+    border-top-left-radius: 0;
+    flex-wrap: wrap;
+    row-gap: 0;
+  }
+  .footerBar[data-hidden-mobile="true"] {
     display: none;
   }
 }

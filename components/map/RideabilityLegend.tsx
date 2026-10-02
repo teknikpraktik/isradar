@@ -4,7 +4,7 @@
 import { CATEGORIES } from "@/lib/rideability/config";
 import styles from "./Legend.module.css";
 
-export default function RideabilityLegend({ loading }: { loading: boolean }) {
+export default function RideabilityLegend() {
   return (
     <div className={styles.legend} role="group" aria-label="Modellerad åkbarhet: kategorier">
       <ul className={styles.list} style={{ marginTop: 0 }}>
@@ -15,7 +15,6 @@ export default function RideabilityLegend({ loading }: { loading: boolean }) {
           </li>
         ))}
       </ul>
-      {loading && <p className={styles.note}>Hämtar underlag…</p>}
     </div>
   );
 }

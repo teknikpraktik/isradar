@@ -124,5 +124,3 @@ export const MISSING_ICE_CAP: RideabilityCategoryId = "favourable";
 export const MIN_SOURCES = 3;
 
 export const RIDEABILITY_TITLE = "Modellerad åkbarhet";
-export const RIDEABILITY_HELP =
-  "Sammanvägd indikator baserad på köldmängd, modellerad is och snö, satellitdata och senaste nederbörd. Ska alltid verifieras på plats.";

@@ -297,10 +297,17 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
           bedöma is.{" "}
           Det är förenat med livsfara att beträda naturis utan rätt kunskap, sällskap och utrustning.
         </p>
+      </div>
+      {/* Längst ner till höger, under friskrivningen och kartans källhänvisning */}
+      <footer className={styles.footerBar} data-hidden-mobile={lake !== null}>
         <a href="/om" target="_blank" rel="noopener noreferrer">
           Om Isvak
         </a>
-      </div>
+        <span aria-hidden>·</span>
+        <span>© 2026 Per Björkman Teknikpraktik</span>
+        <span aria-hidden>·</span>
+        <a href="mailto:per.a.bjorkman@gmail.com">Kontakt</a>
+      </footer>
       {/* Liten knapp som tar fram friskrivningen igen när den stängts */}
       {disclaimerClosed && (
         <button
