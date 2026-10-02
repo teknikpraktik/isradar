@@ -120,6 +120,8 @@ export interface LakeFeatureProperties {
   label?: string;
   /** Etikettnivå efter storlek: 0 stor (syns utzoomat), 1 mellan, 2 liten. */
   lt?: 0 | 1 | 2;
+  /** Förmodad åkbarhet (kategori-id), sätts bara när det lagret är aktivt. */
+  rcat?: string;
 }
 
 export type LakeFeature = GeoJSON.Feature<

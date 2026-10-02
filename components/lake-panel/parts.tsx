@@ -67,7 +67,7 @@ export function Section({
   hintLabel,
   children,
 }: {
-  title: string;
+  title: ReactNode;
   kinds: DataKind[];
   status: SectionStatus;
   source?: string;
@@ -82,7 +82,7 @@ export function Section({
       <header className={styles.sectionHead}>
         <h3 className={styles.sectionTitle}>
           {title}
-          {hint && <HintButton open={open} onToggle={toggle} label={hintLabel ?? `Information om ${title}`} />}
+          {hint && <HintButton open={open} onToggle={toggle} label={hintLabel ?? `Information om ${typeof title === "string" ? title : "avsnittet"}`} />}
         </h3>
         <div className={styles.sectionTags}>
           {kinds.map((k) => (

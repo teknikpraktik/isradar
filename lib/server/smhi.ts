@@ -174,6 +174,42 @@ export async function nearestLatestDay(
   return null;
 }
 
+/**
+ * Som nearestLatestDay men för många punkter: varje station hämtas högst en
+ * gång. Resultat i samma ordning som `points`; null = ingen station med data.
+ */
+export async function nearestLatestDayForPoints(
+  param: number,
+  points: { lat: number; lon: number }[],
+  { maxKm = 50, tries = 3 } = {},
+): Promise<(NearestSeries | null)[]> {
+  const recent = Date.now() - 2 * 86_400_000;
+  const stations = (await stationsFor(param)).filter((s) => s.to >= recent);
+  const series = new Map<string, Promise<SmhiHourly[]>>();
+  const load = (id: string) => {
+    let p = series.get(id);
+    if (!p) {
+      p = latestDay(param, id).catch(() => []);
+      series.set(id, p);
+    }
+    return p;
+  };
+  return Promise.all(
+    points.map(async ({ lat, lon }) => {
+      const candidates = stations
+        .map((s) => ({ ...s, distanceKm: distKm(lat, lon, s.lat, s.lon) }))
+        .filter((s) => s.distanceKm <= maxKm)
+        .sort((a, b) => a.distanceKm - b.distanceKm)
+        .slice(0, tries);
+      for (const s of candidates) {
+        const values = await load(s.id);
+        if (values.length) return { station: { ...s, distanceKm: Math.round(s.distanceKm) }, values };
+      }
+      return null;
+    }),
+  );
+}
+
 /** Timvärden för en given station (t.ex. vindriktning vid samma station som vindhastighet). */
 export const latestDayForStation = latestDay;
 

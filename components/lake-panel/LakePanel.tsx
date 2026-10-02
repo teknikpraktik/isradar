@@ -7,7 +7,9 @@ import type { Lake } from "@/types/lake";
 import type { SatelliteScene } from "@/lib/satellite/api";
 import styles from "./LakePanel.module.css";
 import { LOADING } from "./parts";
+import { RideabilityDetail, RideabilityToggleSection } from "./Rideability";
 import { ModelSection, OverviewSection, SatelliteSection, WeatherSection } from "./sections";
+import type { RideabilityResult } from "@/lib/rideability/types";
 
 interface Props {
   lake: Lake;
@@ -18,9 +20,17 @@ interface Props {
   satellite?: { scene: SatelliteScene; opacity: number } | null;
   onSatellite?: (scene: SatelliteScene | null) => void;
   onSatelliteOpacity?: (opacity: number) => void;
+  /** Förmodad åkbarhet · BETA (kartlager + detaljer). */
+  rideability?: {
+    active: boolean;
+    loading: boolean;
+    failed: string[];
+    result: RideabilityResult | undefined;
+    onToggle: (on: boolean) => void;
+  };
 }
 
-export default function LakePanel({ lake, onClose, onShowInfo, asOf, satellite = null, onSatellite, onSatelliteOpacity }: Props) {
+export default function LakePanel({ lake, onClose, onShowInfo, asOf, satellite = null, onSatellite, onSatelliteOpacity, rideability }: Props) {
   const [loaded, setLoaded] = useState<{ key: string; data: Partial<LakeConditions> }>({ key: "", data: {} });
   const [expanded, setExpanded] = useState(false);
 
@@ -69,6 +79,7 @@ export default function LakePanel({ lake, onClose, onShowInfo, asOf, satellite =
       </header>
 
       <div className={styles.body}>
+        {rideability?.active && <RideabilityDetail result={rideability.result} loading={rideability.loading} />}
         <OverviewSection lake={lake} cold={c.currentCold ?? LOADING} asOf={asOf} />
         <ModelSection meps={c.meps ?? LOADING} />
         <SatelliteSection
@@ -79,6 +90,14 @@ export default function LakePanel({ lake, onClose, onShowInfo, asOf, satellite =
           centroid={lake.centroid}
         />
         <WeatherSection recent={c.weatherRecent ?? LOADING} forecast={c.weatherForecast ?? LOADING} />
+        {rideability && (
+          <RideabilityToggleSection
+            active={rideability.active}
+            loading={rideability.loading}
+            failed={rideability.failed}
+            onToggle={rideability.onToggle}
+          />
+        )}
 
         <p className={styles.disclaimer}>
           Visar inte om isen är bärig. Bedöm alltid på plats.{" "}

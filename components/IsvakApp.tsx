@@ -6,12 +6,16 @@ import LakePanel from "@/components/lake-panel/LakePanel";
 import LakeMap, { type FocusRequest } from "@/components/map/LakeMap";
 import LocateButton from "@/components/map/LocateButton";
 import ColdMapInfo from "@/components/map/ColdMapInfo";
+import RideabilityLegend from "@/components/map/RideabilityLegend";
 import LakeSearch from "@/components/search/LakeSearch";
 import InfoDialog from "@/components/ui/InfoDialog";
 import { isIsoDate } from "@/lib/cold/api";
 import { fetchCurrentColdByStation } from "@/lib/data/cold";
 import { buildLake, lakeRepository, type RegionLakeData } from "@/lib/data/lakes";
+import { loadRideabilityBulk, type RideabilityBulkResult } from "@/lib/data/rideability";
 import { enrichLakeFeatures } from "@/lib/map/lakeFeatures";
+import { computeRideability } from "@/lib/rideability/inputs";
+import { withRideabilityCategory } from "@/lib/rideability/mapStyle";
 import { formatDate, formatShortDateTime } from "@/lib/format";
 import type { SatelliteScene } from "@/lib/satellite/api";
 import { getRegion } from "@/lib/regions";
@@ -72,6 +76,35 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
     [data, currentCold, coldKey],
   );
 
+  // Förmodad åkbarhet · BETA: ersätter köldmängdslagret medan det är aktivt
+  // (ömsesidigt exklusiva). Bulkdata hämtas först när lagret slås på.
+  const [rideabilityOn, setRideabilityOn] = useState(false);
+  const [bulk, setBulk] = useState<{ key: string; result: RideabilityBulkResult } | null>(null);
+  const bulkKey = data ? `${data.regionId}|${asOf ?? ""}` : null;
+  useEffect(() => {
+    if (!rideabilityOn || !data || !bulkKey) return;
+    let cancelled = false;
+    // MEPS och väder finns bara för nuläget – i historiskt läge räknas de som saknade.
+    const load = asOf
+      ? Promise.resolve<RideabilityBulkResult>({ data: { mepsCells: null, precipitationMm: null, sentinel: null }, failed: [] })
+      : loadRideabilityBulk(data.index);
+    load.then((result) => !cancelled && setBulk({ key: bulkKey, result }));
+    return () => {
+      cancelled = true;
+    };
+  }, [rideabilityOn, data, asOf, bulkKey]);
+  const bulkReady = bulk !== null && bulk.key === bulkKey;
+  const rideabilityLoading = rideabilityOn && !bulkReady;
+  const rideability = useMemo(() => {
+    if (!rideabilityOn || !data || !mapLakes || !bulkReady) return null;
+    const gdPercent = new Map(mapLakes.features.map((f) => [f.properties.id, f.properties.pct ?? null]));
+    return computeRideability(data.index, { ...bulk.result.data, gdPercent });
+  }, [rideabilityOn, data, mapLakes, bulk, bulkReady]);
+  const colorLakes = useMemo(
+    () => (rideabilityOn && mapLakes ? withRideabilityCategory(mapLakes, rideability ?? new Map()) : mapLakes),
+    [rideabilityOn, mapLakes, rideability],
+  );
+
   const legendFlags = useMemo(
     () => ({
       showCollection: !!data?.index.some((l) => l.areaType === "COLLECTION_AREA"),
@@ -100,7 +133,8 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
     <main className={styles.app}>
       <LakeMap
         region={region}
-        lakes={mapLakes}
+        lakes={colorLakes}
+        colorMode={rideabilityOn ? "rideability" : "cold"}
         selectedId={selectedId}
         focus={focus}
         userPosition={userPosition}
@@ -154,7 +188,11 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
       </div>
 
       <div className={styles.legend} data-hidden-mobile={lake !== null}>
-        <ColdMapInfo {...legendFlags} />
+        {rideabilityOn ? (
+          <RideabilityLegend loading={rideabilityLoading} onClose={() => setRideabilityOn(false)} />
+        ) : (
+          <ColdMapInfo {...legendFlags} />
+        )}
       </div>
 
       {lake && (
@@ -164,6 +202,13 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
           onClose={() => setSelectedId(null)}
           onShowInfo={() => setInfoOpen(true)}
           asOf={asOf}
+          rideability={{
+            active: rideabilityOn,
+            loading: rideabilityLoading,
+            failed: bulkReady ? bulk.result.failed : [],
+            result: rideability?.get(lake.id),
+            onToggle: setRideabilityOn,
+          }}
           satellite={activeSatellite}
           onSatellite={(scene) => {
             setSatLakeId(lake.id);

@@ -7,6 +7,7 @@ import type { LakeFeatureCollection } from "@/lib/data/lakes";
 import { LAKE_LABEL_FONT, basemapStyle } from "@/lib/map/basemap";
 import { COLLECTION_AREA_STYLE, coldFillColor, coldLineColor, isCollectionAreaFilter } from "@/lib/map/coldScale";
 import { loadMapLibre } from "@/lib/map/maplibre";
+import { rideabilityFillColor, rideabilityLineColor } from "@/lib/rideability/mapStyle";
 import type { BBox, LakeId, LngLat } from "@/types/lake";
 import type { RegionDefinition } from "@/types/region";
 import type { SatelliteScene } from "@/lib/satellite/api";
@@ -28,6 +29,8 @@ interface Props {
   /** Aktivt satellitlager (ett åt gången) eller null. */
   satellite?: { scene: SatelliteScene; opacity: number } | null;
   onSatelliteError?: () => void;
+  /** Vad sjöarnas färg visar. Default köldmängd. */
+  colorMode?: "cold" | "rideability";
 }
 
 const SAT_SOURCE = "satellite";
@@ -57,6 +60,7 @@ export default function LakeMap({
   onSelect,
   satellite = null,
   onSatelliteError,
+  colorMode = "cold",
 }: Props) {
   const onSatErrorRef = useRef(onSatelliteError);
   useEffect(() => {
@@ -160,6 +164,17 @@ export default function LakeMap({
     if (!ready || !map || !lakes) return;
     (map.getSource(SOURCE) as GeoJSONSource).setData(lakes);
   }, [ready, lakes]);
+
+  // Färgläge: köldmängd eller Förmodad åkbarhet (ömsesidigt exklusiva).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map) return;
+    const riding = colorMode === "rideability";
+    const fill = riding ? rideabilityFillColor() : coldFillColor();
+    map.setPaintProperty("lakes-fill", "fill-color", fill as never);
+    map.setPaintProperty("lakes-point", "circle-color", fill as never);
+    map.setPaintProperty("lakes-line", "line-color", (riding ? rideabilityLineColor() : coldLineColor()) as never);
+  }, [ready, colorMode]);
 
   // Satellitlager: rasterkälla under ortnamn och sjölager (baskarta → satellit
   // → sjöar → etiketter). Byts helt vid ny scen; städas bort när det stängs.

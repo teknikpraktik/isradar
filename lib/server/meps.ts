@@ -109,6 +109,43 @@ export async function sampleCells(file: string, cells: MepsCell[]): Promise<Meps
   return { times, perStep, validCells: lakeCells.size, totalCells: valid.length };
 }
 
+/** Rutor per OPeNDAP-anrop i analyshämtningen (bara tidssteg 0). */
+const MAX_ANALYSIS_BOX = 40000;
+
+/**
+ * Analyssteget (+0 h) för många rutor i ett svep, per ruta: [is m, snö m] eller
+ * null utan sjöyta. Hämtar bara tidssteg 0 – betydligt lättare än sampleCells.
+ */
+export async function sampleAnalysis(
+  file: string,
+  runTime: string,
+  cells: MepsCell[],
+): Promise<{ validAt: string; values: ([number, number | null] | null)[] }> {
+  const valid = cells.filter(isValidCell);
+  if (valid.length === 0) throw new MepsError("Inga giltiga gitterrutor");
+  const [y0, y1] = [Math.min(...valid.map((c) => c[0])), Math.max(...valid.map((c) => c[0]))];
+  const [x0, x1] = [Math.min(...valid.map((c) => c[1])), Math.max(...valid.map((c) => c[1]))];
+  if ((y1 - y0 + 1) * (x1 - x0 + 1) > MAX_ANALYSIS_BOX) throw new MepsError("För stort område för MEPS-analys");
+  const sel = `[0:1:0][${y0}:1:${y1}][${x0}:1:${x1}]`;
+  const query = MEPS_VARIABLES.map((v) => `${v}${sel}`).join(",");
+  const text = await getText(`${DODS}/${file}.ascii?${encodeURIComponent(query).replace(/%2C/g, ",")}`, 3600);
+  const { values, times } = parseAscii(text);
+  for (const v of MEPS_VARIABLES) if (!values[v]) throw new MepsError(`Saknar ${v} i svaret`);
+  if (times[0] !== Date.parse(runTime)) throw new MepsError("MEPS tidssteg 0 är inte analystiden");
+  const ice = values.SFX_H_ICE!;
+  const snow = values.SFX_H_SNOW!;
+  return {
+    validAt: runTime,
+    values: cells.map((c) => {
+      if (!isValidCell(c)) return null;
+      const i = ice[0]?.[c[0] - y0]?.[c[1] - x0];
+      if (i === undefined || !(i < FILL_LIMIT)) return null;
+      const s = snow[0]?.[c[0] - y0]?.[c[1] - x0];
+      return [i, s !== undefined && s < FILL_LIMIT ? s : null];
+    }),
+  };
+}
+
 export const MEPS_SOURCE = {
   id: "met-meps",
   name: "MET Norway MEPS (FLake)",
