@@ -26,20 +26,14 @@ export default function ColdLegend({ showCollection = false, showMissing = false
         <strong>Färg</strong> = aktuell köldmängd i procent av historisk referens. <strong>Siffran</strong> efter
         sjönamnet = historisk referens-GD, alltså köldmängden när vattnet tidigare blivit åkbart.
       </p>
-      <div className={styles.ramp} aria-hidden>
-        {COLD_PROGRESS_CLASSES.map((c) => (
-          <span key={c.id} style={{ background: c.color }} title={`${c.range} · ${c.status}`} />
-        ))}
-      </div>
-      <div className={styles.rampEnds}>
-        <span>Långt från referensen</span>
-        <span>Nära / över</span>
-      </div>
       <ul className={styles.list}>
-        <li>
-          <span className={styles.swatch} style={{ background: COLD_PROGRESS_CLASSES[0].color }} />
-          <span>0 % · {COLD_PROGRESS_CLASSES[0].status}</span>
-        </li>
+        {COLD_PROGRESS_CLASSES.map((c) => (
+          <li key={c.id}>
+            <span className={styles.swatch} style={{ background: c.color }} />
+            <span className={styles.range}>{c.range}</span>
+            <span className={styles.status}>{c.status}</span>
+          </li>
+        ))}
         {showMissing && (
           <li>
             <span className={styles.swatch} style={{ border: `1px dashed ${NO_VALUE_STYLE.line}` }} />

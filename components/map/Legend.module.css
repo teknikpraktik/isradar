@@ -59,3 +59,16 @@
   line-height: 1.4;
   color: var(--text-faint);
 }
+
+/* Köldmängdsklasser: intervall alltid synligt, inte bara vid hovring */
+.range {
+  flex: none;
+  min-width: 62px;
+  color: var(--text-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.status {
+  color: var(--text-muted);
+  font-size: 10.5px;
+}
