@@ -1,7 +1,7 @@
 "use client";
 
 import type { LakeConditions } from "@/lib/data/conditions";
-import { distanceKm, formatDate, formatDateShort, formatShortDateTime } from "@/lib/format";
+import { distanceKm, formatDate,formatShortDateTime } from "@/lib/format";
 import { COLLECTION_AREA_NOTE, formatProgressPercent, getColdProgress } from "@/lib/map/coldScale";
 import { useEffect, useState } from "react";
 import { getPassWind } from "@/lib/data/satellite";
@@ -14,16 +14,12 @@ import { MIN_SPARKLINE_POINTS } from "@/lib/weather/meteogram";
 
 const PRECIP_HINT =
   "Anges som vattenekvivalent: 1 mm = 1 liter vatten per m². Vid snöfall kan nysnön bli flera gånger djupare. SMHI:s prognos saknar egen snöparameter – beräknad nysnö är en grov temperaturbaserad uppskattning. Skiljs från MEPS snö på is (befintligt snötäcke).";
-import type {
-  ColdAmountObservation,
-  WeatherStation,
-} from "@/types/observations";
+import type { ColdAmountObservation } from "@/types/observations";
 import type { Lake } from "@/types/lake";
 import styles from "./LakePanel.module.css";
 import { KindBadge, Row, Section, fmtQ, fmtSignedQ, type Loadable } from "./parts";
 import {
   formatPrecipitation,
-  formatStation,
   formatTemperature,
   formatTemperatureRange,
   formatWind,
@@ -42,14 +38,6 @@ type L<K extends keyof LakeConditions> = LakeConditions[K] | { status: "loading"
 /* ------------------------------------------------------------------ */
 /* KÖLDMÄNGD                                                           */
 /* ------------------------------------------------------------------ */
-
-/** "t.o.m. 15 feb · Örebro Flygplats · 2 d saknas" */
-function coldMeta(c: ColdAmountObservation): string {
-  const t = c.provenance.time;
-  if (t.kind !== "observation") return "";
-  const lastDay = new Date(Date.parse(t.observedAt) - 1).toISOString().slice(0, 10);
-  return join(`t.o.m. ${formatDateShort(lastDay)}`, c.measuringStation.name, c.missingDays > 0 && `${c.missingDays} d saknas`);
-}
 
 /** Aldrig "0 GD" när data saknas. */
 function currentColdPlaceholder(cold: Loadable<ColdAmountObservation>, row: "value" | "change") {
@@ -92,7 +80,6 @@ export function OverviewSection({
         placeholder={currentColdPlaceholder(cold, "value")}
         placeholderTitle={reason}
         value={current ? fmtQ(current.accumulated) : undefined}
-        meta={current ? coldMeta(current) : undefined}
         hint="Från 1 okt. SMHI-dygnsmedel vid stationen, netto, golv 0."
       />
       <Row
@@ -262,12 +249,7 @@ export function ModelSection({ meps }: { meps: L<"meps"> }) {
 /* SATELLIT – Sentinel                                                 */
 /* ------------------------------------------------------------------ */
 
-const ORBIT: Record<string, string> = { ascending: "stigande", descending: "fallande" };
-
 type ActiveSat = { scene: SatelliteScene; opacity: number } | null;
-
-const sceneMeta = (s: SatelliteScene) =>
-  join(s.platform, s.cloudCoverPct !== null && `moln ${Math.round(s.cloudCoverPct)} %`, s.orbitState && ORBIT[s.orbitState]);
 
 /** "1 okt" – datumdel av kort tid. */
 const shortDay = (iso: string) => formatShortDateTime(iso).split(" ").slice(0, 2).join(" ");
@@ -321,7 +303,6 @@ function PassWindRows({ centroid, time }: { centroid: [number, number]; time: st
   if (res === undefined) return <Row label="Vind vid passage" status="loading" />;
   const w = res === "error" || res === null ? null : res.wind;
   if (!w) return <p className={styles.satMeta}>Vind vid passage: ingen observation tillgänglig</p>;
-  const dt = Math.round((Date.parse(w.observedAt) - Date.parse(time)) / 60_000);
   return (
     <div className={styles.passWind}>
       <Row
@@ -329,13 +310,6 @@ function PassWindRows({ centroid, time }: { centroid: [number, number]; time: st
         value={formatWind(w.speed, w.fromDirection !== null ? compassSv(w.fromDirection) : null)}
       />
       {w.gust !== null && <Row label="Byvind" value={formatWind(w.gust)} />}
-      <p className={styles.satMeta}>
-        {join(
-          `${w.station.name} · ${w.station.distanceKm} km`,
-          w.station.source === "TRAFIKVERKET_VVIS" ? "VViS" : "SMHI",
-          dt !== 0 && `${dt > 0 ? "+" : "−"}${Math.abs(dt)} min`,
-        )}
-      </p>
     </div>
   );
 }
@@ -375,7 +349,6 @@ function SensorBlock({
       {scene ? (
         <>
           <div className={styles.satTime}>{formatShortDateTime(scene.acquiredAt)}</div>
-          <p className={styles.satMeta}>{sceneMeta(scene)}</p>
           {isSar && <PassWindRows centroid={centroid} time={scene.acquiredAt} />}
           <button
             type="button"
@@ -547,7 +520,7 @@ function ObsBlock({
   sparkline: React.ReactNode;
   value: string | null;
   secondary?: string | null;
-  meta: string;
+  meta?: string;
 }) {
   return (
     <div className={styles.obsBlock}>
@@ -564,13 +537,6 @@ function weatherPlaceholder(r: L<"weatherRecent"> | L<"weatherForecast">): strin
   if (r.code === "no_data_yet") return "Ingen station";
   return "N/A";
 }
-
-/**
- * "Karlstad Flygplats · 16 km" / "VViS Högåsen · 13 km". VViS-namn (vägpunkter)
- * visar inte källan själva, därav prefixet. Täckning visas inte.
- */
-const stationMeta = (v: { station: WeatherStation }) =>
-  formatStation(v.station.source === "TRAFIKVERKET_VVIS" ? `VViS ${v.station.name}` : v.station.name, v.station.distanceKm);
 
 export function WeatherSection({
   recent,
@@ -610,7 +576,6 @@ export function WeatherSection({
           }
           value={`Nu ${formatTemperature(t.values.latest.value)}`}
           secondary={formatTemperatureRange(t.values.min.value, t.values.max.value)}
-          meta={stationMeta(t)}
         />
       ) : (
         <Row label="Temperatur" status={recent.status} placeholder={missing} placeholderTitle={missingTitle} />
@@ -630,7 +595,6 @@ export function WeatherSection({
               ? `${formatPrecipitation(p.values.sum.value)} totalt`
               : formatPrecipitation(p.values.sum.value)
           }
-          meta={stationMeta(p)}
         />
       ) : (
         <Row label="Nederbörd" hint={PRECIP_HINT} status={recent.status} placeholder={missing} placeholderTitle={missingTitle} />
@@ -645,15 +609,6 @@ export function WeatherSection({
             ? formatWind(
                 wind.values.latest.value,
                 wind.values.latestDirection ? compassSv(wind.values.latestDirection.value) : null,
-              )
-            : undefined
-        }
-        meta={
-          wind
-            ? join(
-                `Max ${formatWind(wind.values.maxMean.value)}`,
-                wind.values.gustMax && `byar ${formatWind(wind.values.gustMax.value)}`,
-                stationMeta(wind),
               )
             : undefined
         }

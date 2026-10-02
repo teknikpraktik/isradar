@@ -383,15 +383,15 @@ function addLakeLayers(map: MlMap) {
 
 /** [etikettnivå, minzoom] – minst först (placeras sist vid krock). */
 const LABEL_TIERS = [
-  [2, 10.5],
-  [1, 8.5],
-  [0, 7],
+  [2, 9.5],
+  [1, 8],
+  [0, 6.5],
 ] as const;
 
 const labelLayout = {
   "text-field": ["coalesce", ["get", "label"], ["get", "name"]],
   "text-font": LAKE_LABEL_FONT,
-  "text-size": ["interpolate", ["linear"], ["zoom"], 7, 10, 13, 12.5],
+  "text-size": ["interpolate", ["linear"], ["zoom"], 6.5, 9.5, 13, 12.5],
   "text-letter-spacing": 0.03,
   "text-max-width": 8,
 };
