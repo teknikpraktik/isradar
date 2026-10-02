@@ -1,0 +1,93 @@
+.measure {
+  flex: none;
+  width: 214px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 12px;
+}
+
+.btn {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 12.5px;
+}
+
+.btn:hover,
+.btn:focus-visible {
+  background: var(--surface-hover);
+  outline: none;
+}
+
+.btn[aria-pressed="true"] {
+  color: #ffd23f;
+}
+
+.icon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+}
+
+.body {
+  padding: 0 10px 8px;
+}
+
+.help {
+  margin: 0 0 4px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.route {
+  margin: 2px 0 4px;
+  padding-left: 8px;
+  border-left: 2px solid #ffd23f;
+}
+
+.routeLen {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.routeLen strong {
+  color: var(--text-strong);
+  font-weight: 600;
+}
+
+.routePts {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.routeBtns {
+  display: flex;
+  gap: 6px;
+}
+
+.routeBtns button {
+  all: unset;
+  cursor: pointer;
+  padding: 3px 8px;
+  font-size: 11px;
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+}
+
+.routeBtns button:hover,
+.routeBtns button:focus-visible {
+  background: var(--surface-hover);
+  outline: none;
+  border-color: var(--text-muted);
+}
+

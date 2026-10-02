@@ -1,10 +1,8 @@
 .control {
-  position: absolute;
-  left: 10px;
-  top: calc(env(safe-area-inset-top) + 58px);
-  z-index: 15;
+  /* Placeras av kolumnen i IsvakApp (.layers) – mätverktyget ligger under. */
+  flex: 0 1 auto;
+  min-height: 0;
   width: 214px;
-  max-height: calc(100% - 58px - 60px); /* lämnar plats åt kartans skala nedtill */
   overflow-y: auto;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -146,50 +144,6 @@
   font-size: 11px;
   line-height: 1.4;
   color: var(--text-muted);
-}
-
-.route {
-  margin: 2px 0 4px;
-  padding-left: 8px;
-  border-left: 2px solid #ffd23f;
-}
-
-.routeLen {
-  margin: 0 0 4px;
-  font-size: 13px;
-  color: var(--text);
-}
-
-.routeLen strong {
-  color: var(--text-strong);
-  font-weight: 600;
-}
-
-.routePts {
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-.routeBtns {
-  display: flex;
-  gap: 6px;
-}
-
-.routeBtns button {
-  all: unset;
-  cursor: pointer;
-  padding: 3px 8px;
-  font-size: 11px;
-  color: var(--text);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius);
-}
-
-.routeBtns button:hover,
-.routeBtns button:focus-visible {
-  background: var(--surface-hover);
-  outline: none;
-  border-color: var(--text-muted);
 }
 
 /* "?" som fäller ut modellförklaringen */

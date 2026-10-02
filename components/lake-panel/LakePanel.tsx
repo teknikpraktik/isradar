@@ -11,12 +11,11 @@ import { ModelSection, OverviewSection, WeatherSection } from "./sections";
 interface Props {
   lake: Lake;
   onClose: () => void;
-  onShowInfo: () => void;
   /** Visa läget ett tidigare datum (YYYY-MM-DD). */
   asOf?: string;
 }
 
-export default function LakePanel({ lake, onClose, onShowInfo, asOf }: Props) {
+export default function LakePanel({ lake, onClose, asOf }: Props) {
   const [loaded, setLoaded] = useState<{ key: string; data: Partial<LakeConditions> }>({ key: "", data: {} });
   const [expanded, setExpanded] = useState(false);
 
@@ -68,13 +67,6 @@ export default function LakePanel({ lake, onClose, onShowInfo, asOf }: Props) {
         <OverviewSection lake={lake} cold={c.currentCold ?? LOADING} asOf={asOf} />
         <ModelSection meps={c.meps ?? LOADING} />
         <WeatherSection recent={c.weatherRecent ?? LOADING} forecast={c.weatherForecast ?? LOADING} />
-
-        <p className={styles.disclaimer}>
-          Visar inte om isen är bärig. Bedöm alltid på plats.{" "}
-          <button type="button" className={styles.linkBtn} onClick={onShowInfo}>
-            Om Isvak
-          </button>
-        </p>
       </div>
     </aside>
   );

@@ -47,7 +47,11 @@ export default function InfoDialog({ open, onClose, region, manifest, showCollec
         </header>
 
         <p className={styles.notice}>
-          Visar fjärranalys-, modell- och väderdata – inte om isen är bärig. Bedöm alltid isen på plats.
+          <strong>Livsfara på is utan rätt utrustning, sällskap och kunskap.</strong> Isvak visar fjärranalys-, modell-
+          och väderdata och kan inte användas för att bedöma is. Isen är inte kontrollerad på plats.{" "}
+          <a href="/om" target="_blank" rel="noopener noreferrer">
+            Läs hur allt fungerar
+          </a>
         </p>
 
         <h3>Datatyper</h3>

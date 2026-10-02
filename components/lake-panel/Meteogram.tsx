@@ -338,7 +338,6 @@ export default function Meteogram({
         ) : (
           <span>Ingen nederbörd</span>
         )}
-        {hasWind && <span className={styles.legendNote}>vind m/s · pil = åt vilket håll</span>}
       </div>
     </div>
   );

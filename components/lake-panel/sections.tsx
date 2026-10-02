@@ -15,11 +15,6 @@ import type { ColdAmountObservation } from "@/types/observations";
 import type { Lake } from "@/types/lake";
 import styles from "./LakePanel.module.css";
 import { KindBadge, Row, Section, fmtQ, fmtSignedQ, type Loadable } from "./parts";
-import {
-  formatPrecipitation,
-  formatTemperature,
-  formatTemperatureRange,
-} from "@/lib/weather/format";
 
 /*
  * Textprincip: siffror först, minimalt med ord. Station, tid och täckning
@@ -415,12 +410,6 @@ export function WeatherSection({
       {observed ? (
         <>
           <Meteogram hours={observed} variant="observation" label="Observationer senaste 24 timmarna" scales={scales} />
-          {t && (
-            <p className={styles.snowNote}>
-              Nu {formatTemperature(t.values.latest.value)} · {formatTemperatureRange(t.values.min.value, t.values.max.value)}
-              {p && ` · ${formatPrecipitation(p.values.sum.value)} totalt`}
-            </p>
-          )}
         </>
       ) : (
         <Row

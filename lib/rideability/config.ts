@@ -91,10 +91,10 @@ export interface RideabilityCategory {
 
 /** Mörkaste grön → orange; grå för otillräckliga data. Sorterad fallande rank. */
 export const CATEGORIES: readonly RideabilityCategory[] = [
-  { id: "very_favourable", label: "Mycket gynnsamma indikatorer", minScore: 85, rank: 4, fill: "#2e7d4f", line: "#5fb882" },
-  { id: "favourable", label: "Gynnsamma indikatorer", minScore: 70, rank: 3, fill: "#6fb86a", line: "#a3d99f" },
-  { id: "mixed", label: "Blandade indikatorer", minScore: 45, rank: 2, fill: "#d9bf4a", line: "#ecd878" },
-  { id: "none", label: "Inga indikatorer", minScore: 0, rank: 1, fill: "#d9803f", line: "#eba46e" },
+  { id: "very_favourable", label: "Mycket gynnsamma indikationer", minScore: 85, rank: 4, fill: "#2e7d4f", line: "#5fb882" },
+  { id: "favourable", label: "Gynnsamma indikationer", minScore: 70, rank: 3, fill: "#6fb86a", line: "#a3d99f" },
+  { id: "mixed", label: "Blandade indikationer", minScore: 45, rank: 2, fill: "#d9bf4a", line: "#ecd878" },
+  { id: "none", label: "Inga indikationer", minScore: 0, rank: 1, fill: "#d9803f", line: "#eba46e" },
   { id: "insufficient", label: "Otillräckliga data", minScore: null, rank: 0, fill: "#59636d", line: "#7d8995" },
 ];
 

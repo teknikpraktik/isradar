@@ -2,7 +2,8 @@
 
 /**
  * Observerad vind och byvind vid Sentinel-1-passagen (SMHI/VViS, ±1 h), intill
- * uppgiften om när passagen skedde. Hämtas för kartvyns position.
+ * uppgiften om när passagen skedde. Märks "Vid passagen:" så att det syns att det är
+ * vädret då bilden togs. Hämtas för kartvyns position.
  */
 import { useEffect, useState } from "react";
 import { getPassWind } from "@/lib/data/satellite";
@@ -24,11 +25,12 @@ export default function PassWind({ position, time }: { position: [number, number
     };
   }, [position, time, key]);
   const res = state?.key === key ? state.res : undefined;
-  if (res === undefined) return <span>Vind …</span>;
+  if (res === undefined) return <span>Väder vid passagen …</span>;
   const w = res === "error" ? null : res.wind;
-  if (!w) return <span>Vind vid passage: ingen observation</span>;
+  if (!w) return <span>Väder vid passagen: ingen observation</span>;
   return (
     <>
+      <span title="Observerad vind (SMHI/Trafikverket) vid tidpunkten för satellitpassagen">Vid passagen:</span>
       <span>
         Vind <span className="num">{formatWind(w.speed, w.fromDirection !== null ? compassSv(w.fromDirection) : null)}</span>
       </span>

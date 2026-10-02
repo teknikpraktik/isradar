@@ -97,8 +97,21 @@
   gap: 6px;
 }
 
+/* Vänsterkolumn: lagerväljare med mätverktyget under. */
 .layers {
-  display: contents;
+  position: absolute;
+  left: 10px;
+  top: calc(env(safe-area-inset-top) + 58px);
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: calc(100% - 58px - 60px); /* lämnar plats åt kartans skala nedtill */
+  pointer-events: none;
+}
+
+.layers > * {
+  pointer-events: auto;
 }
 
 @media (max-width: 767px) {
@@ -211,5 +224,33 @@
   /* Mitt i den synliga kartytan (sidopanelen täcker högerkanten) */
   .satLabel {
     left: calc(50% - 206px);
+  }
+}
+
+/* Friskrivning längst ned till vänster, intill skalstocken */
+.disclaimer {
+  position: absolute;
+  left: 112px;
+  bottom: 10px;
+  z-index: 12;
+  margin: 0;
+  max-width: min(380px, calc(100% - 112px - 150px));
+  padding: 3px 8px;
+  background: rgb(12 16 21 / 0.78);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  font-size: 10px;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+
+.disclaimer a {
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+  .disclaimer {
+    max-width: calc(100% - 112px - 100px);
   }
 }

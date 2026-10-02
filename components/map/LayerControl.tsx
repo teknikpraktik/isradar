@@ -15,7 +15,6 @@ import { SatelliteControls } from "@/components/lake-panel/sections";
 import { RIDEABILITY_HELP, RIDEABILITY_TITLE } from "@/lib/rideability/config";
 import { VANERN_HINT } from "@/lib/vanern/config";
 import type { LngLat } from "@/types/lake";
-import { formatLength, routeLengthM } from "@/lib/measure/route";
 import type { SatelliteScene } from "@/lib/satellite/api";
 import ColdLegend from "./ColdLegend";
 import styles from "./LayerControl.module.css";
@@ -36,8 +35,6 @@ interface Props {
   onColorLayer: (layer: "rideability" | "cold" | "none") => void;
   rideability: { loading: boolean; failed: string[] };
   coldLegend: { showCollection: boolean; showMissing: boolean };
-  /** Mätverktyg: lägg ut en rutt och få längden. Rutten ligger kvar tills den tas bort. */
-  measure: { on: boolean; points: LngLat[]; onToggle: (on: boolean) => void; onUndo: () => void; onClear: () => void };
   satellite: {
     active: ActiveSatellite | null;
     loadingSensor: "SAR" | "optical" | null;
@@ -81,7 +78,7 @@ function Switch({
   );
 }
 
-export default function LayerControl({ colorLayer, onColorLayer, rideability, coldLegend, measure, satellite }: Props) {
+export default function LayerControl({ colorLayer, onColorLayer, rideability, coldLegend, satellite }: Props) {
   // Utfälld som standard på bred skärm; på mobil styr knappen (se CSS).
   const [open, setOpen] = useState(false);
   const [modelInfo, setModelInfo] = useState(false);
@@ -148,24 +145,6 @@ export default function LayerControl({ colorLayer, onColorLayer, rideability, co
             onShow={satellite.onShow}
             onOpacity={satellite.onOpacity}
           />
-        )}
-        <Switch checked={measure.on} onChange={measure.onToggle} label="Mät" />
-        {measure.on && <p className={styles.help}>Klicka på kartan för att lägga ut hur du tänker åka.</p>}
-        {measure.points.length > 0 && (
-          <div className={styles.route}>
-            <p className={styles.routeLen}>
-              Rutt <strong className="num">{formatLength(routeLengthM(measure.points))}</strong>
-              <span className={styles.routePts}> · {measure.points.length} punkter</span>
-            </p>
-            <div className={styles.routeBtns}>
-              <button type="button" onClick={measure.onUndo}>
-                Ångra punkt
-              </button>
-              <button type="button" onClick={measure.onClear}>
-                Ta bort rutt
-              </button>
-            </div>
-          </div>
         )}
       </div>
     </section>

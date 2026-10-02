@@ -7,7 +7,6 @@
  * jämförelsen ska tolkas.
  */
 import {
-  COLD_INDICATOR_NOTE,
   COLD_PROGRESS_CLASSES,
   COLLECTION_AREA_STYLE,
   NO_VALUE_STYLE,
@@ -54,9 +53,6 @@ export default function ColdLegend({ showCollection = false, showMissing = false
           </li>
         )}
       </ul>
-      <p className={styles.note}>
-        Jämför mörkare nyans med ljusare: ju mörkare, desto närmare (eller över) historisk referens. {COLD_INDICATOR_NOTE}
-      </p>
     </div>
   );
 }

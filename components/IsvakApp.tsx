@@ -6,6 +6,7 @@ import LakePanel from "@/components/lake-panel/LakePanel";
 import LakeMap, { type FocusRequest } from "@/components/map/LakeMap";
 import LocateButton from "@/components/map/LocateButton";
 import LayerControl, { type ActiveSatellite } from "@/components/map/LayerControl";
+import MeasureControl from "@/components/map/MeasureControl";
 import PassWind from "@/components/map/PassWind";
 import LakeSearch from "@/components/search/LakeSearch";
 import InfoDialog from "@/components/ui/InfoDialog";
@@ -245,13 +246,6 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
             failed: [...(bulkReady ? bulk.result.failed : []), ...vanern.failed],
           }}
           coldLegend={legendFlags}
-          measure={{
-            on: measureOn,
-            points: route,
-            onToggle: setMeasureOn,
-            onUndo: () => setRoute((r) => r.slice(0, -1)),
-            onClear: () => setRoute([]),
-          }}
           satellite={{
             active: activeSatellite,
             loadingSensor: satLoading,
@@ -262,7 +256,22 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
             onOpacity: (opacity) => setSatellite((s) => (s ? { ...s, opacity } : s)),
           }}
         />
+        <MeasureControl
+          on={measureOn}
+          points={route}
+          onToggle={setMeasureOn}
+          onUndo={() => setRoute((r) => r.slice(0, -1))}
+          onClear={() => setRoute([])}
+        />
       </div>
+
+      <p className={styles.disclaimer}>
+        Datormodell – isen är inte kontrollerad på plats och modellerna kan inte användas för att bedöma is. Livsfara
+        på is utan rätt utrustning, sällskap och kunskap.{" "}
+        <a href="/om" target="_blank" rel="noopener noreferrer">
+          Om Isvak
+        </a>
+      </p>
 
       <div className={styles.sideControls}>
         <LocateButton onPosition={setUserPosition} onMessage={showMessage} />
@@ -273,7 +282,6 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
           key={lake.id}
           lake={lake}
           onClose={() => setSelectedId(null)}
-          onShowInfo={() => setInfoOpen(true)}
           asOf={asOf}
         />
       )}
