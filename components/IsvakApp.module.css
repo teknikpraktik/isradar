@@ -116,7 +116,9 @@
 /* Position och zoom under mätverktyget */
 .mapButtons {
   display: flex;
-  gap: 8px;
+  flex-direction: column; /* lodrätt: position, zooma in, zooma ut */
+  align-items: flex-start;
+  gap: 6px;
   flex: none;
 }
 
