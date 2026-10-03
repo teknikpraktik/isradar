@@ -7,7 +7,7 @@
 
 .explain {
   margin: 0 0 4px;
-  font-size: calc(12.5px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
   line-height: 1.4;
   color: var(--text-muted);
 }
@@ -18,7 +18,7 @@
   padding: 0;
   display: grid;
   gap: 3px;
-  font-size: calc(12.5px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
 }
 
 .list li {
@@ -49,13 +49,13 @@
   justify-content: space-between;
   gap: 8px;
   margin-top: 3px;
-  font-size: calc(11.5px * var(--ui-scale, 1));
+  font-size: var(--fs-meta);
   color: var(--text-faint);
 }
 
 .note {
   margin: 6px 0 0;
-  font-size: calc(11.5px * var(--ui-scale, 1));
+  font-size: var(--fs-meta);
   line-height: 1.4;
   color: var(--text-faint);
 }
@@ -70,7 +70,7 @@
 
 .status {
   color: var(--text-muted);
-  font-size: calc(11.5px * var(--ui-scale, 1));
+  font-size: var(--fs-meta);
 }
 
 /* Mobil: förklaringstexten döljs tills den öppnas bakom frågetecknet */
@@ -79,7 +79,7 @@
     display: none;
   }
   .list {
-    font-size: calc(11.5px * var(--ui-scale, 1));
+    font-size: var(--fs-meta);
     gap: 2px;
   }
   .legend {

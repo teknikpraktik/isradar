@@ -4,7 +4,7 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  font-size: calc(12px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
 }
 
 .btn {
@@ -17,7 +17,7 @@
   padding: 10px 14px;
   cursor: pointer;
   color: var(--text);
-  font-size: calc(13.5px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
 }
 
 .btn:hover,
@@ -51,7 +51,7 @@
 
 .help {
   margin: 0 0 12px;
-  font-size: calc(12.5px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
   line-height: 1.55;
   color: var(--text-muted);
 }
@@ -64,7 +64,7 @@
 
 .routeLen {
   margin: 0 0 10px;
-  font-size: calc(13px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
   color: var(--text);
 }
 
@@ -74,7 +74,7 @@
 }
 
 .routePts {
-  font-size: calc(11px * var(--ui-scale, 1));
+  font-size: var(--fs-meta);
   color: var(--text-muted);
 }
 
@@ -88,7 +88,7 @@
   all: unset;
   cursor: pointer;
   padding: 6px 11px;
-  font-size: calc(12px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
   color: var(--text);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);
@@ -113,7 +113,7 @@
   margin: 0 0 6px;
   border: 1px solid var(--border-strong);
   border-radius: 50%;
-  font-size: calc(11px * var(--ui-scale, 1));
+  font-size: var(--fs-meta);
   color: var(--text-muted);
 }
 
@@ -124,7 +124,7 @@
   }
   .btn {
     padding: 7px 10px;
-    font-size: calc(12px * var(--ui-scale, 1));
+    font-size: var(--fs-ui);
     gap: 8px;
   }
   .icon {
@@ -143,15 +143,15 @@
   }
   .help.helpOpen {
     display: block;
-    font-size: calc(11px * var(--ui-scale, 1));
+    font-size: var(--fs-meta);
     margin: 0 0 8px;
   }
   .routeLen {
-    font-size: calc(12px * var(--ui-scale, 1));
+    font-size: var(--fs-ui);
     margin-bottom: 6px;
   }
   .routeBtns button {
     padding: 4px 8px;
-    font-size: calc(11px * var(--ui-scale, 1));
+    font-size: var(--fs-meta);
   }
 }

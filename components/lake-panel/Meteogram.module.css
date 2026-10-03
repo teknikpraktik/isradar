@@ -39,7 +39,7 @@
 
 .axis {
   fill: var(--text-faint);
-  font-size: calc(9.5px * var(--ui-scale, 1));
+  font-size: var(--fs-fine);
   text-anchor: end;
 }
 
@@ -51,7 +51,7 @@
 
 .tempTick {
   fill: var(--text);
-  font-size: calc(10px * var(--ui-scale, 1));
+  font-size: var(--fs-meta);
   text-anchor: end;
 }
 
@@ -62,13 +62,13 @@
 
 .day {
   fill: var(--text-muted);
-  font-size: calc(9.5px * var(--ui-scale, 1));
+  font-size: var(--fs-fine);
   letter-spacing: 0.06em;
 }
 
 .time {
   fill: var(--text-faint);
-  font-size: calc(9.5px * var(--ui-scale, 1));
+  font-size: var(--fs-fine);
   text-anchor: middle;
 }
 
@@ -104,7 +104,7 @@
 
 .wind {
   fill: var(--text);
-  font-size: calc(10px * var(--ui-scale, 1));
+  font-size: var(--fs-meta);
   text-anchor: middle;
 }
 
@@ -129,7 +129,7 @@
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);
   box-shadow: 0 4px 14px rgb(0 0 0 / 0.45);
-  font-size: calc(11.5px * var(--ui-scale, 1));
+  font-size: var(--fs-meta);
   line-height: 1.45;
   color: var(--text);
   pointer-events: none;
@@ -138,12 +138,12 @@
 
 .tipTime {
   color: var(--text-muted);
-  font-size: calc(11px * var(--ui-scale, 1));
+  font-size: var(--fs-meta);
 }
 
 .tipTemp {
   font-family: var(--font-mono);
-  font-size: calc(14px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
   color: var(--text-strong);
 }
 
@@ -152,7 +152,7 @@
   flex-wrap: wrap;
   gap: 4px 12px;
   margin-top: 4px;
-  font-size: calc(10.5px * var(--ui-scale, 1));
+  font-size: var(--fs-meta);
   color: var(--text-muted);
 }
 
@@ -184,14 +184,14 @@
 /* Enhetsetikett vid axeln */
 .unit {
   fill: var(--text-muted);
-  font-size: calc(9.5px * var(--ui-scale, 1));
+  font-size: var(--fs-fine);
   text-anchor: end;
   letter-spacing: 0.04em;
 }
 
 .empty {
   fill: var(--text-faint);
-  font-size: calc(11px * var(--ui-scale, 1));
+  font-size: var(--fs-meta);
   text-anchor: middle;
 }
 
@@ -203,7 +203,7 @@
 
 .nowLabel {
   fill: var(--accent);
-  font-size: calc(10px * var(--ui-scale, 1));
+  font-size: var(--fs-meta);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-anchor: middle; /* centrerad över linjen */

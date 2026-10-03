@@ -22,6 +22,18 @@
   --kind-forecast: #d6b88a;
   --kind-hist: #8fa6b8;
 
+  /* Typografi: ett litet gemensamt system. Alla textstorlekar i appen hämtas härifrån (skalas med --ui-scale på dator).
+     title    – sjönamn, sidtitel
+     heading  – sektions-/underrubriker
+     ui       – normal UI-text: lager, legend, labels, värden, väder, meny, knappar
+     meta     – sekundär metadata, källor, hjälptexter, diagramaxlar
+     fine     – kartattribution, skala, copyright (medvetet undantag, fortfarande läsbart på mobil) */
+  --fs-title: calc(20px * var(--ui-scale, 1));
+  --fs-heading: calc(15px * var(--ui-scale, 1));
+  --fs-ui: calc(13px * var(--ui-scale, 1));
+  --fs-meta: calc(11.5px * var(--ui-scale, 1));
+  --fs-fine: calc(10.5px * var(--ui-scale, 1));
+
   --radius: 6px;
   --font-sans: var(--font-geist-sans), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
@@ -92,13 +104,13 @@ abbr[title] {
   border-color: var(--text-muted) !important;
   color: var(--text-muted) !important;
   font-family: var(--font-mono);
-  font-size: calc(10px * var(--ui-scale, 1)) !important;
+  font-size: var(--fs-fine) !important;
 }
 
 .maplibregl-ctrl-attrib {
   background: rgb(12 16 21 / 0.75) !important;
   color: var(--text-muted) !important;
-  font-size: calc(11.5px * var(--ui-scale, 1)); /* samma storlek som övrig liten text (fotraden, friskrivningen) */
+  font-size: var(--fs-fine); /* attribution: medvetet minsta nivån */
   line-height: 1.5;
   padding: 1px 8px !important;
 }

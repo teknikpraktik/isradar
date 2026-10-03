@@ -78,7 +78,7 @@
 
 .title {
   margin: 0;
-  font-size: calc(19px * var(--ui-scale, 1));
+  font-size: var(--fs-title);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -91,7 +91,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 4px 12px;
-  font-size: calc(11.5px * var(--ui-scale, 1));
+  font-size: var(--fs-meta);
   color: var(--text-faint);
 }
 
@@ -106,7 +106,7 @@
   height: 32px;
   display: grid;
   place-items: center;
-  font-size: calc(22px * var(--ui-scale, 1));
+  font-size: var(--fs-title);
   line-height: 1;
   color: var(--text-muted);
   border-radius: var(--radius);
@@ -141,7 +141,7 @@
 
 .sectionHead h3 {
   margin: 0;
-  font-size: calc(11px * var(--ui-scale, 1));
+  font-size: var(--fs-meta);
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -157,7 +157,7 @@
 
 .status {
   font-family: var(--font-mono);
-  font-size: calc(9.5px * var(--ui-scale, 1));
+  font-size: var(--fs-fine);
   letter-spacing: 0.06em;
   padding: 2px 5px;
   border-radius: 3px;
@@ -184,7 +184,7 @@
 }
 
 .row .label {
-  font-size: calc(13px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
   color: var(--text-muted);
   display: flex;
   align-items: center;
@@ -196,11 +196,11 @@
 .row .placeholder {
   text-align: right;
   /* Värden ligger nära etikettens storlek (13 px); mono-siffror ser större ut och tas ned lite till. */
-  font-size: calc(13.5px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
 }
 
 .row .value :global(.num) {
-  font-size: 0.94em;
+  font-size: 1em;
 }
 
 .value {
@@ -209,7 +209,7 @@
 
 .placeholder {
   color: var(--text-faint);
-  font-size: calc(12px * var(--ui-scale, 1)) !important;
+  font-size: var(--fs-ui) !important;
 }
 
 /* Station, tid, täckning – egen rad under värdet, högerställd */
@@ -217,7 +217,7 @@
   grid-column: 1 / -1;
   margin: 1px 0 0;
   text-align: right;
-  font-size: calc(11px * var(--ui-scale, 1));
+  font-size: var(--fs-meta);
   line-height: 1.35;
   color: var(--text-faint);
 }
@@ -231,7 +231,7 @@
   place-items: center;
   border: 1px solid var(--border-strong);
   border-radius: 50%;
-  font-size: calc(10px * var(--ui-scale, 1));
+  font-size: var(--fs-meta);
   color: var(--text-muted);
 }
 
@@ -245,7 +245,7 @@
   grid-column: 1 / -1;
   margin: 4px 0 2px;
   padding: 8px 10px;
-  font-size: calc(13px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
   line-height: 1.45;
   color: var(--text-muted);
   background: var(--surface);
@@ -255,13 +255,13 @@
 
 .source {
   margin: 4px 0 0;
-  font-size: calc(10.5px * var(--ui-scale, 1));
+  font-size: var(--fs-meta);
   color: var(--text-faint);
 }
 
 .disclaimer {
   margin: 14px 0 0;
-  font-size: calc(11.5px * var(--ui-scale, 1));
+  font-size: var(--fs-meta);
   line-height: 1.45;
   color: var(--text-faint);
 }
@@ -277,7 +277,7 @@
 .loading {
   padding: 16px 0;
   color: var(--text-faint);
-  font-size: calc(13px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
 }
 
 .coldValue {
@@ -302,7 +302,7 @@
 .forecast table {
   width: 100%;
   border-collapse: collapse;
-  font-size: calc(13px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
 }
 
 .forecast th,
@@ -313,7 +313,7 @@
 }
 
 .forecast thead th {
-  font-size: calc(11px * var(--ui-scale, 1));
+  font-size: var(--fs-meta);
   color: var(--text-faint);
   padding-bottom: 4px;
 }
@@ -325,14 +325,14 @@
 }
 
 .forecast tbody th {
-  font-size: calc(12px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
 }
 
 .forecast td {
   color: var(--text-strong);
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  font-size: 0.94em; /* mono-siffror ser större ut än omgivande text */
+  font-size: 1em;
 }
 
 .dim {
@@ -346,7 +346,7 @@
   align-items: center;
   gap: 8px;
   margin: 10px 0 2px;
-  font-size: calc(10.5px * var(--ui-scale, 1));
+  font-size: var(--fs-meta);
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -359,13 +359,13 @@
 
 .snowNote {
   margin: 4px 0 0;
-  font-size: calc(12.5px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
   color: var(--text);
 }
 
 .weatherSource {
   margin: 10px 0 0;
-  font-size: calc(10.5px * var(--ui-scale, 1));
+  font-size: var(--fs-meta);
   line-height: 1.4;
   color: var(--text-faint);
 }
@@ -394,7 +394,7 @@
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 1px 10px;
-  font-size: calc(11.5px * var(--ui-scale, 1));
+  font-size: var(--fs-meta);
 }
 
 .hintMeta dt {
@@ -420,13 +420,13 @@
 
 .satTime {
   font-family: var(--font-mono);
-  font-size: calc(15px * var(--ui-scale, 1));
+  font-size: var(--fs-heading);
   color: var(--text-strong);
 }
 
 .satMeta {
   margin: 1px 0 8px;
-  font-size: calc(11.5px * var(--ui-scale, 1));
+  font-size: var(--fs-meta);
   color: var(--text-faint);
 }
 
@@ -439,7 +439,7 @@
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);
   font: inherit;
-  font-size: calc(13.5px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
   cursor: pointer;
 }
 
@@ -465,7 +465,7 @@
   grid-template-columns: auto 1fr 42px;
   align-items: center;
   gap: 10px;
-  font-size: calc(12px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
   color: var(--text-muted);
 }
 
@@ -485,7 +485,7 @@
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 8px;
-  font-size: calc(12px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
   color: var(--text-faint);
 }
 
@@ -496,7 +496,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   font: inherit;
-  font-size: calc(12px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
   cursor: pointer;
 }
 
@@ -513,7 +513,7 @@
 .obsMeta {
   margin: 0;
   text-align: right;
-  font-size: calc(11px * var(--ui-scale, 1));
+  font-size: var(--fs-meta);
   line-height: 1.35;
   color: var(--text-faint);
 }
@@ -527,7 +527,7 @@
 }
 
 .sarLegendTitle {
-  font-size: calc(10.5px * var(--ui-scale, 1));
+  font-size: var(--fs-meta);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -545,7 +545,7 @@
   display: flex;
   justify-content: space-between;
   margin-top: 3px;
-  font-size: calc(11px * var(--ui-scale, 1));
+  font-size: var(--fs-meta);
   line-height: 1.3;
   color: var(--text-faint);
 }
@@ -568,7 +568,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   font: inherit;
-  font-size: calc(12px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
   cursor: pointer;
 }
 
@@ -586,7 +586,7 @@
 
 .srcTitle {
   margin: 0 0 4px;
-  font-size: calc(12.5px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
   font-weight: 600;
   color: var(--text);
 }
@@ -595,7 +595,7 @@
   margin: 0;
   display: grid;
   gap: 3px;
-  font-size: calc(12px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
   line-height: 1.4;
 }
 

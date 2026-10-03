@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import LakePanel from "@/components/lake-panel/LakePanel";
 import LakeMap, { type FocusRequest } from "@/components/map/LakeMap";
 import LocateButton from "@/components/map/LocateButton";
@@ -22,6 +23,7 @@ import { useLakeSentinel } from "@/components/useLakeSentinel";
 import { withRideabilityCategory } from "@/lib/rideability/mapStyle";
 import { formatDate, formatShortDateTime } from "@/lib/format";
 import { getRegion } from "@/lib/regions";
+import { disclaimerGate } from "@/lib/session/gate";
 import type { LakeId, LakeIndexEntry, LngLat } from "@/types/lake";
 import styles from "./IsvakApp.module.css";
 
@@ -35,8 +37,9 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
   const [selectedId, setSelectedId] = useState<LakeId | null>(null);
   const [focus, setFocus] = useState<FocusRequest | null>(null);
   const [userPosition, setUserPosition] = useState<LngLat | null>(null);
-  // Friskrivningen visas som en ruta mitt i skärmen vid varje sidladdning och måste kvitteras med OK.
-  const [accepted, setAccepted] = useState(false);
+  // Friskrivningen visas mitt i skärmen vid varje appstart och måste kvitteras. Kvitteringen gäller tills sidan
+  // laddas om, så Om Isvak → Tillbaka till kartan går direkt till kartan (se lib/session/gate.ts).
+  const accepted = useSyncExternalStore(disclaimerGate.subscribe, disclaimerGate.isAccepted, disclaimerGate.isAcceptedOnServer);
   const [toast, setToast] = useState<string | null>(null);
   // Satellitlager: ett åt gången, hör till kartan (inte till en sjö) och ligger kvar när man byter vatten.
   const [satellite, setSatellite] = useState<ActiveSatellite | null>(null);
@@ -67,13 +70,16 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
   // Aktuell köldmängd per station → kartans progressfärg. Utan svar ritas
   // vattnen som ej klassificerade (ingen gissning).
   const [currentCold, setCurrentCold] = useState<{ key: string; values: Map<number, number | null> } | null>(null);
+  // Köldmängdssvaret har kommit eller misslyckats (då räknas köldmängden som saknad, aldrig gissad).
+  const [coldSettledKey, setColdSettledKey] = useState<string | null>(null);
   const coldKey = data ? `${data.regionId}|${asOf ?? ""}` : null;
   useEffect(() => {
     if (!data || !coldKey) return;
     let cancelled = false;
     fetchCurrentColdByStation([...data.stations.keys()], asOf)
       .then((values) => !cancelled && setCurrentCold({ key: coldKey, values }))
-      .catch((e: unknown) => console.error(e));
+      .catch((e: unknown) => console.error(e))
+      .finally(() => !cancelled && setColdSettledKey(coldKey));
     return () => {
       cancelled = true;
     };
@@ -125,9 +131,13 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
       vanern.memberIds,
     );
   }, [rideabilityOn, data, mapLakes, bulk, bulkReady, vanern.memberIds, lakeSentinel.indications]);
+  // Modellen ritas först när alla grundindata har avgjorts (svar eller misslyckande): sjöarna och Vänernmodellens
+  // celler får då sina färger i samma uppdatering, i stället för att Vänern syns före övriga sjöar. Sentinel-1
+  // fyller sedan på successivt för båda (laddindikatorn i lagerpanelen visar det).
+  const modelReady = !rideabilityOn || (data !== null && coldSettledKey === coldKey && bulkReady && vanern.baseReady && rideability !== null);
   const colorLakes = useMemo(
-    () => (rideabilityOn && mapLakes ? withRideabilityCategory(mapLakes, rideability ?? new Map()) : mapLakes),
-    [rideabilityOn, mapLakes, rideability],
+    () => (rideabilityOn && mapLakes && modelReady ? withRideabilityCategory(mapLakes, rideability ?? new Map()) : mapLakes),
+    [rideabilityOn, mapLakes, rideability, modelReady],
   );
 
   const legendFlags = useMemo(
@@ -192,8 +202,8 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
       <LakeMap
         region={region}
         lakes={colorLakes}
-        colorMode={colorLayer}
-        cells={vanern.features}
+        colorMode={rideabilityOn && !modelReady ? "none" : colorLayer}
+        cells={modelReady ? vanern.features : null}
         apiRef={mapApi}
         selectedId={selectedId}
         focus={focus}
@@ -219,6 +229,13 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
               time={activeSatellite.scene.acquiredAt}
             />
           )}
+        </div>
+      )}
+
+      {rideabilityOn && !modelReady && !loadError && (
+        <div className={styles.modelStatus} role="status">
+          <span>Modellerad åkbarhet</span>
+          <span>beräknas…</span>
         </div>
       )}
 
@@ -292,9 +309,7 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
         <span aria-hidden>·</span>
         <a href="mailto:per.a.bjorkman@gmail.com">Kontakt</a>
         <span aria-hidden>·</span>
-        <a href="/om" target="_blank" rel="noopener noreferrer">
-          Om Isvak
-        </a>
+        <Link href="/om">Om Isvak</Link>
       </footer>
       {lake && (
         <LakePanel
@@ -311,7 +326,7 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
         </div>
       )}
       </div>
-      {!accepted && <DisclaimerGate onAccept={() => setAccepted(true)} />}
+      {!accepted && <DisclaimerGate onAccept={disclaimerGate.accept} />}
     </main>
   );
 }

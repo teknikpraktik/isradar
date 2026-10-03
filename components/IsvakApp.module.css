@@ -47,13 +47,13 @@
 .logo {
   font-family: var(--font-mono);
   font-weight: 600;
-  font-size: calc(13px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
   letter-spacing: 0.18em;
   color: var(--text-strong);
 }
 
 .region {
-  font-size: calc(10px * var(--ui-scale, 1));
+  font-size: var(--fs-fine);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-faint);
@@ -70,7 +70,7 @@
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  font: 600 calc(15px * var(--ui-scale, 1))/1 var(--font-mono);
+  font: 600 var(--fs-ui)/1 var(--font-mono);
   cursor: pointer;
 }
 
@@ -123,7 +123,7 @@
 }
 
 .mapButtons .iconBtn {
-  font-size: calc(20px * var(--ui-scale, 1));
+  font-size: var(--fs-title);
   font-weight: 500;
 }
 
@@ -159,7 +159,7 @@
   background: var(--surface-solid);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);
-  font-size: calc(13px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
   color: var(--text);
 }
 
@@ -175,7 +175,7 @@
   border: 1px solid var(--kind-forecast);
   border-radius: var(--radius);
   color: var(--text-strong);
-  font-size: calc(12px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
   line-height: 1.1;
   text-decoration: none;
   position: relative;
@@ -183,7 +183,7 @@
 }
 
 .asOf span:first-child {
-  font-size: calc(9.5px * var(--ui-scale, 1));
+  font-size: var(--fs-fine);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--kind-forecast);
@@ -212,7 +212,7 @@
   background: rgb(12 16 21 / 0.82);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);
-  font-size: calc(11.5px * var(--ui-scale, 1));
+  font-size: var(--fs-meta);
   color: var(--text-strong);
   pointer-events: none;
   white-space: nowrap;
@@ -229,9 +229,35 @@
   color: var(--text-muted);
 }
 
+/* Laddstatus för modellerad åkbarhet: nere vid kartans fot så att den inte täcker kontrollerna. */
+.modelStatus {
+  position: absolute;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom) + 64px);
+  transform: translateX(-50%);
+  z-index: 12;
+  display: flex;
+  gap: 8px;
+  padding: 4px 10px;
+  background: rgb(12 16 21 / 0.82);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  font-size: var(--fs-meta);
+  color: var(--text-strong);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.modelStatus > span:first-child {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
 @media (min-width: 768px) {
   /* Mitt i den synliga kartytan (sidopanelen täcker högerkanten) */
-  .satLabel {
+  .satLabel,
+  .modelStatus {
     left: calc(50% - 206px);
   }
 }
@@ -256,7 +282,7 @@
   padding: 5px 10px;
   background: rgb(12 16 21 / 0.82);
   border-top-left-radius: var(--radius);
-  font-size: calc(11.5px * var(--ui-scale, 1));
+  font-size: var(--fs-fine);
   line-height: 1.5;
   color: var(--text-muted);
   white-space: nowrap;

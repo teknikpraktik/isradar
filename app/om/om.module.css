@@ -12,25 +12,25 @@
   max-width: 720px;
   margin: 0 auto;
   padding: calc(env(safe-area-inset-top) + 20px) 18px 56px;
-  font-size: calc(15px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
   line-height: 1.6;
 }
 
 .main h1 {
   margin: 14px 0 8px;
-  font-size: calc(26px * var(--ui-scale, 1));
+  font-size: var(--fs-title);
   color: var(--text-strong);
 }
 
 .main h2 {
   margin: 34px 0 8px;
-  font-size: calc(18px * var(--ui-scale, 1));
+  font-size: var(--fs-heading);
   color: var(--text-strong);
 }
 
 .main h3 {
   margin: 24px 0 6px;
-  font-size: calc(12px * var(--ui-scale, 1));
+  font-size: var(--fs-meta);
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -39,7 +39,7 @@
 
 .main h4 {
   margin: 18px 0 4px;
-  font-size: calc(14px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
   color: var(--text-strong);
 }
 
@@ -61,7 +61,7 @@
 }
 
 .lead {
-  font-size: calc(16px * var(--ui-scale, 1));
+  font-size: var(--fs-heading);
   color: var(--text-strong);
 }
 
@@ -69,7 +69,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: calc(14px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
   font-weight: 600;
   text-decoration: none;
 }
@@ -95,7 +95,7 @@
   color: #ff9d92;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  font-size: calc(16px * var(--ui-scale, 1));
+  font-size: var(--fs-heading);
 }
 
 .legend {
@@ -125,6 +125,6 @@
   margin-top: 26px !important;
   padding-top: 14px;
   border-top: 1px solid var(--border);
-  font-size: calc(14px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
   color: var(--text-muted);
 }

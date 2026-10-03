@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import RequireDisclaimer from "@/components/ui/RequireDisclaimer";
 import { COLD_PROGRESS_CLASSES } from "@/lib/map/coldScale";
 import {
   CATEGORIES,
@@ -58,10 +59,11 @@ function ArrowLeft() {
 
 export default function OmIsvak() {
   return (
+    <RequireDisclaimer>
     <div className={styles.page}>
       <main className={styles.main}>
         <Link href="/" className={styles.back}>
-          <ArrowLeft /> Till kartan
+          <ArrowLeft /> Tillbaka till kartan
         </Link>
         <h1>Om Isvak</h1>
         <p className={styles.lead}>
@@ -387,9 +389,10 @@ export default function OmIsvak() {
           <a href="mailto:per.a.bjorkman@gmail.com">per.a.bjorkman@gmail.com</a>
         </p>
         <Link href="/" className={styles.back}>
-          <ArrowLeft /> Till kartan
+          <ArrowLeft /> Tillbaka till kartan
         </Link>
       </main>
     </div>
+    </RequireDisclaimer>
   );
 }

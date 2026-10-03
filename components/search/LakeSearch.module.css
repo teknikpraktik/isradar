@@ -14,7 +14,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   font: inherit;
-  font-size: calc(15px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
   outline: none;
 }
 
@@ -57,16 +57,16 @@
 
 .name {
   color: var(--text);
-  font-size: calc(14px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
 }
 
 .meta {
   color: var(--text-faint);
-  font-size: calc(11.5px * var(--ui-scale, 1));
+  font-size: var(--fs-meta);
 }
 
 .empty {
   color: var(--text-muted);
   cursor: default !important;
-  font-size: calc(13px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
 }

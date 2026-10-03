@@ -25,6 +25,11 @@ export interface VanernCells {
   /** Objektid som täcks av Vänernmodellen (ska inte få sjömodell). */
   memberIds: Set<number>;
   cellCount: number;
+  /**
+   * Grunddata (väderunderlag) har hämtats eller misslyckats, så cellernas färger är slutgiltiga utöver
+   * Sentinel-1, som fyller på successivt. Sant när lagret är av, i historiskt läge och utan celler.
+   */
+  baseReady: boolean;
   loading: boolean;
   failed: string[];
   /** Internt: resultat per cell (delscore, tak, datatillit) för felsökning och kalibrering. */
@@ -61,6 +66,7 @@ export function useVanernCells({
   const [sentinel, setSentinel] = useState<Map<string, SentinelCellInput>>(new Map());
   const [failed, setFailed] = useState<string[]>([]);
   const [done, setDone] = useState(false);
+  const [baseDoneKey, setBaseDoneKey] = useState<string | null>(null);
   const gridKey = grid ? `${region.id}|${grid.cells.length}` : null;
 
   useEffect(() => {
@@ -78,6 +84,7 @@ export function useVanernCells({
       ]);
       if (cancelled) return;
       if (weather) setWeatherByTile(weather);
+      setBaseDoneKey(gridKey);
       if (passes && passes.length > 0) {
         await loadSentinelFor(
           grid.cells.map((c) => ({ id: c.id, geometry: c.geometry, centroid: c.centroid })),
@@ -93,6 +100,7 @@ export function useVanernCells({
     };
     // gridKey identifierar gridet; enabled/asOf styr om något hämtas.
   }, [enabled, asOf, gridKey, grid]);
+  const baseReady = !enabled || !!asOf || !grid || grid.cells.length === 0 || baseDoneKey === gridKey;
 
   // Aktuell GD i % av objektets egen historiska referens. Samlingsområden (Vänerns delar) saknar
   // kartfärgens progress, men har referens och station i indexet – därför räknas det här direkt.
@@ -126,6 +134,7 @@ export function useVanernCells({
     features,
     memberIds: grid?.memberIds ?? EMPTY_IDS,
     cellCount: cells.length,
+    baseReady,
     loading: enabled && !asOf && cells.length > 0 && !done,
     failed,
     results,

@@ -15,7 +15,7 @@
   display: grid;
   place-items: center;
   color: var(--text-muted);
-  font-size: calc(14px * var(--ui-scale, 1));
+  font-size: var(--fs-ui);
 }
 
 .userMarker {

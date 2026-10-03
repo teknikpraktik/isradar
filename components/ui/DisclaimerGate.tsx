@@ -1,12 +1,11 @@
 "use client";
 
 /**
- * Startgate: säkerhetsinformation som visas mitt i skärmen vid sidladdning. Det är en obligatorisk
- * bekräftelse, inte en vanlig informationsruta: den kan inte stängas med Escape, klick utanför eller
- * en stängknapp, och fokus hålls inne i dialogen (Tab/Skift+Tab cirkulerar). Bakgrunden görs inert av
- * föräldern (IsvakApp) så att varken tangentbord, pekare eller skärmläsare når kartan bakom.
- * Enda vägen vidare är knappen "Jag förstår – visa kartan". Länken "Om Isvak" öppnas i ny flik och
- * påverkar inte gaten.
+ * Startgate: obligatorisk bekräftelse mitt i skärmen innan appen används. Den kan inte stängas med Escape,
+ * klick utanför eller en stängknapp, och fokus hålls inne i dialogen (Tab/Skift+Tab cirkulerar). Bakgrunden
+ * görs inert av föräldern (IsvakApp) så att varken tangentbord, pekare eller skärmläsare når kartan bakom.
+ * Enda vägen vidare är knappen "Jag förstår". Innehållet är avsiktligt begränsat till rubrik, saklig
+ * information, begränsningar och knapp – ingen länk härifrån.
  *
  * Renderas direkt i första svaret, så kartan syns aldrig obevakad.
  */
@@ -52,44 +51,31 @@ export default function DisclaimerGate({ onAccept }: { onAccept: () => void }) {
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="gate-title"
-        aria-describedby="gate-lead gate-body"
+        aria-describedby="gate-body"
         tabIndex={-1}
         onKeyDown={onKeyDown}
       >
-        <header className={styles.header}>
-          <svg className={styles.icon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <path d="M12 3 2.5 20h19z" />
-            <path d="M12 10v5M12 17.8v.4" />
-          </svg>
-          <h2 id="gate-title" className={styles.title}>
-            Innan du använder Isvak
-          </h2>
-        </header>
-
-        <p id="gate-lead" className={styles.lead}>
-          Isvak bedömer inte om is är säker eller bärig.
-        </p>
+        <h2 id="gate-title" className={styles.title}>
+          Välkommen till Isvak
+        </h2>
 
         <div id="gate-body" className={styles.body}>
           <p>
-            Isvak sammanställer väder, modeller, köldmängd och satellitdata för att visa områden som kan vara
-            intressanta för isspaning. Ingen is har kontrollerats på plats.
+            Isvak presenterar datadrivna och modellerade indikatorer för isbildning och för förhållanden som kan vara
+            relevanta vid isspaning. Underlaget består av väderdata, köldmängd, satellitdata och modellberäkningar.
           </p>
-          <p className={styles.warning}>
-            Det är förenat med livsfara att beträda naturis utan rätt kunskap, sällskap och utrustning.
+          <p>
+            Informationen är inte en observation av faktisk isbärighet. Modellerna innehåller osäkerheter, och lokala
+            förhållanden kan avvika kraftigt från det som visas. Informationen får inte användas som bekräftelse på att
+            is är säker eller åkbar.
           </p>
-          <p>Kontrollera alltid isen själv på plats.</p>
-          <p className={styles.more}>
-            Läs mer om hur Isvak fungerar och dess begränsningar under{" "}
-            <a href="/om" target="_blank" rel="noopener noreferrer">
-              Om Isvak
-            </a>
-            .
+          <p>
+            Bedömning av isen måste alltid göras på plats av användaren. Du ansvarar själv för beslutet att beträda is.
           </p>
         </div>
 
         <button type="button" className={styles.confirm} onClick={onAccept}>
-          Jag förstår – visa kartan
+          Jag förstår
         </button>
       </div>
     </div>
