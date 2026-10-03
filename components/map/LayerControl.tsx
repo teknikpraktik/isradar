@@ -90,7 +90,6 @@ export default function LayerControl({ colorLayer, onColorLayer, rideability, co
   // Utfälld som standard på bred skärm; på mobil styr knappen (se CSS).
   const [open, setOpen] = useState(false);
   const [modelInfo, setModelInfo] = useState(false);
-  const [coldInfo, setColdInfo] = useState(false);
   const sat = satellite.active;
   const riding = colorLayer === "rideability";
   const cold = colorLayer === "cold";
@@ -141,18 +140,8 @@ export default function LayerControl({ colorLayer, onColorLayer, rideability, co
             onChange={(on) => onColorLayer(on ? "cold" : "none")}
             label="Köldmängd"
           />
-          {/* På mobil ligger förklaringen infälld bakom frågetecknet */}
-          <button
-            type="button"
-            className={`${styles.hintBtn} ${styles.mobileOnly}`}
-            onClick={() => setColdInfo((v) => !v)}
-            aria-expanded={coldInfo}
-            aria-label="Om köldmängdslagret"
-          >
-            ?
-          </button>
         </div>
-        {cold && <ColdLegend {...coldLegend} collapsedOnMobile={!coldInfo} />}
+        {cold && <ColdLegend {...coldLegend} />}
         <Switch
           checked={sat?.scene.sensor === "SAR"}
           onChange={(on) => satellite.onToggle("SAR", on)}

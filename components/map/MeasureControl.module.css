@@ -113,7 +113,8 @@
   margin: 0 0 6px;
   border: 1px solid var(--border-strong);
   border-radius: 50%;
-  font-size: var(--fs-meta);
+  font-size: calc(9px * var(--ui-scale, 1));
+  line-height: 1;
   color: var(--text-muted);
 }
 

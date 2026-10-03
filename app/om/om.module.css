@@ -80,24 +80,6 @@
   flex: none;
 }
 
-.danger {
-  margin: 22px 0 8px;
-  padding: 14px 16px 6px;
-  background: rgb(120 28 28 / 0.28);
-  border: 1px solid #b5483f;
-  border-left-width: 5px;
-  border-radius: var(--radius);
-  color: var(--text-strong);
-}
-
-.main .danger h2 {
-  margin: 0 0 8px;
-  color: #ff9d92;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-size: var(--fs-heading);
-}
-
 .legend {
   list-style: none;
   padding-left: 0 !important;

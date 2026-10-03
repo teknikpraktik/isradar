@@ -2,9 +2,8 @@
 
 /**
  * Legend för köldmängdslagret. Visas bara när det lagret är valt (inbäddad
- * under reglaget i lagerkontrollen). Förklarar färg (aktuell köldmängd i
- * procent av historisk referens), etikett (historisk referens-GD) och hur
- * jämförelsen ska tolkas.
+ * under reglaget i lagerkontrollen). Ren visuell nyckel; förklaringen av färg
+ * och GD-etikett finns under Köldmängd på Om Isvak.
  */
 import {
   COLD_PROGRESS_CLASSES,
@@ -14,17 +13,11 @@ import styles from "./Legend.module.css";
 
 interface Props {
   showMissing?: boolean;
-  /** Mobil: dölj förklaringstexten tills användaren öppnar den bakom frågetecknet. */
-  collapsedOnMobile?: boolean;
 }
 
-export default function ColdLegend({ showMissing = false, collapsedOnMobile = false }: Props) {
+export default function ColdLegend({ showMissing = false }: Props) {
   return (
     <div className={styles.legend} role="group" aria-label="Köldmängd: aktuell jämfört med historisk">
-      <p className={collapsedOnMobile ? `${styles.explain} ${styles.mobileCollapsed}` : styles.explain}>
-        <strong>Färg</strong> = aktuell köldmängd i procent av historisk referens. <strong>Siffran</strong> efter
-        sjönamnet = historisk referens-GD, alltså köldmängden när vattnet tidigare blivit åkbart.
-      </p>
       <ul className={styles.list}>
         {COLD_PROGRESS_CLASSES.map((c) => (
           <li key={c.id}>

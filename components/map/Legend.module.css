@@ -5,26 +5,19 @@
   border-left: 2px solid var(--border-strong);
 }
 
-.explain {
-  margin: 0 0 4px;
-  font-size: var(--fs-meta);
-  line-height: 1.4;
-  color: var(--text-muted);
-}
-
 .list {
   list-style: none;
   margin: 4px 0 0;
   padding: 0;
   display: grid;
-  gap: 3px;
-  font-size: var(--fs-ui);
+  gap: 2px;
+  font-size: var(--fs-meta);
 }
 
 .list li {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   color: var(--text);
 }
 
@@ -63,7 +56,8 @@
 /* Köldmängdsklasser: intervall alltid synligt, inte bara vid hovring */
 .range {
   flex: none;
-  min-width: 62px;
+  min-width: 48px;
+  font-size: var(--fs-meta);
   color: var(--text-strong);
   font-variant-numeric: tabular-nums;
 }
@@ -73,15 +67,7 @@
   font-size: var(--fs-meta);
 }
 
-/* Mobil: förklaringstexten döljs tills den öppnas bakom frågetecknet */
 @media (max-width: 767px) {
-  .mobileCollapsed {
-    display: none;
-  }
-  .list {
-    font-size: var(--fs-meta);
-    gap: 2px;
-  }
   .legend {
     margin: 2px 0 4px;
     padding-top: 2px;

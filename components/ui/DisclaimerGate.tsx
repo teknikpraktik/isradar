@@ -5,7 +5,7 @@
  * klick utanför eller en stängknapp, och fokus hålls inne i dialogen (Tab/Skift+Tab cirkulerar). Bakgrunden
  * görs inert av föräldern (IsvakApp) så att varken tangentbord, pekare eller skärmläsare når kartan bakom.
  * Enda vägen vidare är knappen "Jag förstår". Innehållet är avsiktligt begränsat till rubrik, saklig
- * information, begränsningar och knapp – ingen länk härifrån.
+ * kort säkerhetsvarning och knapp – ingen länk härifrån.
  *
  * Renderas direkt i första svaret, så kartan syns aldrig obevakad.
  */
@@ -61,17 +61,13 @@ export default function DisclaimerGate({ onAccept }: { onAccept: () => void }) {
 
         <div id="gate-body" className={styles.body}>
           <p>
-            Isvak presenterar datadrivna och modellerade indikatorer för isbildning och för förhållanden som kan vara
-            relevanta vid isspaning. Underlaget består av väderdata, köldmängd, satellitdata och modellberäkningar.
+            Isvak är ett datadrivet verktyg för att identifiera sjöar där isbildning kan vara intressant att undersöka.
           </p>
           <p>
-            Informationen är inte en observation av faktisk isbärighet. Modellerna innehåller osäkerheter, och lokala
-            förhållanden kan avvika kraftigt från det som visas. Informationen får inte användas som bekräftelse på att
-            is är säker eller åkbar.
+            Isvak kan inte avgöra om en is är säker. Modellresultat, satellitdata och historiska jämförelser kan vara
+            felaktiga eller inaktuella. Isförhållanden måste alltid kontrolleras på plats.
           </p>
-          <p>
-            Bedömning av isen måste alltid göras på plats av användaren. Du ansvarar själv för beslutet att beträda is.
-          </p>
+          <p>Isvistelse innebär risk för allvarlig personskada eller dödsfall.</p>
         </div>
 
         <button type="button" className={styles.confirm} onClick={onAccept}>

@@ -28,8 +28,8 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  height: 38px;
-  padding: 0 10px;
+  min-height: 38px;
+  padding: 3px 12px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -44,16 +44,17 @@
   outline-offset: 2px;
 }
 
+/* Appens rubrik: samma storlek som sjönamnet i sjövyn (--fs-title) */
 .logo {
   font-family: var(--font-mono);
   font-weight: 600;
-  font-size: var(--fs-ui);
-  letter-spacing: 0.18em;
+  font-size: var(--fs-title);
+  letter-spacing: 0.14em;
   color: var(--text-strong);
 }
 
 .region {
-  font-size: var(--fs-fine);
+  font-size: var(--fs-meta);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-faint);

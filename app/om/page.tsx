@@ -72,43 +72,6 @@ export default function OmIsvak() {
           använda det till.
         </p>
 
-        <section className={styles.danger} aria-labelledby="varning">
-          <h2 id="varning">Livsfara: läs detta först</h2>
-          <p>
-            <strong>Isvak bedömer inte om is är säker eller bärig. Kontrollera alltid isen själv på plats.</strong>
-          </p>
-          <p>
-            <strong>Det är förenat med livsfara att vistas på isar utan rätt utrustning, sällskap och kunskap.</strong>{" "}
-            Människor drunknar och dör varje vinter efter att ha gått, åkt eller kört genom isen.
-          </p>
-          <p>
-            <strong>Isvaks modeller kan inte användas som ett verktyg för att bedöma is.</strong> Allt som visas är
-            beräkningar och mätningar av andra saker än isen själv: temperaturer, modellerade värden, väder och
-            radarbilder. Ingen har kontrollerat isen på platsen. En färg, en kategori eller en siffra säger{" "}
-            <strong>ingenting</strong> om huruvida isen bär, inte ens när den visar &quot;Mycket gynnsamma
-            indikationer&quot;. Isen kan vara farlig trots gynnsamma indikationer, och kartan kan visa fel.
-          </p>
-          <ul>
-            <li>Gå aldrig ut på is ensam, och gå aldrig ut på is som du inte själv har kontrollerat på plats.</li>
-            <li>
-              Ha rätt utrustning (isdubbar, ispik, räddningslina, flytväst med grenrem, komplett ombyte packat i
-              vattentäta påsar och mobiltelefon i vattenskyddat fodral) och kunna använda den.
-            </li>
-            <li>
-              Ha kunskap om hur is bildas och varierar. Tjockleken och kvaliteten kan skifta kraftigt på några meter,
-              särskilt vid strömmar, utlopp, bryggor, vass och under snö.
-            </li>
-            <li>Lita inte på spår efter andra. Ingen kan veta att isen bär bara för att någon annan gått där.</li>
-            <li>Vid olycka: ring 112.</li>
-          </ul>
-          <p>
-            Isvak ersätter inte lokal kunskap, råd från sjöräddning, livräddning eller kommun, och inte heller
-            Skridskonätets egna rapporter. Användning sker helt på egen risk. Tjänsten tillhandahålls i befintligt skick
-            utan någon garanti, och ansvar för skador eller förluster som uppstår av att tjänstens information använts
-            friskrivs i den utsträckning lagen tillåter.
-          </p>
-        </section>
-
         <h2>Vad Isvak är och inte är</h2>
         <ul>
           <li>
@@ -287,8 +250,10 @@ export default function OmIsvak() {
           Köldmängd räknas i graddagar (GD). Den <strong>aktuella</strong> köldmängden summeras från 1 oktober med
           SMHI:s dygnsmedeltemperatur (netto, aldrig under noll) vid vattnets närmaste mätstation. Den{" "}
           <strong>historiska referensen</strong> är Skridskonätets median av tidigare säsongers köldmängd den dag
-          vattnet första gången rapporterades som åkbart. Siffran efter sjönamnet är den historiska referensen. Färgen
-          visar hur stor del av referensen som den aktuella köldmängden nått:
+          vattnet första gången rapporterades som åkbart, alltså den köldmängd vid vilken vattnet historiskt har
+          rapporterats eller bedömts som åkbart enligt Skridskonätets underlag. På kartan anger{" "}
+          <strong>färgen</strong> den aktuella ackumulerade köldmängden som procent av vattnets historiska referens,
+          och <strong>siffran efter sjönamnet</strong> anger den historiska referensen i graddagar (GD):
         </p>
         <ul>
           {COLD_PROGRESS_CLASSES.map((c) => (
