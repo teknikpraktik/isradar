@@ -352,7 +352,9 @@ export default function OmIsvak() {
           <SafetyNotice id="om-safety" headingLevel={2} />
         </div>
         <p className={styles.contact}>
-          Har du synpunkter, förbättringsförslag eller vill rapportera ett fel? Kontakta{" "}
+          Har du synpunkter, förbättringsförslag eller vill rapportera ett fel?
+          <br />
+          Kontakta{" "}
           <a href="mailto:per.a.bjorkman@gmail.com">per.a.bjorkman@gmail.com</a>
         </p>
         <Link href="/" className={styles.back}>
