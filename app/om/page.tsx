@@ -248,8 +248,9 @@ export default function OmIsvak() {
         <h3>Köldmängd</h3>
         <p>
           Köldmängd räknas i graddagar (GD). Den <strong>aktuella</strong> köldmängden summeras från 1 oktober med
-          SMHI:s dygnsmedeltemperatur (netto, aldrig under noll) vid vattnets närmaste mätstation. Den{" "}
-          <strong>historiska referensen</strong> är Skridskonätets median av tidigare säsongers köldmängd den dag
+          SMHI:s dygnsmedeltemperatur vid vattnets närmaste mätstation. Köldmängden summeras som ett
+          nettovärde där kalla dygn ökar och milda dygn minskar summan. Den ackumulerade köldmängden kan aldrig bli
+          lägre än 0 GD. Den <strong>historiska referensen</strong> är Skridskonätets median av tidigare säsongers köldmängd den dag
           vattnet första gången rapporterades som åkbart, alltså den köldmängd vid vilken vattnet historiskt har
           rapporterats eller bedömts som åkbart enligt Skridskonätets underlag. På kartan anger{" "}
           <strong>färgen</strong> den aktuella ackumulerade köldmängden som procent av vattnets historiska referens,
