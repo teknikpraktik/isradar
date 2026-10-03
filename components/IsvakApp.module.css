@@ -319,19 +319,17 @@
 @media (max-width: 767px) {
   /* Kompakt enradig fot längst ner; skalstocken (nere till vänster) lyfts ovanför fot och källhänvisning. */
   .footerBar {
-    left: 0;
     justify-content: flex-end;
-    border-top-left-radius: 0;
     flex-wrap: nowrap;
     gap: 4px;
-    padding: 1px 8px calc(1px + env(safe-area-inset-bottom));
+    padding: 1px 8px;
     line-height: 1.35;
   }
   :global(.maplibregl-ctrl-bottom-right) {
-    bottom: calc(env(safe-area-inset-bottom) + 16px) !important;
+    bottom: 17px !important;
   }
   :global(.maplibregl-ctrl-bottom-left) {
-    bottom: calc(env(safe-area-inset-bottom) + 40px) !important;
+    bottom: 38px !important;
   }
   .footerBar[data-hidden-mobile="true"] {
     display: none;
