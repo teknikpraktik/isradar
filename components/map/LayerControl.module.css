@@ -240,6 +240,7 @@
 
 .modelInfo {
   padding: 6px 8px;
+  font-size: var(--fs-meta);
   background: var(--surface-solid);
   border-left: 2px solid var(--kind-model);
   border-radius: 0 var(--radius) var(--radius) 0;

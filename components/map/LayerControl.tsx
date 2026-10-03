@@ -10,6 +10,7 @@
  * överlagras. Är alla av visas bara baskartan med sjönamn. Varje lagers legend
  * visas direkt under dess reglage när lagret är på.
  */
+import Link from "next/link";
 import { useState } from "react";
 import { SatelliteControls } from "@/components/lake-panel/sections";
 import { RIDEABILITY_TITLE } from "@/lib/rideability/config";
@@ -34,7 +35,7 @@ interface Props {
   colorLayer: "rideability" | "cold" | "none";
   onColorLayer: (layer: "rideability" | "cold" | "none") => void;
   rideability: { loading: boolean; failed: string[] };
-  coldLegend: { showCollection: boolean; showMissing: boolean };
+  coldLegend: { showMissing: boolean };
   satellite: {
     active: ActiveSatellite | null;
     loadingSensor: "SAR" | "optical" | null;
@@ -124,9 +125,7 @@ export default function LayerControl({ colorLayer, onColorLayer, rideability, co
         {modelInfo && (
           <p className={`${styles.help} ${styles.modelInfo}`}>
             {VANERN_HINT}{" "}
-            <a href="/om" target="_blank" rel="noopener noreferrer">
-              Läs mer här
-            </a>
+            <Link href="/om">Läs mer här.</Link>
           </p>
         )}
         {riding && rideability.failed.length > 0 && (

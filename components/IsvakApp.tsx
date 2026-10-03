@@ -142,7 +142,6 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
 
   const legendFlags = useMemo(
     () => ({
-      showCollection: !!data?.index.some((l) => l.areaType === "COLLECTION_AREA"),
       showMissing: !!data?.index.some((l) => l.areaType !== "COLLECTION_AREA" && l.hca === null),
     }),
     [data],

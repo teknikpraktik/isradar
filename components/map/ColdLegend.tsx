@@ -8,19 +8,17 @@
  */
 import {
   COLD_PROGRESS_CLASSES,
-  COLLECTION_AREA_STYLE,
   NO_VALUE_STYLE,
 } from "@/lib/map/coldScale";
 import styles from "./Legend.module.css";
 
 interface Props {
-  showCollection?: boolean;
   showMissing?: boolean;
   /** Mobil: dölj förklaringstexten tills användaren öppnar den bakom frågetecknet. */
   collapsedOnMobile?: boolean;
 }
 
-export default function ColdLegend({ showCollection = false, showMissing = false, collapsedOnMobile = false }: Props) {
+export default function ColdLegend({ showMissing = false, collapsedOnMobile = false }: Props) {
   return (
     <div className={styles.legend} role="group" aria-label="Köldmängd: aktuell jämfört med historisk">
       <p className={collapsedOnMobile ? `${styles.explain} ${styles.mobileCollapsed}` : styles.explain}>
@@ -39,19 +37,6 @@ export default function ColdLegend({ showCollection = false, showMissing = false
           <li>
             <span className={styles.swatch} style={{ border: `1px dashed ${NO_VALUE_STYLE.line}` }} />
             <span>{NO_VALUE_STYLE.label}</span>
-          </li>
-        )}
-        {showCollection && (
-          <li>
-            <span
-              className={styles.swatch}
-              style={{
-                background: COLLECTION_AREA_STYLE.fill,
-                opacity: COLLECTION_AREA_STYLE.fillOpacity + 0.25,
-                outline: `1px solid ${COLLECTION_AREA_STYLE.line}`,
-              }}
-            />
-            <span>{COLLECTION_AREA_STYLE.label}</span>
           </li>
         )}
       </ul>

@@ -7,7 +7,7 @@
 
 .explain {
   margin: 0 0 4px;
-  font-size: var(--fs-ui);
+  font-size: var(--fs-meta);
   line-height: 1.4;
   color: var(--text-muted);
 }
