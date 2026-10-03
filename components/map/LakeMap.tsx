@@ -571,7 +571,7 @@ const LABEL_TIERS = [
 const labelLayout = {
   "text-field": ["coalesce", ["get", "label"], ["get", "name"]],
   "text-font": LAKE_LABEL_FONT,
-  "text-size": ["interpolate", ["linear"], ["zoom"], 6.5, 9.5, 13, 12.5],
+  "text-size": ["interpolate", ["linear"], ["zoom"], 6.5, 11.5, 13, 15],
   "text-letter-spacing": 0.03,
   "text-max-width": 8,
 };
