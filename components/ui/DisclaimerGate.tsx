@@ -9,6 +9,7 @@
  *
  * Renderas direkt i första svaret, så kartan syns aldrig obevakad.
  */
+import Image from "next/image";
 import { useEffect, useRef, type KeyboardEvent } from "react";
 import styles from "./DisclaimerGate.module.css";
 
@@ -45,6 +46,8 @@ export default function DisclaimerGate({ onAccept }: { onAccept: () => void }) {
 
   return (
     <div className={styles.overlay}>
+      <div className={styles.stack}>
+      <Image src="/brand/logo-192.png" alt="" width={72} height={72} priority className={styles.logo} />
       <div
         ref={dialog}
         className={styles.dialog}
@@ -83,6 +86,7 @@ export default function DisclaimerGate({ onAccept }: { onAccept: () => void }) {
         <button type="button" className={styles.confirm} onClick={onAccept}>
           Jag har förstått
         </button>
+      </div>
       </div>
     </div>
   );

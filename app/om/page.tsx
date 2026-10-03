@@ -362,7 +362,7 @@ export default function OmIsvak() {
           </p>
         </section>
         <p className={styles.contact}>
-          Synpunkter, förbättringsförslag och felrapporter är välkomna:{" "}
+          Har du synpunkter, förbättringsförslag eller vill rapportera ett fel? Kontakta{" "}
           <a href="mailto:per.a.bjorkman@gmail.com">per.a.bjorkman@gmail.com</a>
         </p>
         <Link href="/" className={styles.back}>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import LakePanel from "@/components/lake-panel/LakePanel";
@@ -233,8 +234,11 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
       <div className={styles.topBar}>
         {/* Full omladdning: inga valda sjöar, lager eller datum (originalinladdningen). */}
         <a href="?" className={styles.brand} title="Ladda om Isvak" aria-label={`Isvak ${region.name} – ladda om`}>
-          <span className={styles.logo}>ISVAK</span>
-          <span className={styles.region}>{region.name}</span>
+          <Image src="/brand/logo-96.png" alt="" width={32} height={32} className={styles.mark} />
+          <span className={styles.brandText}>
+            <span className={styles.logo}>ISVAK</span>
+            <span className={styles.region}>{region.name}</span>
+          </span>
         </a>
         {asOf && (
           <a href="?" className={styles.asOf} title="Visar ett tidigare datum. Klicka för nuläget.">

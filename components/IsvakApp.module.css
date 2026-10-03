@@ -28,11 +28,12 @@
 
 .brand {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  flex-direction: row;
+  align-items: center;
+  gap: 9px;
   box-sizing: border-box;
   height: var(--brand-h);
-  padding: 3px 12px;
+  padding: 3px 12px 3px 8px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -45,6 +46,20 @@
 .brand:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+.mark {
+  flex: none;
+  width: calc(32px * var(--ui-scale, 1));
+  height: calc(32px * var(--ui-scale, 1));
+  border-radius: 7px;
+}
+
+.brandText {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  line-height: 1.05;
 }
 
 /* Appens rubrik: samma storlek som sjönamnet i sjövyn (--fs-title) */
