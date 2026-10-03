@@ -4,7 +4,7 @@
  * Startgate: obligatorisk bekräftelse mitt i skärmen innan appen används. Den kan inte stängas med Escape,
  * klick utanför eller en stängknapp, och fokus hålls inne i dialogen (Tab/Skift+Tab cirkulerar). Bakgrunden
  * görs inert av föräldern (IsvakApp) så att varken tangentbord, pekare eller skärmläsare når kartan bakom.
- * Enda vägen vidare är knappen "Jag förstår". Innehållet är avsiktligt begränsat till rubrik, saklig
+ * Enda vägen vidare är knappen "Jag har förstått". Innehållet är avsiktligt begränsat till rubrik, saklig
  * kort säkerhetsvarning och knapp – ingen länk härifrån.
  *
  * Renderas direkt i första svaret, så kartan syns aldrig obevakad.
@@ -61,25 +61,27 @@ export default function DisclaimerGate({ onAccept }: { onAccept: () => void }) {
 
         <div id="gate-body" className={styles.body}>
           <p>
-            Isvak är ett datadrivet verktyg för att identifiera sjöar där isbildning kan vara intressant att undersöka.
+            Isvak sammanställer väderdata, satellitdata och historiska referenser för att identifiera sjöar där
+            isläget kan vara värt att undersöka.
           </p>
-          <p>
-            Isvak kan inte avgöra om en is är säker. Modellresultat, satellitdata och historiska jämförelser kan vara
-            felaktiga eller inaktuella. Isförhållanden måste alltid kontrolleras på plats.
-          </p>
-          <div className={styles.warning} role="note">
-            <span className={styles.warningIcon} aria-hidden>
-              !
-            </span>
+          <section className={styles.notice} aria-labelledby="gate-safety">
+            <h3 id="gate-safety" className={styles.noticeTitle}>
+              <svg className={styles.noticeIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M12 3 2.5 20h19z" />
+                <path d="M12 10v4.5M12 17.2v.1" />
+              </svg>
+              Viktig säkerhetsinformation
+            </h3>
             <p>
-              Det är förenat med livsfara att beträda isar utan kunskap, sällskap och rätt utrustning. Isvak kan
-              aldrig göra den bedömningen åt dig.
+              Isvak bedömer inte om en is är säker att beträda. Modellresultat och underliggande data kan vara
+              osäkra, ofullständiga eller inaktuella. Isens bärighet måste alltid bedömas på plats med rätt kunskap
+              och utrustning.
             </p>
-          </div>
+          </section>
         </div>
 
         <button type="button" className={styles.confirm} onClick={onAccept}>
-          Jag förstår
+          Jag har förstått
         </button>
       </div>
     </div>

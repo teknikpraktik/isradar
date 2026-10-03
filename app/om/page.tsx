@@ -346,9 +346,20 @@ export default function OmIsvak() {
         <h2>Personuppgifter</h2>
         <p>Din position (om du använder positionsknappen) visas bara lokalt i webbläsaren och skickas ingenstans.</p>
 
-        <p className={styles.endWarning}>
-          Kontrollera alltid isen själv, på plats, med rätt utrustning och i sällskap. Isvak kan aldrig göra det åt dig.
-        </p>
+        <section className={styles.notice} aria-labelledby="om-safety">
+          <h2 id="om-safety">
+            <svg className={styles.noticeIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M12 3 2.5 20h19z" />
+              <path d="M12 10v4.5M12 17.2v.1" />
+            </svg>
+            Viktig säkerhetsinformation
+          </h2>
+          <p>
+            Isvak bedömer inte om en is är säker att beträda. Modellresultat och underliggande data kan vara osäkra,
+            ofullständiga eller inaktuella. Isens bärighet måste alltid bedömas på plats med rätt kunskap och
+            utrustning.
+          </p>
+        </section>
         <p className={styles.contact}>
           Synpunkter, förbättringsförslag och felrapporter är välkomna:{" "}
           <a href="mailto:per.a.bjorkman@gmail.com">per.a.bjorkman@gmail.com</a>
