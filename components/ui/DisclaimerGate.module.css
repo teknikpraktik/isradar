@@ -65,31 +65,6 @@
   margin: 0;
 }
 
-/* Säkerhetsinformation: avskiljd med tunn linje, ingen egen ruta. Gul ikon som enda färgaccent. */
-.notice {
-  margin-top: 24px;
-  padding-top: 24px;
-  border-top: 1px solid var(--border);
-}
-
-.noticeTitle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 8px;
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 1.4;
-  color: var(--text-strong);
-}
-
-.noticeIcon {
-  flex: none;
-  width: 18px;
-  height: 18px;
-  color: #d9b44a;
-}
-
 /* Enda primära handlingen: centrerad, djupare blå accent (vit text ca 5,6:1), 48 px hög. */
 .confirm {
   box-sizing: border-box;
@@ -137,9 +112,6 @@
   }
   .title {
     font-size: 22px;
-  }
-  .noticeTitle {
-    font-size: 15px;
   }
   .confirm {
     width: 100%;

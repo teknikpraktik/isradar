@@ -1,0 +1,30 @@
+/* Dubbel klass i väljarna så att sidors generella h2/p-regler (t.ex. .main h2 på Om Isvak) inte vinner. */
+.notice {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.notice .title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-size: var(--safety-title-size, 1em);
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--text-strong);
+}
+
+.icon {
+  flex: none;
+  width: 1.15em;
+  height: 1.15em;
+  color: var(--warning);
+}
+
+.notice .text {
+  margin: 0;
+}

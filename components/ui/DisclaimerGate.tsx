@@ -10,6 +10,7 @@
  * Renderas direkt i första svaret, så kartan syns aldrig obevakad.
  */
 import { useEffect, useRef, type KeyboardEvent } from "react";
+import SafetyNotice from "./SafetyNotice";
 import styles from "./DisclaimerGate.module.css";
 
 const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -67,20 +68,7 @@ export default function DisclaimerGate({ onAccept }: { onAccept: () => void }) {
             Isvak sammanställer väderdata, satellitdata och historiska referenser för att identifiera sjöar där
             isbildningen kan vara värd att undersöka.
           </p>
-          <section className={styles.notice} aria-labelledby="gate-safety">
-            <h3 id="gate-safety" className={styles.noticeTitle}>
-              <svg className={styles.noticeIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M12 3 2.5 20h19z" />
-                <path d="M12 10v4.5M12 17.2v.1" />
-              </svg>
-              Viktig säkerhetsinformation
-            </h3>
-            <p>
-              Isvak bedömer inte om en is är säker att beträda. Modellresultat och underliggande data kan vara
-              osäkra, ofullständiga eller inaktuella. Isens bärighet måste alltid bedömas på plats med rätt kunskap
-              och utrustning.
-            </p>
-          </section>
+          <SafetyNotice id="gate-safety" />
         </div>
 
         <button type="button" className={styles.confirm} onClick={onAccept}>

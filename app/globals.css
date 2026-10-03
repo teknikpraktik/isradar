@@ -22,6 +22,9 @@
   --kind-forecast: #d6b88a;
   --kind-hist: #8fa6b8;
 
+  /* Dämpad varningsgul: används bara för varningsikoner, aldrig som bakgrund */
+  --warning: #d9b44a;
+
   /* Typografi: ett litet gemensamt system. Alla textstorlekar i appen hämtas härifrån (skalas med --ui-scale på dator).
      title    – sjönamn, sidtitel
      heading  – sektions-/underrubriker

@@ -94,36 +94,15 @@
   vertical-align: baseline;
 }
 
-/* Samma säkerhetsinformation som i startrutan */
-.main .notice {
-  margin-top: 30px;
-  padding: 12px 14px;
-  background: rgb(255 255 255 / 0.03);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius);
-}
-
-.main .notice h2 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 6px;
-}
-
-.main .notice p {
-  margin: 0;
-}
-
-.noticeIcon {
-  flex: none;
-  width: 16px;
-  height: 16px;
-  color: #e5877c;
+/* Säkerhetsinformationen (delad komponent): rubriken som övriga h2 */
+.safety {
+  --safety-title-size: var(--fs-heading);
+  margin-top: 34px;
 }
 
 .contact {
-  margin-top: 26px !important;
-  padding-top: 14px;
+  margin-top: 24px !important;
+  padding-top: 24px;
   border-top: 1px solid var(--border);
   font-size: var(--fs-ui);
   color: var(--text-muted);
