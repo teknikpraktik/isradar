@@ -9,7 +9,6 @@
  *
  * Renderas direkt i första svaret, så kartan syns aldrig obevakad.
  */
-import Image from "next/image";
 import { useEffect, useRef, type KeyboardEvent } from "react";
 import styles from "./DisclaimerGate.module.css";
 
@@ -46,8 +45,6 @@ export default function DisclaimerGate({ onAccept }: { onAccept: () => void }) {
 
   return (
     <div className={styles.overlay}>
-      <div className={styles.stack}>
-      <Image src="/brand/logo-192.png" alt="" width={72} height={72} priority className={styles.logo} />
       <div
         ref={dialog}
         className={styles.dialog}
@@ -58,14 +55,17 @@ export default function DisclaimerGate({ onAccept }: { onAccept: () => void }) {
         tabIndex={-1}
         onKeyDown={onKeyDown}
       >
-        <h2 id="gate-title" className={styles.title}>
-          Välkommen till Isvak
-        </h2>
+        <header className={styles.header}>
+          <h2 id="gate-title" className={styles.title}>
+            Isvak
+          </h2>
+          <p className={styles.subtitle}>Datadriven bevakning av isbildning</p>
+        </header>
 
         <div id="gate-body" className={styles.body}>
           <p>
             Isvak sammanställer väderdata, satellitdata och historiska referenser för att identifiera sjöar där
-            isläget kan vara värt att undersöka.
+            isbildningen kan vara värd att undersöka.
           </p>
           <section className={styles.notice} aria-labelledby="gate-safety">
             <h3 id="gate-safety" className={styles.noticeTitle}>
@@ -86,7 +86,6 @@ export default function DisclaimerGate({ onAccept }: { onAccept: () => void }) {
         <button type="button" className={styles.confirm} onClick={onAccept}>
           Jag har förstått
         </button>
-      </div>
       </div>
     </div>
   );
