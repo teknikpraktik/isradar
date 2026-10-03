@@ -3,6 +3,8 @@
   inset: 0;
   overflow: hidden;
   background: var(--bg);
+  /* Appnamnsrutans höjd; lagerkolumnen placeras under den med samma glapp som mellan rutorna. */
+  --brand-h: calc(47px * var(--ui-scale, 1));
 }
 
 /* --- toppfält ---------------------------------------------------- */
@@ -28,7 +30,8 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-height: 38px;
+  box-sizing: border-box;
+  height: var(--brand-h);
   padding: 3px 12px;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -93,12 +96,12 @@
 .layers {
   position: absolute;
   left: 10px;
-  top: calc(env(safe-area-inset-top) + 58px);
+  top: calc(env(safe-area-inset-top) + 10px + var(--brand-h) + 8px);
   z-index: 15;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: calc(100% - 58px - 60px); /* lämnar plats åt kartans skala nedtill */
+  max-height: calc(100% - 66px - 60px); /* lämnar plats åt kartans skala nedtill */
   pointer-events: none;
 }
 
@@ -133,6 +136,7 @@
   .layers {
     width: 128px;
     gap: 6px;
+    top: calc(env(safe-area-inset-top) + 10px + var(--brand-h) + 6px);
   }
   .layers:has([data-open="true"]) {
     width: 208px;

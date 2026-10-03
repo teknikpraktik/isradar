@@ -182,7 +182,6 @@ app/                 Next.js App Router (page, layout, manifest)
 components/
   IsvakApp.tsx     klientskal: state för vald sjö, sök, position
   map/               LakeMap (MapLibre), ColdLegend, LayerControl, LocateButton
-  search/            LakeSearch
   lake-panel/        LakePanel + sektioner (Översikt, Modell, Satellit, Väder)
   ui/                GdUnit
 lib/

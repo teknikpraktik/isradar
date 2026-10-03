@@ -9,22 +9,15 @@ import { COLLECTION_AREA_STYLE, coldFillColor, coldLineColor, isCollectionAreaFi
 import { loadMapLibre } from "@/lib/map/maplibre";
 import { cumulativeM, formatLength } from "@/lib/measure/route";
 import { categoryFillColor, rideabilityFillColor, rideabilityLineColor } from "@/lib/rideability/mapStyle";
-import type { BBox, LakeId, LngLat } from "@/types/lake";
+import type { LakeId, LngLat } from "@/types/lake";
 import type { RegionDefinition } from "@/types/region";
 import type { SatelliteScene } from "@/lib/satellite/api";
 import styles from "./LakeMap.module.css";
-
-export interface FocusRequest {
-  bbox: BBox;
-  /** Ändras för varje ny begäran så att samma sjö kan fokuseras igen. */
-  key: number;
-}
 
 interface Props {
   region: RegionDefinition;
   lakes: LakeFeatureCollection | null;
   selectedId: LakeId | null;
-  focus: FocusRequest | null;
   userPosition: LngLat | null;
   onSelect: (id: LakeId | null) => void;
   /** Aktivt satellitlager (ett åt gången) eller null. */
@@ -54,19 +47,10 @@ const CLICK_LAYERS = ["vanern-cells", "lakes-fill", "lakes-point", "collection-f
 const HOVER_LAYERS = ["lakes-fill", "lakes-point", "collection-fill"];
 const SELECTED_COLOR = "#f2f5f7";
 
-/** Kartans synliga yta när sjöpanelen är öppen (bottom sheet resp. sidopanel). */
-function focusPadding(map: MlMap) {
-  const { clientWidth: w, clientHeight: h } = map.getContainer();
-  return w < 768
-    ? { top: 90, left: 32, right: 32, bottom: Math.round(h * 0.5) }
-    : { top: 90, left: 60, right: 500, bottom: 60 };
-}
-
 export default function LakeMap({
   region,
   lakes,
   selectedId,
-  focus,
   userPosition,
   onSelect,
   satellite = null,
@@ -321,20 +305,6 @@ export default function LakeMap({
     map.setFilter("lakes-selected-fill", filter as never);
     map.setFilter("lakes-selected-line", filter as never);
   }, [ready, selectedId]);
-
-  // Zoom till sjö
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!ready || !map || !focus) return;
-    const [x0, y0, x1, y1] = focus.bbox;
-    map.fitBounds(
-      [
-        [x0, y0],
-        [x1, y1],
-      ],
-      { padding: focusPadding(map), maxZoom: 13, duration: 900 },
-    );
-  }, [ready, focus]);
 
   // Egen position – visas endast lokalt, skickas ingenstans.
   useEffect(() => {

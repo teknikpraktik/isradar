@@ -4,12 +4,11 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import LakePanel from "@/components/lake-panel/LakePanel";
-import LakeMap, { type FocusRequest } from "@/components/map/LakeMap";
+import LakeMap from "@/components/map/LakeMap";
 import LocateButton from "@/components/map/LocateButton";
 import LayerControl, { type ActiveSatellite } from "@/components/map/LayerControl";
 import MeasureControl from "@/components/map/MeasureControl";
 import PassWind from "@/components/map/PassWind";
-import LakeSearch from "@/components/search/LakeSearch";
 import DisclaimerGate from "@/components/ui/DisclaimerGate";
 import { isIsoDate } from "@/lib/cold/api";
 import { fetchCurrentColdByStation } from "@/lib/data/cold";
@@ -24,7 +23,7 @@ import { withRideabilityCategory } from "@/lib/rideability/mapStyle";
 import { formatDate, formatShortDateTime } from "@/lib/format";
 import { getRegion } from "@/lib/regions";
 import { disclaimerGate } from "@/lib/session/gate";
-import type { LakeId, LakeIndexEntry, LngLat } from "@/types/lake";
+import type { LakeId, LngLat } from "@/types/lake";
 import styles from "./IsvakApp.module.css";
 
 export default function IsvakApp({ regionId }: { regionId?: string }) {
@@ -35,7 +34,6 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
   const [data, setData] = useState<RegionLakeData | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<LakeId | null>(null);
-  const [focus, setFocus] = useState<FocusRequest | null>(null);
   const [userPosition, setUserPosition] = useState<LngLat | null>(null);
   // Friskrivningen visas mitt i skärmen vid varje appstart och måste kvitteras. Kvitteringen gäller tills sidan
   // laddas om, så Om Isvak → Tillbaka till kartan går direkt till kartan (se lib/session/gate.ts).
@@ -189,11 +187,6 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
     [region, asOf],
   );
 
-  const pickFromSearch = (entry: LakeIndexEntry) => {
-    setSelectedId(entry.id);
-    setFocus({ bbox: entry.bbox, key: Date.now() });
-  };
-
   return (
     <main className={styles.app}>
       {/* Allt bakom friskrivningen är inaktivt (inert) tills användaren tryckt OK. */}
@@ -205,7 +198,6 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
         cells={modelReady ? vanern.features : null}
         apiRef={mapApi}
         selectedId={selectedId}
-        focus={focus}
         userPosition={userPosition}
         onSelect={setSelectedId}
         onMoveEnd={(c) => (mapCenterRef.current = c)}
@@ -244,12 +236,6 @@ export default function IsvakApp({ regionId }: { regionId?: string }) {
           <span className={styles.logo}>ISVAK</span>
           <span className={styles.region}>{region.name}</span>
         </a>
-        <LakeSearch
-          index={data?.index ?? []}
-          stations={data?.stations ?? new Map()}
-          onPick={pickFromSearch}
-          disabled={!data}
-        />
         {asOf && (
           <a href="?" className={styles.asOf} title="Visar ett tidigare datum. Klicka för nuläget.">
             <span>Datum</span>

@@ -67,7 +67,15 @@ export default function DisclaimerGate({ onAccept }: { onAccept: () => void }) {
             Isvak kan inte avgöra om en is är säker. Modellresultat, satellitdata och historiska jämförelser kan vara
             felaktiga eller inaktuella. Isförhållanden måste alltid kontrolleras på plats.
           </p>
-          <p>Isvistelse innebär risk för allvarlig personskada eller dödsfall.</p>
+          <div className={styles.warning} role="note">
+            <span className={styles.warningIcon} aria-hidden>
+              !
+            </span>
+            <p>
+              Det är förenat med livsfara att beträda isar utan kunskap, sällskap och rätt utrustning. Isvak kan
+              aldrig göra den bedömningen åt dig.
+            </p>
+          </div>
         </div>
 
         <button type="button" className={styles.confirm} onClick={onAccept}>
