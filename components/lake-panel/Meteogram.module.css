@@ -51,7 +51,7 @@
 
 .tempTick {
   fill: var(--text);
-  font-size: var(--fs-meta);
+  font-size: var(--fs-fine);
   text-anchor: end;
 }
 
@@ -104,7 +104,7 @@
 
 .wind {
   fill: var(--text);
-  font-size: var(--fs-meta);
+  font-size: var(--fs-fine);
   text-anchor: middle;
 }
 
@@ -203,7 +203,7 @@
 
 .nowLabel {
   fill: var(--accent);
-  font-size: var(--fs-meta);
+  font-size: var(--fs-fine);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-anchor: middle; /* centrerad över linjen */
