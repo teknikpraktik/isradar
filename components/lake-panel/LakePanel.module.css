@@ -195,8 +195,8 @@
 .row .value,
 .row .placeholder {
   text-align: right;
-  /* Värden ligger nära etikettens storlek (13 px); mono-siffror ser större ut och tas ned lite till. */
-  font-size: var(--fs-ui);
+  /* Mätvärden och statustext en nivå under etiketterna (mono-siffror ser annars större ut). */
+  font-size: var(--fs-meta);
 }
 
 .row .value :global(.num) {
@@ -209,7 +209,7 @@
 
 .placeholder {
   color: var(--text-faint);
-  font-size: var(--fs-ui) !important;
+  font-size: var(--fs-meta) !important;
 }
 
 /* Station, tid, täckning – egen rad under värdet, högerställd */
